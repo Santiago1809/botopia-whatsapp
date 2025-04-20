@@ -1,0 +1,211 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+
+// Tipo para el usuario
+interface User {
+  id?: string;
+  name?: string;
+  username?: string;
+  email?: string;
+  phoneNumber?: string;
+  countryCode?: string;
+  role?: string;
+}
+
+// Contexto de autenticación
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (identifier: string, password: string) => Promise<void>;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+    countryCode?: string,
+    phoneNumber?: string
+  ) => Promise<void>;
+  logout: () => void;
+}
+
+// Creación del contexto
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Proveedor del contexto de autenticación
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Función para iniciar sesión con la API real
+  const login = async (identifier: string, password: string) => {
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ identifier, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Credenciales inválidas");
+      }
+
+      const data = await response.json();
+
+      // Guardamos el token en localStorage si tu API lo devuelve
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Guardamos los datos del usuario
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+      }
+      
+      localStorage.setItem("isAuthenticated", "true");
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      throw error;
+    }
+  };
+
+  // Función para registrar usuario con la API real
+  const register = async (
+    username: string,
+    email: string,
+    password: string,
+    countryCode?: string,
+    phoneNumber?: string
+  ) => {
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          countryCode,
+          phoneNumber,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error en el registro");
+      }
+
+      const data = await response.json();
+
+      // Guardamos el token si la API lo devuelve
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Guardamos los datos del usuario
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+      }
+      
+      localStorage.setItem("isAuthenticated", "true");
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      throw error;
+    }
+  };
+
+  // Función para cerrar sesión
+  const logout = () => {
+    // Si tu API tiene un endpoint de logout, podrías llamarlo aquí
+    // fetch('http://localhost:3001/api/auth/logout', { credentials: 'include' });
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("token");
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+  // Efecto para comprobar la autenticación cuando se carga la aplicación
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+      const storedIsAuthenticated = localStorage.getItem("isAuthenticated");
+
+      if (storedUser && storedIsAuthenticated === "true" && token) {
+        try {
+          // Verificar si el token es válido haciendo una petición al servidor
+          const response = await fetch(
+            "http://localhost:3001/api/auth/user-info",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            // Si la respuesta es exitosa, el token es válido
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            setIsAuthenticated(true);
+          } else {
+            // Si la respuesta no es exitosa, el token no es válido
+            logout();
+          }
+        } catch (error) {
+          console.error("Error al verificar el token:", error);
+          // Si hay un error en la petición, mantenemos la sesión si hay datos en localStorage
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setIsAuthenticated(true);
+        }
+      } else {
+        // Si no hay token o usuario en localStorage, cerramos sesión
+        logout();
+      }
+
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  // Si está cargando, no mostramos nada
+  if (loading) {
+    return null;
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, login, register, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Hook para usar el contexto de autenticación
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth debe ser utilizado dentro de un AuthProvider");
+  }
+  return context;
+}
