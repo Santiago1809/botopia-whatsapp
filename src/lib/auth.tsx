@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
       }
-      
+
       localStorage.setItem("isAuthenticated", "true");
       setIsAuthenticated(true);
     } catch (error) {
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
       }
-      
+
       localStorage.setItem("isAuthenticated", "true");
       setIsAuthenticated(true);
     } catch (error) {

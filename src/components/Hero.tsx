@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 export const Hero: React.FC = () => {
@@ -33,7 +34,7 @@ export const Hero: React.FC = () => {
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-tertiary/20 rounded-full"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-tertiary/20 rounded-full"></div>
-              <img
+              <Image
                 src="/services/whatsapp-preview.png"
                 alt="WhatsApp Business Preview"
                 className="relative z-10 rounded-xl shadow-xl max-w-full"
