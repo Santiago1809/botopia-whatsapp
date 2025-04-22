@@ -1,3 +1,4 @@
+"use client"; // Añadir directiva use client
 import React, { ReactNode } from "react";
 import Image from "next/image";
 
@@ -28,6 +29,13 @@ export const ServiceCard: React.FC<ServiceProps> = ({
   iconColor = "text-primary",
   isComingSoon = false, // Valor por defecto
 }) => {
+  // Manejador de clic para componentes deshabilitados
+  const handleDisabledClick = (e: React.MouseEvent) => {
+    if (isComingSoon) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div
       className={`${bgColor} ${
@@ -58,8 +66,8 @@ export const ServiceCard: React.FC<ServiceProps> = ({
         <h3 className="text-xl font-semibold mb-2">{title}</h3>
         <p className="text-gray-600 text-sm mb-6 flex-grow">{description}</p>
         <a
-          href={isComingSoon ? "" : actionUrl}
-          onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
+          href={isComingSoon ? "#" : actionUrl}
+          onClick={handleDisabledClick}
           className={`block w-full py-2 text-white text-center rounded-md transition ${
             isComingSoon
               ? "bg-gray-500 cursor-not-allowed pointer-events-none"

@@ -23,6 +23,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  token: string | null;
   login: (identifier: string, password: string) => Promise<void>;
   register: (
     username: string,
@@ -32,6 +33,7 @@ interface AuthContextType {
     phoneNumber?: string
   ) => Promise<void>;
   logout: () => void;
+  getToken: () => string | null;
 }
 
 // Creación del contexto
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [token, setToken] = useState<string | null>(null);
 
   // Función para iniciar sesión con la API real
   const login = async (identifier: string, password: string) => {
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Guardamos el token en localStorage si tu API lo devuelve
       if (data.token) {
         localStorage.setItem("token", data.token);
+        setToken(data.token);
       }
 
       // Guardamos los datos del usuario
@@ -112,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Guardamos el token si la API lo devuelve
       if (data.token) {
         localStorage.setItem("token", data.token);
+        setToken(data.token);
       }
 
       // Guardamos los datos del usuario
@@ -138,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token");
     setUser(null);
     setIsAuthenticated(false);
+    setToken(null);
   };
 
   // Efecto para comprobar la autenticación cuando se carga la aplicación
@@ -165,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = JSON.parse(storedUser);
             setUser(userData);
             setIsAuthenticated(true);
+            setToken(token);
           } else {
             // Si la respuesta no es exitosa, el token no es válido
             logout();
@@ -175,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = JSON.parse(storedUser);
           setUser(userData);
           setIsAuthenticated(true);
+          setToken(token);
         }
       } else {
         // Si no hay token o usuario en localStorage, cerramos sesión
@@ -187,6 +195,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
   // Si está cargando, no mostramos nada
   if (loading) {
     return null;
@@ -194,7 +206,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, login, register, logout }}
+      value={{
+        user,
+        isAuthenticated,
+        token,
+        login,
+        register,
+        logout,
+        getToken,
+      }}
     >
       {children}
     </AuthContext.Provider>

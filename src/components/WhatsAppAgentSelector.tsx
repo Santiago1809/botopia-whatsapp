@@ -1,0 +1,482 @@
+import { useAuth } from "@/lib/auth";
+import { Agent, WhatsappNumber } from "@/types/gobal";
+import { Check, Edit, Trash, UserRound } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Avatar } from "./ui/avatar";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
+// Type definitions
+
+interface NewAgent {
+  title: string;
+  prompt: string;
+}
+
+interface AgentSelectorProps {
+  selectedNumber: WhatsappNumber | null;
+  setSelectedNumber: (val: WhatsappNumber | null) => void;
+  currentAgent: Agent | null;
+  setCurrentAgent: (agent: Agent | null) => void;
+}
+
+export default function WhatsAppAgentSelector({
+  selectedNumber,
+  setSelectedNumber,
+  currentAgent,
+  setCurrentAgent,
+}: AgentSelectorProps) {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [newAgent, setNewAgent] = useState<NewAgent>({ title: "", prompt: "" });
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
+  const { token } = useAuth();
+
+  const handleClick = (agent: Agent) => {
+    if (currentAgent?.id !== agent.id) {
+      setCurrentAgent(agent);
+      if (selectedNumber) {
+        setSelectedNumber({ ...selectedNumber, aiPrompt: agent.prompt });
+      }
+    } else {
+      setCurrentAgent(null);
+      if (selectedNumber) {
+        setSelectedNumber({ ...selectedNumber, aiPrompt: "" });
+      }
+    }
+  };
+
+  const fetchAgents = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/user/agents`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error(
+          `Error obteniendo la lista de agentes: ${res.statusText}`
+        );
+      }
+
+      const data = await res.json();
+      console.log(data);
+      setAgents(data);
+    } catch (error) {
+      console.error("❌ Error obteniendo la lista de agentes:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const createAgent = async () => {
+    if (!newAgent.title || !newAgent.prompt) return;
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/agents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newAgent),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error creando agente");
+      }
+
+      await fetchAgents();
+      setNewAgent({ title: "", prompt: "" });
+      setIsCreateModalOpen(false); // Close the modal
+    } catch (error) {
+      console.error("❌ Error creando agente:", error);
+    }
+  };
+
+  const updateAgent = async () => {
+    if (!editingAgent?.title || !editingAgent?.prompt) return;
+
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/user/agents/${editingAgent.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(editingAgent),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error actualizando agente");
+      }
+
+      await fetchAgents();
+      setEditingAgent(null);
+    } catch (error) {
+      console.error("❌ Error actualizando agente:", error);
+    }
+  };
+
+  const deleteAgent = async (agentId: string) => {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/user/agents/${agentId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error eliminando agente");
+      }
+
+      setAgents((prev) => prev.filter((agent) => agent.id !== agentId));
+    } catch (error) {
+      console.error("❌ Error eliminando agente:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
+
+  const userAgents = agents.filter((agent) => agent.isGlobal === false);
+  const generalAgents = agents.filter((agent) => agent.isGlobal === true);
+
+  return (
+    <div className="space-y-5 min-h-[500px]">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-semibold text-gray-800">
+          Agentes Disponibles
+        </h3>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-secondary hover:bg-primary text-white font-medium flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Crear Agente
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                Crear Nuevo Agente
+              </DialogTitle>
+              <p className="text-gray-500 text-sm">
+                Personaliza tu agente con un título y prompt
+              </p>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-2">
+                <label
+                  htmlFor="title"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Título
+                </label>
+                <Input
+                  id="title"
+                  placeholder="Nombre para tu agente"
+                  value={newAgent.title}
+                  onChange={(e) =>
+                    setNewAgent({ ...newAgent, title: e.target.value })
+                  }
+                  className="focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="prompt"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Prompt
+                </label>
+                <textarea
+                  id="prompt"
+                  placeholder="Instrucciones para tu agente..."
+                  value={newAgent.prompt}
+                  onChange={(e) =>
+                    setNewAgent({ ...newAgent, prompt: e.target.value })
+                  }
+                  className="w-full min-h-[120px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+            <Button
+              className="w-full bg-secondary hover:bg-primary text-white font-medium py-2"
+              onClick={createAgent}
+              disabled={!newAgent.title || !newAgent.prompt}
+            >
+              Crear Agente
+            </Button>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-600"></div>
+        </div>
+      ) : (
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="general" className="text-sm font-medium">
+              Agentes Generales
+            </TabsTrigger>
+            <TabsTrigger value="user" className="text-sm font-medium">
+              Mis Agentes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general">
+            {generalAgents.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                No hay agentes generales disponibles
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-96 overflow-y-auto">
+                {generalAgents.map((agent) => (
+                  <Card
+                    key={agent.id}
+                    className={`p-5 border rounded-lg transition-all hover:shadow-md cursor-pointer min-w-fit flex flex-col h-full ${
+                      currentAgent?.id === agent.id
+                        ? "border-purple-600 bg-purple-50 shadow-sm"
+                        : "hover:border-purple-200"
+                    }`}
+                  >
+                    <div
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => handleClick(agent)}
+                    >
+                      <Avatar className="size-12">
+                        <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                          <UserRound className="h-7 w-7 text-purple-600" />
+                        </div>
+                      </Avatar>
+                      <h3 className="font-medium text-base md:text-lg text-gray-800">
+                        {agent.title}
+                      </h3>
+                    </div>
+
+                    <div className="w-full flex justify-end items-center gap-2 mt-auto">
+                      {currentAgent?.id === agent.id && (
+                        <div className="mt-3 flex items-center gap-1 text-sm text-purple-600 font-medium">
+                          <Check className="h-4 w-4" /> Agente activo
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                        onClick={() => setViewingAgent(agent)}
+                      >
+                        Ver
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="user">
+            {userAgents.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <p className="mb-2">
+                  No has creado ningún agente personalizado
+                </p>
+                <Button
+                  className="bg-secondary hover:bg-primary text-white"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  Crear mi primer agente
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userAgents.map((agent) => (
+                  <Card
+                    key={agent.id}
+                    className={`p-5 border rounded-lg transition-all hover:shadow-md min-w-fit flex flex-col h-full ${
+                      currentAgent?.id === agent.id
+                        ? "border-purple-600 bg-purple-50 shadow-sm"
+                        : "hover:border-purple-200"
+                    }`}
+                  >
+                    <div
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => handleClick(agent)}
+                    >
+                      <Avatar className="size-12">
+                        <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                          <UserRound className="h-7 w-7 text-purple-600" />
+                        </div>
+                      </Avatar>
+                      <h3 className="font-medium text-base md:text-lg text-gray-800">
+                        {agent.title}
+                      </h3>
+                    </div>
+
+                    <div className="w-full flex justify-end items-center gap-2 mt-auto">
+                      {currentAgent?.id === agent.id && (
+                        <div className="mt-3 flex items-center gap-1 text-sm text-purple-600 font-medium">
+                          <Check className="h-4 w-4" /> Agente activo
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-gray-600 hover:text-purple-600 hover:border-purple-300"
+                        onClick={() => setEditingAgent(agent)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50 hover:border-red-300"
+                        onClick={() => {
+                          if (
+                            confirm("¿Estás seguro de eliminar este agente?")
+                          ) {
+                            deleteAgent(agent.id);
+                          }
+                        }}
+                      >
+                        <Trash className="h-4 w-4 mr-1" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                        onClick={() => setViewingAgent(agent)}
+                      >
+                        Ver
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Edit Agent Dialog */}
+      {editingAgent && (
+        <Dialog
+          open={!!editingAgent}
+          onOpenChange={(open) => !open && setEditingAgent(null)}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogTitle className="text-xl font-semibold text-gray-800">
+              Editar Agente
+            </DialogTitle>
+            <div className="space-y-4 py-3">
+              <div className="space-y-2">
+                <label
+                  htmlFor="edit-title"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Título
+                </label>
+                <Input
+                  id="edit-title"
+                  value={editingAgent.title}
+                  onChange={(e) =>
+                    setEditingAgent({ ...editingAgent, title: e.target.value })
+                  }
+                  className="focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="edit-prompt"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Prompt
+                </label>
+                <textarea
+                  id="edit-prompt"
+                  value={editingAgent.prompt}
+                  onChange={(e) =>
+                    setEditingAgent({ ...editingAgent, prompt: e.target.value })
+                  }
+                  className="w-full min-h-[120px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+            <Button
+              className="w-full bg-secondary hover:bg-primary text-white"
+              onClick={updateAgent}
+              disabled={!editingAgent.title || !editingAgent.prompt}
+            >
+              Guardar Cambios
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* View Agent Dialog */}
+      {viewingAgent && (
+        <Dialog
+          open={!!viewingAgent}
+          onOpenChange={(open) => !open && setViewingAgent(null)}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogTitle>
+              <h2 className="text-xl font-semibold text-gray-800">
+                Información del Agente
+              </h2>
+            </DialogTitle>
+            <div className="space-y-4 py-3">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700">Título:</h3>
+                <p className="text-gray-800">{viewingAgent.title}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700">Prompt:</h3>
+                <p className="text-gray-800 whitespace-pre-wrap">
+                  {viewingAgent.prompt}
+                </p>
+              </div>
+            </div>
+            <Button
+              className="w-full bg-secondary hover:bg-primary text-white"
+              onClick={() => setViewingAgent(null)}
+            >
+              Cerrar
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}

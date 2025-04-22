@@ -4,7 +4,7 @@ import { ReactNode, useState } from "react";
 import Image from "next/image";
 import { Footer } from "./Footer";
 import { useAuth } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Webhook } from "lucide-react";
@@ -16,6 +16,7 @@ interface SidebarLayoutProps {
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Verificar si el usuario está autenticado y tiene el rol de usuario
@@ -37,6 +38,22 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Función para determinar si una ruta está activa
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return pathname === path;
+    }
+    // Para otras rutas, verificamos si el pathname comienza con la ruta
+    return pathname?.startsWith(path);
+  };
+
+  // Estilo común para los elementos del menú
+  const menuItemStyle = (path: string) => {
+    return isActive(path)
+      ? "flex items-center px-2 py-2 rounded-md hover:bg-primary/10 hover:text-primary bg-secondary text-white"
+      : "flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary";
   };
 
   return (
@@ -79,7 +96,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             <li>
               <Link
                 href="/"
-                className="flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary"
+                className={menuItemStyle("/")}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg
@@ -100,15 +117,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </Link>
             </li>
             <li>
-              <a
-                href="#"
-                className="flex items-center px-2 py-2 rounded-md hover:bg-primary/10 hover:text-primary bg-secondary text-white opacity-70"
+              <Link
+                href="/services"
+                className={menuItemStyle("/services")}
+                onClick={() => setIsSidebarOpen(false)}
               >
-                <Webhook />
-                <span className="line-clamp-1">
-                  Servicios
-                </span>
-              </a>
+                <Webhook className="h-5 w-5 mr-2 flex-shrink-0" />
+                <span className="line-clamp-1">Productos</span>
+              </Link>
             </li>
 
             <li className="mt-8 mb-6">
@@ -117,9 +133,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </span>
             </li>
             <li>
-              <a
+              <Link
                 href="/profile"
-                className="flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary"
+                className={menuItemStyle("/profile")}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg
@@ -137,12 +153,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   />
                 </svg>
                 <span>Mi Perfil</span>
-              </a>
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="/connections"
-                className="flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary"
+                className={menuItemStyle("/connections")}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg
@@ -160,12 +176,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   />
                 </svg>
                 <span>Conexiones</span>
-              </a>
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="/billing"
-                className="flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary"
+                className={menuItemStyle("/billing")}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg
@@ -183,7 +199,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   />
                 </svg>
                 <span>Facturación</span>
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>
