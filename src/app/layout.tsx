@@ -28,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <link rel="icon" href="/logo.ico" sizes="any" />
+      <head>
+        <link rel="icon" type="image/png" href="/Logo.png" sizes="any" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
