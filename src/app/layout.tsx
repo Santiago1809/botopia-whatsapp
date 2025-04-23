@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   title: "Botopia - Productos",
   description: "Panel de control de productos Botopia",
   icons: {
-    icon: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/logo.ico",
+    apple: "/logo.ico",
   },
 };
 
