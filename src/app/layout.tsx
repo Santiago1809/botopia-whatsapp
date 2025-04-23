@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Botopia - Servicios",
-  description: "Panel de control de servicios Botopia",
+  title: "Botopia - Productos",
+  description: "Panel de control de productos Botopia",
   icons: {
     icon: "/logo.svg",
     apple: "/logo.svg",

@@ -9,7 +9,7 @@ export default function ConnectionsPage() {
             Conexiones
           </h1>
           <p className="text-sm sm:text-base text-gray-600 mt-2">
-            Administra tus conexiones y servicios integrados
+            Administra tus conexiones y productos integrados
           </p>
         </div>
 
@@ -36,7 +36,7 @@ export default function ConnectionsPage() {
             </h2>
             <p className="text-gray-600 max-w-md">
               Estamos desarrollando esta funcionalidad. Pronto podrás
-              administrar tus conexiones e integraciones con otros servicios
+              administrar tus conexiones e integraciones con otros productos
               desde aquí.
             </p>
           </div>

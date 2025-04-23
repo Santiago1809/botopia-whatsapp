@@ -7,6 +7,7 @@ import { useChat } from "@/lib/chatState";
 import { Agent, QrCodeEvent, WhatsappNumber } from "@/types/gobal";
 import { useCallback, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { useRouter } from "next/navigation";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -24,6 +25,7 @@ export default function Page() {
   );
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const { setNumberStatus } = useChat();
+  const router = useRouter()
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -114,6 +116,14 @@ export default function Page() {
     },
     [getToken, isAuthenticated, logout]
   );
+
+  const handleGoBack  = () => {
+    fetch(`${BACKEND_URL}/api/whatsapp/stop-whatsapp`, {
+      method: "POST",
+      headers: {'Authorization': `Bearer ${getToken()}`}
+    })
+    router.back()
+  }
 
   const toggleResponseGroups = useCallback(
     async (number: string | number, newVal: boolean) => {
@@ -405,7 +415,7 @@ export default function Page() {
         selectedNumber={selectedNumber}
         setSelectedNumber={setSelectedNumber}
         setWhatsappNumbers={setWhatsappNumbers}
-        handleLogout={logout}
+        handleLogout={handleGoBack}
         removeNumber={removeNumber}
       />
       <div className="flex-1 flex flex-col overflow-hidden bg-white w-full">

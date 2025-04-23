@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { WhatsappNumber } from "@/types/gobal";
-import { ArrowLeft, LogOut, Phone, Search, Trash, User } from "lucide-react";
+import { ArrowLeft, Phone, Search, Trash, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -141,11 +141,11 @@ export default function WhatsAppSideBar({
        
         <Button
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200 rounded-full"
+          className="w-full flex cursor-pointer items-center justify-center gap-2 text-secondary hover:text-white hover:bg-secondary border-primary rounded-full"
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
+          <ArrowLeft className="h-4 w-4" />
+          Volver al dashboard
         </Button>
       </div>
     </div>
