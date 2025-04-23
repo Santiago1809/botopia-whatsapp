@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Botopia - Productos",
   description: "Panel de control de productos Botopia",
   icons: {
-    icon: '/logo.ico'
+    icon: "/logo.ico",
   },
 };
 
@@ -28,6 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
+      <link rel="icon" href="/logo.ico" sizes="any" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
