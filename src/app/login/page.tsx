@@ -38,7 +38,7 @@ export default function Login() {
         {/* Logo y mensaje de bienvenida - Lado izquierdo */}
         <div className="md:w-2/5 p-6 sm:p-8 flex flex-col items-center justify-center bg-white bg-opacity-80">
           <Image
-            src="/logo.png"
+            src="/Logo.png"
             alt="Botopia Logo"
             width={180}
             height={60}
