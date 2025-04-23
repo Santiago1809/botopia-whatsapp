@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useContext,
@@ -39,17 +40,20 @@ interface AuthContextType {
 // Creación del contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
 // Proveedor del contexto de autenticación
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string | null>(null);
+  const router = useRouter();
 
   // Función para iniciar sesión con la API real
   const login = async (identifier: string, password: string) => {
     try {
-      const response = await fetch("http://localhost:3001/api/auth/login", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phoneNumber?: string
   ) => {
     try {
-      const response = await fetch("http://localhost:3001/api/auth/register", {
+      const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,32 +140,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Función para cerrar sesión
   const logout = () => {
     // Si tu API tiene un endpoint de logout, podrías llamarlo aquí
-    // fetch('http://localhost:3001/api/auth/logout', { credentials: 'include' });
-
+    if (token) {
+      fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken}` },
+      });
+    }
     localStorage.removeItem("user");
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("token");
     setUser(null);
     setIsAuthenticated(false);
     setToken(null);
+    router.push("/login");
   };
 
   // Efecto para comprobar la autenticación cuando se carga la aplicación
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+      const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
       const storedIsAuthenticated = localStorage.getItem("isAuthenticated");
 
-      if (storedUser && storedIsAuthenticated === "true" && token) {
+      if (storedUser && storedIsAuthenticated === "true" && storedToken) {
         try {
           // Verificar si el token es válido haciendo una petición al servidor
           const response = await fetch(
-            "http://localhost:3001/api/auth/user-info",
+            `${BACKEND_URL}/api/auth/user-info`,
             {
               method: "GET",
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${storedToken}`,
               },
             }
           );
@@ -171,10 +180,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = JSON.parse(storedUser);
             setUser(userData);
             setIsAuthenticated(true);
-            setToken(token);
+            setToken(storedToken);
           } else {
             // Si la respuesta no es exitosa, el token no es válido
-            logout();
+            // Limpiar el estado sin llamar a logout para evitar el ciclo
+            localStorage.removeItem("user");
+            localStorage.removeItem("isAuthenticated");
+            localStorage.removeItem("token");
+            setUser(null);
+            setIsAuthenticated(false);
+            setToken(null);
+            router.push("/login");
           }
         } catch (error) {
           console.error("Error al verificar el token:", error);
@@ -182,18 +198,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = JSON.parse(storedUser);
           setUser(userData);
           setIsAuthenticated(true);
-          setToken(token);
+          setToken(storedToken);
         }
       } else {
-        // Si no hay token o usuario en localStorage, cerramos sesión
-        logout();
+        // Si no hay token o usuario en localStorage, limpiamos el estado
+        setUser(null);
+        setIsAuthenticated(false);
+        setToken(null);
       }
 
       setLoading(false);
     };
 
     checkAuth();
-  }, []);
+  }, [router]); // Eliminamos logout de las dependencias para evitar el ciclo
 
   const getToken = () => {
     return localStorage.getItem("token");

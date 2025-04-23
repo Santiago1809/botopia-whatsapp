@@ -62,10 +62,10 @@ export default function ServicesPage() {
       <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Nuestros Servicios
+            Nuestros Productos
           </h1>
           <p className="text-sm sm:text-base text-gray-600 mt-2">
-            Selecciona el servicio que deseas utilizar
+            Selecciona el producto que deseas utilizar
           </p>
         </div>
 
