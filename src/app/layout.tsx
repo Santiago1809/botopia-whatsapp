@@ -16,9 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Botopia - Productos",
   description: "Panel de control de productos Botopia",
-  icons: {
-    icon: "/logo.ico",
-  },
 };
 
 export default function RootLayout({
@@ -28,9 +25,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <head>
-        <link rel="icon" type="image/png" href="/Logo.png" sizes="any" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
