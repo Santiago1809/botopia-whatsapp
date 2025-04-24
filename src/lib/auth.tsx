@@ -144,7 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fetch(`${BACKEND_URL}/api/auth/logout`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${getToken}` },
-      });
+      }).catch(err => {
+        console.log(err)
+      })
     }
     localStorage.removeItem("user");
     localStorage.removeItem("isAuthenticated");
