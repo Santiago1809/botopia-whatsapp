@@ -117,8 +117,8 @@ export default function Page() {
     [getToken, isAuthenticated, logout]
   );
 
-  const handleGoBack  = () => {
-    fetch(`${BACKEND_URL}/api/whatsapp/stop-whatsapp`, {
+  const handleGoBack  = async () => {
+    await fetch(`${BACKEND_URL}/api/whatsapp/stop-whatsapp`, {
       method: "POST",
       headers: {'Authorization': `Bearer ${getToken()}`}
     })
