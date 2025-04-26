@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
-      throw error;
     }
   };
 
@@ -133,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Error al registrar:", error);
-      throw error;
     }
   };
 
@@ -141,12 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     // Si tu API tiene un endpoint de logout, podrías llamarlo aquí
     if (token) {
-      fetch(`${BACKEND_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken}` },
-      }).catch(err => {
+      try {
+        fetch(`${BACKEND_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getToken}` },
+        })
+      } catch (err) {
         console.log(err)
-      })
+      }
     }
     localStorage.removeItem("user");
     localStorage.removeItem("isAuthenticated");
