@@ -13,7 +13,6 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -157,15 +156,34 @@ export default function WhatsAppAgentSelector({
     fetchAgents();
   }, [fetchAgents]);
 
+  // Filtrar solo los agentes del usuario
   const userAgents = agents.filter((agent) => agent.isGlobal === false);
-  const generalAgents = agents.filter((agent) => agent.isGlobal === true);
+
+  // Efecto para deseleccionar el texto cuando se abre el modal de edición
+  useEffect(() => {
+    if (editingAgent) {
+      // Pequeño retraso para asegurarnos que el input esté renderizado
+      const timer = setTimeout(() => {
+        // Deseleccionar cualquier texto seleccionado en el documento
+        if (window.getSelection) {
+          window.getSelection()?.removeAllRanges();
+        }
+
+        // También enfocamos en el input pero sin seleccionar su contenido
+        const titleInput = document.getElementById("edit-title");
+        if (titleInput) {
+          titleInput.blur();
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [editingAgent]);
 
   return (
     <div className="space-y-5 min-h-[500px]">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-gray-800">
-          Agentes Disponibles
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-800">Mis Agentes</h3>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-secondary hover:bg-primary text-white font-medium flex items-center gap-2">
@@ -245,148 +263,80 @@ export default function WhatsAppAgentSelector({
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-600"></div>
         </div>
       ) : (
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="general" className="text-sm font-medium">
-              Agentes Generales
-            </TabsTrigger>
-            <TabsTrigger value="user" className="text-sm font-medium">
-              Mis Agentes
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general">
-            {generalAgents.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                No hay agentes generales disponibles
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-96 overflow-y-auto">
-                {generalAgents.map((agent) => (
-                  <Card
-                    key={agent.id}
-                    className={`p-5 border rounded-lg transition-all hover:shadow-md cursor-pointer min-w-fit flex flex-col h-full ${
-                      currentAgent?.id === agent.id
-                        ? "border-purple-600 bg-purple-50 shadow-sm"
-                        : "hover:border-purple-200"
-                    }`}
-                  >
-                    <div
-                      className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => handleClick(agent)}
-                    >
-                      <Avatar className="size-12">
-                        <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                          <UserRound className="h-7 w-7 text-purple-600" />
-                        </div>
-                      </Avatar>
-                      <h3 className="font-medium text-base md:text-lg text-gray-800">
-                        {agent.title}
-                      </h3>
-                    </div>
-
-                    <div className="w-full flex justify-end items-center gap-2 mt-auto">
-                      {currentAgent?.id === agent.id && (
-                        <div className="mt-3 flex items-center gap-1 text-sm text-purple-600 font-medium">
-                          <Check className="h-4 w-4" /> Agente activo
-                        </div>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-                        onClick={() => setViewingAgent(agent)}
-                      >
-                        Ver
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="user">
-            {userAgents.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                <p className="mb-2">
-                  No has creado ningún agente personalizado
-                </p>
-                <Button
-                  className="bg-secondary hover:bg-primary text-white"
-                  onClick={() => setIsCreateModalOpen(true)}
+        <div>
+          {userAgents.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              <p className="mb-2">No has creado ningún agente personalizado</p>
+              <Button
+                className="bg-secondary hover:bg-primary text-white"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Crear mi primer agente
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userAgents.map((agent) => (
+                <Card
+                  onClick={() => handleClick(agent)}
+                  key={agent.id}
+                  className={`p-5 cursor-pointer border rounded-lg transition-all hover:shadow-md max-w-64 flex flex-col h-full ${
+                    currentAgent?.id === agent.id
+                      ? "border-purple-600 bg-purple-50 shadow-sm"
+                      : "hover:border-purple-200"
+                  }`}
                 >
-                  Crear mi primer agente
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userAgents.map((agent) => (
-                  <Card
-                    key={agent.id}
-                    className={`p-5 border rounded-lg transition-all hover:shadow-md min-w-fit flex flex-col h-full ${
-                      currentAgent?.id === agent.id
-                        ? "border-purple-600 bg-purple-50 shadow-sm"
-                        : "hover:border-purple-200"
-                    }`}
-                  >
-                    <div
-                      className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => handleClick(agent)}
-                    >
-                      <Avatar className="size-12">
-                        <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                          <UserRound className="h-7 w-7 text-purple-600" />
-                        </div>
-                      </Avatar>
-                      <h3 className="font-medium text-base md:text-lg text-gray-800">
-                        {agent.title}
-                      </h3>
-                    </div>
+                  <div className="flex items-center gap-3 cursor-pointer">
+                    <Avatar className="size-12">
+                      <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                        <UserRound className="h-7 w-7 text-purple-600" />
+                      </div>
+                    </Avatar>
+                    <h3 className="font-medium text-base md:text-lg text-gray-800">
+                      {agent.title}
+                    </h3>
+                    {currentAgent?.id === agent.id && (
+                      <div className="mt-3 flex items-center gap-1 text-sm text-purple-600 font-medium">
+                        <Check className="h-4 w-4" /> Agente activo
+                      </div>
+                    )}
+                  </div>
 
-                    <div className="w-full flex justify-end items-center gap-2 mt-auto">
-                      {currentAgent?.id === agent.id && (
-                        <div className="mt-3 flex items-center gap-1 text-sm text-purple-600 font-medium">
-                          <Check className="h-4 w-4" /> Agente activo
-                        </div>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-gray-600 hover:text-purple-600 hover:border-purple-300"
-                        onClick={() => setEditingAgent(agent)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50 hover:border-red-300"
-                        onClick={() => {
-                          if (
-                            confirm("¿Estás seguro de eliminar este agente?")
-                          ) {
-                            deleteAgent(agent.id);
-                          }
-                        }}
-                      >
-                        <Trash className="h-4 w-4 mr-1" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-                        onClick={() => setViewingAgent(agent)}
-                      >
-                        Ver
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                  <div className="w-full flex justify-end items-center gap-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-gray-600 hover:text-purple-600 hover:border-purple-300"
+                      onClick={() => setEditingAgent(agent)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-50 hover:border-red-300"
+                      onClick={() => {
+                        if (confirm("¿Estás seguro de eliminar este agente?")) {
+                          deleteAgent(agent.id);
+                        }
+                      }}
+                    >
+                      <Trash className="h-4 w-4 mr-1" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                      onClick={() => setViewingAgent(agent)}
+                    >
+                      Ver
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Edit Agent Dialog */}
@@ -414,6 +364,7 @@ export default function WhatsAppAgentSelector({
                     setEditingAgent({ ...editingAgent, title: e.target.value })
                   }
                   className="focus:ring-purple-500 focus:border-purple-500"
+                  autoFocus={false}
                 />
               </div>
               <div className="space-y-2">
@@ -451,10 +402,8 @@ export default function WhatsAppAgentSelector({
           onOpenChange={(open) => !open && setViewingAgent(null)}
         >
           <DialogContent className="sm:max-w-md">
-            <DialogTitle>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Información del Agente
-              </h2>
+            <DialogTitle className="text-xl font-semibold text-gray-800">
+              Información del Agente
             </DialogTitle>
             <div className="space-y-4 py-3">
               <div>
