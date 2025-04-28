@@ -1,13 +1,12 @@
 "use client";
 
-import { ReactNode, useState } from "react";
-import Image from "next/image";
-import { Footer } from "./Footer";
 import { useAuth } from "@/lib/auth";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
-import Link from "next/link";
 import { Webhook } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { Footer } from "./Footer";
 
 interface SidebarLayoutProps {
   children: ReactNode;
@@ -214,9 +213,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               <div className="ml-3 overflow-hidden">
                 <p className="text-sm font-medium text-gray-700 truncate">
                   {user?.username || "Usuario"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Rol: {user?.role || "usuario"}
                 </p>
               </div>
             </div>

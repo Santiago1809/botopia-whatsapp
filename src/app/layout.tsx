@@ -1,8 +1,7 @@
+import ClientProviders from "@/components/ClientProviders";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ClientProviders from "@/components/ClientProviders";
-import CreditsCard from "@/components/CreditCard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +30,6 @@ export default function RootLayout({
       >
         <ClientProviders>
           {children}
-          <CreditsCard />
         </ClientProviders>
       </body>
     </html>

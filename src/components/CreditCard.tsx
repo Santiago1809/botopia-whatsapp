@@ -34,7 +34,7 @@ export default function CreditsCard() {
   }
 
   return (
-    <div className="absolute w-fit max-h-44 px-4 py-2 bottom-20 right-2 bg-white rounded-lg shadow-lg border border-gray-200 flex gap-x-2 items-center justify-center text-lg">
+    <div className="w-fit max-h-44 text-gray-600/80 flex gap-x-2 items-center justify-center text-lg">
       <Coins />
       Créditos usados: {credits}
     </div>
