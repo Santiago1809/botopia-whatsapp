@@ -3,6 +3,7 @@ import { WhatsappNumber } from "@/types/gobal";
 import { ArrowLeft, Phone, Search, Trash, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import CreditsCard from "./CreditCard";
 
 interface WhatsAppSideBarProps {
   sidebarOpen: boolean;
@@ -52,6 +53,16 @@ export default function WhatsAppSideBar({
           onClick={() => setSidebarOpen(false)}
         >
           <ArrowLeft className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="p-4 border-b">
+        <Button
+          variant="outline"
+          className="w-full flex cursor-pointer items-center justify-center gap-2 text-secondary hover:text-white hover:bg-secondary border-primary rounded-full"
+          onClick={handleLogout}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al dashboard
         </Button>
       </div>
       <div className="p-4 bg-white">
@@ -138,15 +149,7 @@ export default function WhatsAppSideBar({
         ))}
       </div>
       <div className="p-4 border-t bg-white">
-       
-        <Button
-          variant="outline"
-          className="w-full flex cursor-pointer items-center justify-center gap-2 text-secondary hover:text-white hover:bg-secondary border-primary rounded-full"
-          onClick={handleLogout}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al dashboard
-        </Button>
+        <CreditsCard />
       </div>
     </div>
   );
