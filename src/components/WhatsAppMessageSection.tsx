@@ -1,23 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
+import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chatState";
-import { ArrowRight, Lock, Mic, Paperclip, Send } from "lucide-react";
+import { WhatsappNumber } from "@/types/gobal";
+import { Lock, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import WhatsAppChatBubble from "./WhatsAppMessageBubble";
 import QRDisplay from "./WhatsAppQrDisplay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTrigger,
-} from "./ui/dialog";
-import { WhatsappNumber } from "@/types/gobal";
-import { useAuth } from "@/lib/auth";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -67,25 +60,26 @@ export default function WhatsAppMessageSection({
   useEffect(() => {
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
     setSocket(newSocket);
+    setMessages([]); // Reset messages when socket is created
   }, [selectedNumber]);
 
   useEffect(() => {
     if (!socket || !selectedNumber) return;
 
-    socket.emit('join-room', String(selectedNumber.id))
+    socket.emit("join-room", String(selectedNumber.id));
 
-    socket.on('chat-history', (data: ChatHistory) => {
-      console.log(data)
+    socket.on("chat-history", (data: ChatHistory) => {
+      console.log(data);
       setMessages(data.chatHistory);
       setSendTo(data.to);
-    })
+    });
     return () => {
       if (selectedNumber) {
-        socket.emit('leave-room', String(selectedNumber.id))
+        socket.emit("leave-room", String(selectedNumber.id));
       }
-      socket.off('chat-history')
-    }
-  }, [socket,selectedNumber])
+      socket.off("chat-history");
+    };
+  }, [socket, selectedNumber]);
 
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement;
@@ -117,7 +111,6 @@ export default function WhatsAppMessageSection({
   }, [messages, isAtBottom]);
 
   const handleSendMessage = () => {
-
     const newMessage: Message = { role: "assistant", content: message };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -126,7 +119,7 @@ export default function WhatsAppMessageSection({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${getToken()}`,
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify({
         number: selectedNumber?.number,
@@ -155,50 +148,26 @@ export default function WhatsAppMessageSection({
               <div className="flex-1 space-y-4 sm:space-y-6">
                 <div>
                   <h1 className="text-xl sm:text-2xl font-medium mb-2">
-                    Inicia sesión en WhatsApp Web
+                    Conecta tu número
                   </h1>
                   <p className="text-sm sm:text-base text-gray-600">
-                    Envía mensajes privados a tus amigos y familiares a través
-                    de WhatsApp en tu navegador.
+                    Escanea el código QR con tu teléfono para conectar tu número
+                    y empezar a usar el servicio.
                   </p>
                 </div>
 
                 <ol className="space-y-3 sm:space-y-4 list-decimal list-inside text-sm sm:text-base text-gray-700">
-                  <li>Abre WhatsApp en tu teléfono.</li>
+                  <li>Abre la aplicación de WhatsApp en tu teléfono</li>
+                  <li>Ve a la sección de configuración</li>
+                  <li>Selecciona la opción &quot;Escanear código QR&quot;</li>
                   <li>
-                    Toca Menú{" "}
-                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-gray-400 text-xs mx-1">
-                      ⋮
-                    </span>{" "}
-                    en Android o Ajustes{" "}
-                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-gray-400 text-xs mx-1">
-                      ⚙
-                    </span>{" "}
-                    en iPhone.
-                  </li>
-                  <li>
-                    Toca Dispositivos vinculados y, luego, Vincular un
-                    dispositivo.
-                  </li>
-                  <li>
-                    Apunta tu teléfono hacia esta pantalla para escanear el
-                    código QR.
+                    Apunta la cámara hacia el código mostrado a la derecha
                   </li>
                 </ol>
-
-                <div className="space-y-3 pt-2">
-                  <a
-                    href="#"
-                    className="flex items-center text-green-600 hover:text-green-700 font-medium text-sm sm:text-base"
-                  >
-                    ¿Necesitas ayuda para empezar?{" "}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </a>
-                </div>
               </div>
 
-              <div className="relative">
-                <div className="bg-white p-2 border rounded-lg">
+              <div className="relative flex items-center justify-center">
+                <div className="bg-white p-2 border rounded-lg shadow-sm">
                   {selectedNumber && qrCodes && qrCodes[selectedNumber.id] ? (
                     <QRDisplay
                       qrCode={qrCodes[selectedNumber.id]}
@@ -206,7 +175,9 @@ export default function WhatsAppMessageSection({
                     />
                   ) : (
                     <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] flex items-center justify-center bg-gray-100">
-                      <p className="text-sm text-gray-500">Cargando QR...</p>
+                      <p className="text-sm text-gray-500">
+                        Generando código...
+                      </p>
                     </div>
                   )}
                 </div>
