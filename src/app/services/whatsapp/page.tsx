@@ -8,6 +8,15 @@ import { Agent, QrCodeEvent, WhatsappNumber } from "@/types/gobal";
 import { useCallback, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog";
+import SyncedSidebar from '@/components/SyncedSidebar';
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -26,6 +35,18 @@ export default function Page() {
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const { setNumberStatus } = useChat();
   const router = useRouter()
+  const [contactsModalOpen, setContactsModalOpen] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [syncedContacts, setSyncedContacts] = useState<any[]>([]);
+  const [syncedGroups, setSyncedGroups] = useState<any[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+
+  // Separar contactos y grupos (debe ir antes de cualquier uso)
+  const personalContacts = contacts.filter((c) => !c.isGroup && c.isMyContact);
+  const groupContacts = contacts.filter((c) => c.isGroup);
+  const filteredPersonalContacts = personalContacts.filter((c: any) => (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase()));
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -98,7 +119,7 @@ export default function Page() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ enabled: newVal, number }),
+          body: JSON.stringify({ enabled: newVal, number: selectedNumber?.number }),
         });
 
         const data = await res.json();
@@ -114,7 +135,7 @@ export default function Page() {
         console.error("❌ Error actualizando AI:", error);
       }
     },
-    [getToken, isAuthenticated, logout]
+    [getToken, isAuthenticated, logout, selectedNumber]
   );
 
   const handleGoBack  = async () => {
@@ -141,7 +162,7 @@ export default function Page() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ enabled: newVal, number }),
+          body: JSON.stringify({ enabled: newVal, number: selectedNumber?.number }),
         });
 
         const data = await res.json();
@@ -157,7 +178,7 @@ export default function Page() {
         console.error("❌ Error actualizando AI:", error);
       }
     },
-    [getToken, isAuthenticated, logout]
+    [getToken, isAuthenticated, logout, selectedNumber]
   );
 
   const removeNumber = useCallback(
@@ -216,13 +237,32 @@ export default function Page() {
       }
     });
 
-    socket.on("whatsapp-ready", (data: { numberId: string | number }) => {
+    socket.on("whatsapp-ready", async (data: { numberId: string | number }) => {
       if (data.numberId === selectedNumber?.id) {
         setNumberStatus(data.numberId.toString(), "connected");
         setQrCodes((prev) => ({ ...prev, [data.numberId]: null }));
         setSelectedNumber((prev) =>
           prev ? { ...prev, status: "connected" } : null
         );
+        // Obtener contactos y mostrar modal
+        const token = getToken();
+        if (token) {
+          try {
+            const res = await fetch(
+              `${BACKEND_URL}/api/whatsapp/contacts?numberId=${data.numberId}`,
+              {
+                headers: { Authorization: `Bearer ${token}` }
+              }
+            );
+            if (res.ok) {
+              const contactList = await res.json();
+              setContacts(contactList);
+              setContactsModalOpen(true);
+            }
+          } catch (err) {
+            console.error("Error fetching contacts:", err);
+          }
+        }
       }
     });
 
@@ -396,8 +436,62 @@ export default function Page() {
     updatePrompt();
   }, [currentAgent, updatePrompt]);
 
+  const handleContactToggle = (id: string) => {
+    setSelectedContacts((prev) =>
+      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
+    );
+  };
+  const handleGroupToggle = (id: string) => {
+    setSelectedGroups((prev) =>
+      prev.includes(id) ? prev.filter((gid) => gid !== id) : [...prev, id]
+    );
+  };
+
+  const handleSyncSelected = async () => {
+    if (!selectedNumber) return;
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/whatsapp/sync-contacts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          numberId: selectedNumber.id,
+          contacts: selectedContacts,
+          groups: selectedGroups
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Sync successful!');
+        setContactsModalOpen(false);
+        // Guardar los sincronizados en el estado
+        setSyncedContacts(contacts.filter(c => selectedContacts.includes(c.id)));
+        setSyncedGroups(contacts.filter(c => selectedGroups.includes(c.id)));
+      } else {
+        alert(data.message || 'Sync failed');
+      }
+    } catch (err) {
+      alert('Sync failed');
+    }
+  };
+
+  const handleSelectSynced = (item: any, type: 'contact' | 'group') => {
+    // Para contactos: buscar en whatsappNumbers y seleccionar
+    if (type === 'contact') {
+      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
+    } else if (type === 'group') {
+      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
+    }
+    // Aquí podrías agregar lógica adicional para cargar el chat si es necesario
+  };
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
+      {/* Sidebar izquierdo */}
       <WhatsAppSideBar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -414,6 +508,7 @@ export default function Page() {
         handleLogout={handleGoBack}
         removeNumber={removeNumber}
       />
+      {/* Contenido central */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white w-full">
         <WhatsAppHeader
           setSidebarOpen={setSidebarOpen}
@@ -429,6 +524,105 @@ export default function Page() {
           selectedNumber={selectedNumber}
         />
       </div>
+      {/* Sidebar derecho */}
+      <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
+        <SyncedSidebar
+          contacts={syncedContacts}
+          groups={syncedGroups}
+          onSelect={handleSelectSynced}
+          onSyncClick={() => setContactsModalOpen(true)}
+          onRemoveContact={(id) => setSyncedContacts((prev) => prev.filter((c) => c.id !== id))}
+          onRemoveGroup={(id) => setSyncedGroups((prev) => prev.filter((g) => g.id !== id))}
+        />
+      </div>
+      <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold mb-2 text-primary">Sincronizar contactos y grupos</DialogTitle>
+            <DialogDescription className="mb-4 text-gray-600">
+              Selecciona los contactos y grupos de WhatsApp que deseas sincronizar con el agente. Puedes actualizar tu selección en cualquier momento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-lg text-secondary">Contactos</h3>
+                <button
+                  className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
+                  onClick={() => setSelectedContacts(personalContacts.map((c) => c.id))}
+                  disabled={personalContacts.length === 0}
+                >
+                  Seleccionar todos
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar contacto..."
+                className="mb-2 w-full px-3 py-1 rounded border border-gray-200"
+                onChange={e => setContactSearch(e.target.value)}
+              />
+              {filteredPersonalContacts.length === 0 ? (
+                <div className="text-sm text-gray-500">No hay contactos disponibles.</div>
+              ) : (
+                <ul className="grid grid-cols-1 gap-2">
+                  {filteredPersonalContacts.map((contact: any) => (
+                    <li key={contact.id} className="flex items-center p-2 rounded hover:bg-gray-100 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedContacts.includes(contact.id)}
+                        onChange={() => handleContactToggle(contact.id)}
+                        className="mr-3 accent-primary"
+                      />
+                      <span className="font-medium text-base">{contact.name || contact.number}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-lg text-secondary">Grupos</h3>
+                <button
+                  className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
+                  onClick={() => setSelectedGroups(groupContacts.map((g) => g.id))}
+                  disabled={groupContacts.length === 0}
+                >
+                  Seleccionar todos
+                </button>
+              </div>
+              {groupContacts.length === 0 ? (
+                <div className="text-sm text-gray-500">No hay grupos disponibles.</div>
+              ) : (
+                <ul className="grid grid-cols-1 gap-2">
+                  {groupContacts.map((group: any) => (
+                    <li key={group.id} className="flex items-center p-2 rounded hover:bg-gray-100 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedGroups.includes(group.id)}
+                        onChange={() => handleGroupToggle(group.id)}
+                        className="mr-3 accent-primary"
+                      />
+                      <span className="font-medium text-base">{group.name || group.number}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 mt-6">
+            <button
+              className="px-6 py-2 bg-primary text-white rounded-full font-semibold shadow hover:bg-secondary transition disabled:opacity-50"
+              disabled={selectedContacts.length === 0 && selectedGroups.length === 0}
+              onClick={handleSyncSelected}
+            >
+              Sincronizar seleccionados
+            </button>
+            <DialogClose asChild>
+              <button className="px-6 py-2 bg-gray-200 rounded-full font-semibold">Cerrar</button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
