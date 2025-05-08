@@ -132,7 +132,7 @@ export default function Page() {
           prev ? { ...prev, aiEnabled: newVal } : null
         );
       } catch (error) {
-        console.error("❌ Error actualizando AI:", error);
+        console.error("Error actualizando AI:", error);
       }
     },
     [getToken, isAuthenticated, logout, selectedNumber]
