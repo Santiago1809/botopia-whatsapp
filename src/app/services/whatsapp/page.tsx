@@ -123,7 +123,7 @@ export default function Page() {
 
         setWhatsappNumbers(data);
       } catch (error) {
-        console.error("❌ Error obteniendo números:", error);
+        console.error("Error obteniendo números:", error);
       }
     };
 
