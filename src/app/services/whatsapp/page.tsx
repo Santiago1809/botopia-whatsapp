@@ -5,6 +5,7 @@ import WhatsAppHeader from "@/components/WhatsAppHeader";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chatState";
 import { Agent, WhatsappNumber } from "@/types/gobal";
+import { Contact, Group } from "@/types/global";
 import { useCallback, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
@@ -20,19 +21,6 @@ import SyncedSidebar from '@/components/SyncedSidebar';
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-
-// Definir interfaces para evitar 'any'
-interface Contact {
-  id: number;
-  name: string;
-  number: string;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  number: string;
-}
 
 interface QrCodeEvent {
   numberId: number;
@@ -52,6 +40,16 @@ interface WhatsAppGroup {
   name: string;
   number: string;
   isGroup: boolean;
+}
+
+// Utilidad para eliminar duplicados por id
+function uniqueById<T extends { id: string }>(arr: T[]): T[] {
+  const seen = new Set();
+  return arr.filter(item => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 
 export default function Page() {
@@ -75,12 +73,18 @@ export default function Page() {
   const [syncedContacts, setSyncedContacts] = useState<WhatsAppContact[]>([]);
   const [syncedGroups, setSyncedGroups] = useState<WhatsAppGroup[]>([]);
   const [contactSearch, setContactSearch] = useState("");
+  const [loadingContacts, setLoadingContacts] = useState(false);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
-  const personalContacts = contacts.filter((c) => !c.isGroup && c.isMyContact);
-  const groupContacts = contacts.filter((c) => c.isGroup);
-  const filteredPersonalContacts = personalContacts.filter((c: WhatsAppContact) => 
-    (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase())
+  const personalContacts = uniqueById(contacts.filter((c) => !c.isGroup && c.isMyContact).map(c => ({ ...c, id: String(c.id) })));
+  const groupContacts = uniqueById(
+    contacts.filter((c) => c.isGroup && c.name && c.name.trim() !== "")
+      .map(c => ({ ...c, id: String(c.id) }))
+  );
+  const filteredPersonalContacts = uniqueById(
+    personalContacts.filter((c: Contact) =>
+      (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase())
+    )
   );
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
@@ -222,7 +226,6 @@ export default function Page() {
         logout();
         return;
       }
-
       const token = getToken();
       try {
         const res = await fetch(
@@ -234,22 +237,24 @@ export default function Page() {
             },
           }
         );
-
         const data = await res.json();
         if (!res.ok) {
           alert(`⚠️ Error: ${data.message}`);
           return;
         }
-
         setWhatsappNumbers(
           whatsappNumbers.filter(
             (number) => String(number.id) !== String(numberId)
           )
         );
-
-        // Si el número eliminado es el seleccionado, deseleccionarlo
+        // Borra sincronizados de ese número
+        localStorage.removeItem(`syncedContacts_${numberId}`);
+        localStorage.removeItem(`syncedGroups_${numberId}`);
+        // Si el número eliminado es el seleccionado, limpia el estado
         if (selectedNumber && String(selectedNumber.id) === String(numberId)) {
           setSelectedNumber(null);
+          setSyncedContacts([]);
+          setSyncedGroups([]);
         }
       } catch (error) {
         console.error("❌ Error eliminando número:", error);
@@ -279,6 +284,8 @@ export default function Page() {
         setSelectedNumber((prev) =>
           prev ? { ...prev, status: "connected" } : null
         );
+        // Loader: empieza la carga
+        setLoadingContacts(true);
         // Obtener contactos y mostrar modal
         const token = getToken();
         if (token) {
@@ -291,12 +298,18 @@ export default function Page() {
             );
             if (res.ok) {
               const contactList = await res.json();
-              setContacts(contactList);
+              setContacts(uniqueById(contactList.map((c: WhatsAppContact) => ({ ...c, id: String(c.id) }))));
+              setLoadingContacts(false); // Loader: termina la carga
               setContactsModalOpen(true);
+            } else {
+              setLoadingContacts(false);
             }
           } catch (err) {
+            setLoadingContacts(false);
             console.error("Error fetching contacts:", err);
           }
+        } else {
+          setLoadingContacts(false);
         }
       }
     });
@@ -320,6 +333,16 @@ export default function Page() {
       socket.off("whatsapp-numbers-updated");
     };
   }, [socket, selectedNumber, setNumberStatus, whatsappNumbers, removeNumber, getToken]);
+
+  // Loader: mostrar cuando el QR desaparece (después de escanear)
+  useEffect(() => {
+    if (!selectedNumber) return;
+    const qr = qrCodes[selectedNumber.id];
+    // Si el QR existía y ahora es null, significa que ya se escaneó
+    if (qr === null) {
+      setLoadingContacts(true);
+    }
+  }, [qrCodes, selectedNumber]);
 
   // Función para buscar números
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -503,9 +526,12 @@ export default function Page() {
       if (res.ok) {
         alert(data.message || 'Sync successful!');
         setContactsModalOpen(false);
-        // Guardar los sincronizados en el estado
-        setSyncedContacts(contacts.filter(c => selectedContacts.includes(c.id)));
-        setSyncedGroups(contacts.filter(c => selectedGroups.includes(c.id)));
+        const newSyncedContacts = contacts.filter(c => selectedContacts.includes(c.id));
+        const newSyncedGroups = contacts.filter(c => selectedGroups.includes(c.id));
+        setSyncedContacts(newSyncedContacts);
+        setSyncedGroups(newSyncedGroups);
+        localStorage.setItem(`syncedContacts_${selectedNumber.id}`, JSON.stringify(newSyncedContacts));
+        localStorage.setItem(`syncedGroups_${selectedNumber.id}`, JSON.stringify(newSyncedGroups));
       } else {
         alert(data.message || 'Sync failed');
       }
@@ -516,12 +542,24 @@ export default function Page() {
   };
 
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
+    setLoadingContacts(false);
     if (type === 'contact') {
-      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
+      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number, id: Number(item.id) } : prev);
     } else if (type === 'group') {
-      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
+      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number, id: Number(item.id) } : prev);
     }
   };
+
+  // Al iniciar, cargar sincronizados del número seleccionado desde localStorage
+  useEffect(() => {
+    if (!selectedNumber) return;
+    const savedContacts = localStorage.getItem(`syncedContacts_${selectedNumber.id}`);
+    const savedGroups = localStorage.getItem(`syncedGroups_${selectedNumber.id}`);
+    if (savedContacts) setSyncedContacts(JSON.parse(savedContacts));
+    else setSyncedContacts([]);
+    if (savedGroups) setSyncedGroups(JSON.parse(savedGroups));
+    else setSyncedGroups([]);
+  }, [selectedNumber]);
 
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
@@ -553,20 +591,43 @@ export default function Page() {
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
         />
-        <WhatsAppMainContent
-          qrCodes={qrCodes}
-          selectedNumber={selectedNumber}
-        />
+        {loadingContacts ? (
+          <div className="flex flex-1 flex-col items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
+            <p className="text-lg font-semibold">Cargando contactos...</p>
+          </div>
+        ) : (
+          <WhatsAppMainContent
+            qrCodes={qrCodes}
+            selectedNumber={selectedNumber}
+          />
+        )}
       </div>
       {/* Sidebar derecho */}
       <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
         <SyncedSidebar
-          contacts={syncedContacts.map(c => ({ ...c, id: parseInt(c.id) }))}
-          groups={syncedGroups.map(g => ({ ...g, id: parseInt(g.id) }))}
+          contacts={syncedContacts}
+          groups={syncedGroups}
           onSelect={handleSelectSynced}
           onSyncClick={() => setContactsModalOpen(true)}
-          onRemoveContact={(id) => setSyncedContacts(prev => prev.filter(c => parseInt(c.id) !== id))}
-          onRemoveGroup={(id) => setSyncedGroups(prev => prev.filter(g => parseInt(g.id) !== id))}
+          onRemoveContact={(id) => {
+            const updated = syncedContacts.filter((c) => c.id !== id);
+            setSyncedContacts(updated);
+            if (selectedNumber) localStorage.setItem(`syncedContacts_${selectedNumber.id}`, JSON.stringify(updated));
+          }}
+          onRemoveGroup={(id) => {
+            const updated = syncedGroups.filter((g) => g.id !== id);
+            setSyncedGroups(updated);
+            if (selectedNumber) localStorage.setItem(`syncedGroups_${selectedNumber.id}`, JSON.stringify(updated));
+          }}
+          selectedId={selectedNumber?.id?.toString()}
+          selectedType={
+            selectedNumber && syncedContacts.some(c => c.id === String(selectedNumber.id))
+              ? 'contact'
+              : (selectedNumber && syncedGroups.some(g => g.id === String(selectedNumber.id))
+                ? 'group'
+                : undefined)
+          }
         />
       </div>
       <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
