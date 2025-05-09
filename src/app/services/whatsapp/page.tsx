@@ -4,7 +4,7 @@ import WhatsAppSideBar from "@/components/WhatsAppSideBar";
 import WhatsAppHeader from "@/components/WhatsAppHeader";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chatState";
-import { Agent, QrCodeEvent, WhatsappNumber } from "@/types/gobal";
+import { Agent, WhatsappNumber } from "@/types/gobal";
 import { useCallback, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,39 @@ import SyncedSidebar from '@/components/SyncedSidebar';
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
+// Definir interfaces para evitar 'any'
+interface Contact {
+  id: number;
+  name: string;
+  number: string;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  number: string;
+}
+
+interface QrCodeEvent {
+  numberId: number;
+  qr: string;
+}
+
+interface WhatsAppContact {
+  id: string;
+  name: string;
+  number: string;
+  isGroup: boolean;
+  isMyContact: boolean;
+}
+
+interface WhatsAppGroup {
+  id: string;
+  name: string;
+  number: string;
+  isGroup: boolean;
+}
+
 export default function Page() {
   const { logout, isAuthenticated, getToken } = useAuth();
   const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsappNumber[]>([]);
@@ -36,17 +69,19 @@ export default function Page() {
   const { setNumberStatus } = useChat();
   const router = useRouter()
   const [contactsModalOpen, setContactsModalOpen] = useState(false);
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [syncedContacts, setSyncedContacts] = useState<any[]>([]);
-  const [syncedGroups, setSyncedGroups] = useState<any[]>([]);
+  const [syncedContacts, setSyncedContacts] = useState<WhatsAppContact[]>([]);
+  const [syncedGroups, setSyncedGroups] = useState<WhatsAppGroup[]>([]);
   const [contactSearch, setContactSearch] = useState("");
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = contacts.filter((c) => !c.isGroup && c.isMyContact);
   const groupContacts = contacts.filter((c) => c.isGroup);
-  const filteredPersonalContacts = personalContacts.filter((c: any) => (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase()));
+  const filteredPersonalContacts = personalContacts.filter((c: WhatsAppContact) => 
+    (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase())
+  );
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -284,7 +319,7 @@ export default function Page() {
       socket.off("whatsapp-ready");
       socket.off("whatsapp-numbers-updated");
     };
-  }, [socket, selectedNumber, setNumberStatus, whatsappNumbers, removeNumber]);
+  }, [socket, selectedNumber, setNumberStatus, whatsappNumbers, removeNumber, getToken]);
 
   // Función para buscar números
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -437,13 +472,13 @@ export default function Page() {
   }, [currentAgent, updatePrompt]);
 
   const handleContactToggle = (id: string) => {
-    setSelectedContacts((prev) =>
-      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
+    setSelectedContacts(prev =>
+      prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
     );
   };
   const handleGroupToggle = (id: string) => {
-    setSelectedGroups((prev) =>
-      prev.includes(id) ? prev.filter((gid) => gid !== id) : [...prev, id]
+    setSelectedGroups(prev =>
+      prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
     );
   };
 
@@ -474,19 +509,18 @@ export default function Page() {
       } else {
         alert(data.message || 'Sync failed');
       }
-    } catch (err) {
-      alert('Sync failed');
+    } catch (error) {
+      console.error('Error al sincronizar:', error);
+      alert('Error al sincronizar contactos y grupos');
     }
   };
 
-  const handleSelectSynced = (item: any, type: 'contact' | 'group') => {
-    // Para contactos: buscar en whatsappNumbers y seleccionar
+  const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
     if (type === 'contact') {
       setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
     } else if (type === 'group') {
       setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number } : prev);
     }
-    // Aquí podrías agregar lógica adicional para cargar el chat si es necesario
   };
 
   return (
@@ -527,12 +561,12 @@ export default function Page() {
       {/* Sidebar derecho */}
       <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
         <SyncedSidebar
-          contacts={syncedContacts}
-          groups={syncedGroups}
+          contacts={syncedContacts.map(c => ({ ...c, id: parseInt(c.id) }))}
+          groups={syncedGroups.map(g => ({ ...g, id: parseInt(g.id) }))}
           onSelect={handleSelectSynced}
           onSyncClick={() => setContactsModalOpen(true)}
-          onRemoveContact={(id) => setSyncedContacts((prev) => prev.filter((c) => c.id !== id))}
-          onRemoveGroup={(id) => setSyncedGroups((prev) => prev.filter((g) => g.id !== id))}
+          onRemoveContact={(id) => setSyncedContacts(prev => prev.filter(c => parseInt(c.id) !== id))}
+          onRemoveGroup={(id) => setSyncedGroups(prev => prev.filter(g => parseInt(g.id) !== id))}
         />
       </div>
       <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
@@ -565,7 +599,7 @@ export default function Page() {
                 <div className="text-sm text-gray-500">No hay contactos disponibles.</div>
               ) : (
                 <ul className="grid grid-cols-1 gap-2">
-                  {filteredPersonalContacts.map((contact: any) => (
+                  {filteredPersonalContacts.map((contact: WhatsAppContact) => (
                     <li key={contact.id} className="flex items-center p-2 rounded hover:bg-gray-100 transition">
                       <input
                         type="checkbox"
@@ -594,7 +628,7 @@ export default function Page() {
                 <div className="text-sm text-gray-500">No hay grupos disponibles.</div>
               ) : (
                 <ul className="grid grid-cols-1 gap-2">
-                  {groupContacts.map((group: any) => (
+                  {groupContacts.map((group: WhatsAppGroup) => (
                     <li key={group.id} className="flex items-center p-2 rounded hover:bg-gray-100 transition">
                       <input
                         type="checkbox"

@@ -1,13 +1,25 @@
 import React from 'react';
 import { Trash } from "lucide-react";
 
+interface Contact {
+  id: number;
+  name: string;
+  number: string;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  number: string;
+}
+
 interface SyncedSidebarProps {
-  contacts: any[];
-  groups: any[];
-  onSelect: (item: any, type: 'contact' | 'group') => void;
+  contacts: Contact[];
+  groups: Group[];
+  onSelect: (item: Contact | Group, type: 'contact' | 'group') => void;
   onSyncClick: () => void;
-  onRemoveContact: (id: string) => void;
-  onRemoveGroup: (id: string) => void;
+  onRemoveContact: (id: number) => void;
+  onRemoveGroup: (id: number) => void;
 }
 
 const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelect, onSyncClick, onRemoveContact, onRemoveGroup }) => {

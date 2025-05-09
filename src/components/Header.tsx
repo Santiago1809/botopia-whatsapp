@@ -1,14 +1,17 @@
+import React from 'react';
+import Image from 'next/image';
+
 interface HeaderProps {
   title: string;
   logoSrc: string;
 }
 
-export const Header = ({ title, logoSrc }: HeaderProps) => {
+const Header: React.FC<HeaderProps> = ({ title, logoSrc }) => {
   return (
     <header className="bg-white border-b border-gray-200 py-4 px-6">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
-          <img
+          <Image
             src={logoSrc}
             alt={`${title} logo`}
             width={100}
@@ -90,3 +93,5 @@ export const Header = ({ title, logoSrc }: HeaderProps) => {
     </header>
   );
 };
+
+export default Header;
