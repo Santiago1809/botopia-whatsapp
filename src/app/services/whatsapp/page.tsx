@@ -298,7 +298,7 @@ export default function Page() {
             );
             if (res.ok) {
               const contactList = await res.json();
-              setContacts(uniqueById(contactList.map((c: any) => ({ ...c, id: String(c.id) }))));
+              setContacts(uniqueById(contactList.map((c: WhatsAppContact) => ({ ...c, id: String(c.id) }))));
               setLoadingContacts(false); // Loader: termina la carga
               setContactsModalOpen(true);
             } else {

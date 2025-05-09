@@ -33,6 +33,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
               <li
                 key={contact.id}
                 className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === contact.id && selectedType === 'contact' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
+                onClick={() => onSelect(contact, 'contact')}
               >
                 <span className="font-medium">
                   {contact.name || contact.number}
@@ -64,6 +65,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
               <li
                 key={group.id}
                 className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === group.id && selectedType === 'group' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
+                onClick={() => onSelect(group, 'group')}
               >
                 <span className="font-medium">
                   {group.name || group.number}
