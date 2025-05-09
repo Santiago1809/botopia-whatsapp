@@ -1,28 +1,19 @@
 import React from 'react';
 import { Trash } from "lucide-react";
-
-interface Contact {
-  id: number;
-  name: string;
-  number: string;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  number: string;
-}
+import { Contact, Group } from '@/types/global';
 
 interface SyncedSidebarProps {
   contacts: Contact[];
   groups: Group[];
   onSelect: (item: Contact | Group, type: 'contact' | 'group') => void;
   onSyncClick: () => void;
-  onRemoveContact: (id: number) => void;
-  onRemoveGroup: (id: number) => void;
+  onRemoveContact: (id: string) => void;
+  onRemoveGroup: (id: string) => void;
+  selectedId?: string;
+  selectedType?: 'contact' | 'group';
 }
 
-const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelect, onSyncClick, onRemoveContact, onRemoveGroup }) => {
+const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelect, onSyncClick, onRemoveContact, onRemoveGroup, selectedId, selectedType }) => {
   return (
     <div className="h-full p-4 flex flex-col">
       <button
@@ -41,18 +32,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
             {contacts.map((contact) => (
               <li
                 key={contact.id}
-                className="py-1 border-b last:border-b-0 flex items-center justify-between hover:bg-gray-200 rounded px-2 group"
+                className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === contact.id && selectedType === 'contact' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
               >
-                <span
-                  className="font-medium cursor-pointer"
-                  onClick={() => onSelect(contact, 'contact')}
-                >
+                <span className="font-medium">
                   {contact.name || contact.number}
                 </span>
                 <button
                   className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
                   title="Eliminar contacto"
-                  onClick={() => {
+                  onClick={e => {
+                    e.stopPropagation();
                     if (window.confirm('¿Eliminar este contacto sincronizado?')) {
                       onRemoveContact(contact.id);
                     }
@@ -74,18 +63,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
             {groups.map((group) => (
               <li
                 key={group.id}
-                className="py-1 border-b last:border-b-0 flex items-center justify-between hover:bg-gray-200 rounded px-2 group"
+                className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === group.id && selectedType === 'group' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
               >
-                <span
-                  className="font-medium cursor-pointer"
-                  onClick={() => onSelect(group, 'group')}
-                >
+                <span className="font-medium">
                   {group.name || group.number}
                 </span>
                 <button
                   className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
                   title="Eliminar grupo"
-                  onClick={() => {
+                  onClick={e => {
+                    e.stopPropagation();
                     if (window.confirm('¿Eliminar este grupo sincronizado?')) {
                       onRemoveGroup(group.id);
                     }
