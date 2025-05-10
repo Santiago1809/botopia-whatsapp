@@ -532,9 +532,9 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: any) => x.type === 'contact'));
-      setSyncedGroups(data.filter((x: any) => x.type === 'group'));
-    } catch (error) {
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
+    } catch {
       alert('Error al sincronizar');
     } finally {
       setLoadingContacts(false);
@@ -557,11 +557,11 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: any) => x.type === 'contact'));
-      setSyncedGroups(data.filter((x: any) => x.type === 'group'));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
     };
     fetchSynced();
-  }, [selectedNumber]);
+  }, [selectedNumber, getToken]);
 
   // NUEVO: Actualizar agenteHabilitado
   const handleToggleAgente = async (id: string, newValue: boolean) => {
@@ -634,7 +634,7 @@ export default function Page() {
       ]);
       setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: false })));
       setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: false })));
-    } catch (err) {
+    } catch {
       alert('Error al desactivar todos los agentes');
     }
   };
@@ -657,7 +657,7 @@ export default function Page() {
       ]);
       setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: true })));
       setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: true })));
-    } catch (err) {
+    } catch {
       alert('Error al activar todos los agentes');
     }
   };
