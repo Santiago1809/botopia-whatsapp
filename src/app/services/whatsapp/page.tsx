@@ -74,6 +74,9 @@ export default function Page() {
   const [syncedGroups, setSyncedGroups] = useState<WhatsAppGroup[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups'>('all');
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(contacts.filter((c) => !c.isGroup && c.isMyContact).map(c => ({ ...c, id: String(c.id) })));
@@ -510,7 +513,7 @@ export default function Page() {
     const token = getToken();
     if (!token) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/whatsapp/sync-contacts`, {
+      await fetch(`${BACKEND_URL}/api/whatsapp/sync-contacts-db`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -518,48 +521,146 @@ export default function Page() {
         },
         body: JSON.stringify({
           numberId: selectedNumber.id,
-          contacts: selectedContacts,
-          groups: selectedGroups
+          contacts: personalContacts.filter(c => selectedContacts.includes(c.id)),
+          groups: groupContacts.filter(g => selectedGroups.includes(g.id))
         })
       });
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message || 'Sync successful!');
         setContactsModalOpen(false);
-        const newSyncedContacts = contacts.filter(c => selectedContacts.includes(c.id));
-        const newSyncedGroups = contacts.filter(c => selectedGroups.includes(c.id));
-        setSyncedContacts(newSyncedContacts);
-        setSyncedGroups(newSyncedGroups);
-        localStorage.setItem(`syncedContacts_${selectedNumber.id}`, JSON.stringify(newSyncedContacts));
-        localStorage.setItem(`syncedGroups_${selectedNumber.id}`, JSON.stringify(newSyncedGroups));
-      } else {
-        alert(data.message || 'Sync failed');
-      }
-    } catch (error) {
-      console.error('Error al sincronizar:', error);
-      alert('Error al sincronizar contactos y grupos');
+      // Refresca sincronizados desde la base de datos
+      const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      let data = await res.json();
+      if (!Array.isArray(data)) data = [];
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
+    } catch {
+      alert('Error al sincronizar');
+    } finally {
+      setLoadingContacts(false);
     }
   };
 
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
     setLoadingContacts(false);
-    if (type === 'contact') {
-      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number, id: Number(item.id) } : prev);
-    } else if (type === 'group') {
-      setSelectedNumber((prev) => prev ? { ...prev, chatId: item.id, name: item.name, number: item.number, id: Number(item.id) } : prev);
-    }
+    setSelectedChatId(item.id);
+    setSelectedChatType(type);
   };
 
-  // Al iniciar, cargar sincronizados del número seleccionado desde localStorage
+  // NUEVO: Cargar sincronizados desde la base de datos
   useEffect(() => {
     if (!selectedNumber) return;
-    const savedContacts = localStorage.getItem(`syncedContacts_${selectedNumber.id}`);
-    const savedGroups = localStorage.getItem(`syncedGroups_${selectedNumber.id}`);
-    if (savedContacts) setSyncedContacts(JSON.parse(savedContacts));
-    else setSyncedContacts([]);
-    if (savedGroups) setSyncedGroups(JSON.parse(savedGroups));
-    else setSyncedGroups([]);
-  }, [selectedNumber]);
+    const fetchSynced = async () => {
+      const token = getToken();
+      const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      let data = await res.json();
+      if (!Array.isArray(data)) data = [];
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
+    };
+    fetchSynced();
+  }, [selectedNumber, getToken]);
+
+  // NUEVO: Actualizar agenteHabilitado
+  const handleToggleAgente = async (id: string, newValue: boolean) => {
+    const token = getToken();
+    await fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, agenteHabilitado: newValue })
+    });
+    // Solo actualiza el estado local, NO cambia selectedNumber ni loadingContacts
+    setSyncedContacts(prev => prev.map(c => c.id === id ? { ...c, agenteHabilitado: newValue } : c));
+    setSyncedGroups(prev => prev.map(g => g.id === id ? { ...g, agenteHabilitado: newValue } : g));
+  };
+
+  const handleRemoveContact = async (id: string) => {
+    // Elimina de la base de datos
+    const token = getToken();
+    await fetch(`${BACKEND_URL}/api/whatsapp/delete-synced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id })
+    });
+    setSyncedContacts(prev => prev.filter(c => c.id !== id));
+  };
+  const handleRemoveGroup = async (id: string) => {
+    const token = getToken();
+    await fetch(`${BACKEND_URL}/api/whatsapp/delete-synced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id })
+    });
+    setSyncedGroups(prev => prev.filter(g => g.id !== id));
+  };
+
+  const selectedChat =
+    selectedChatType === 'contact'
+      ? syncedContacts.find(c => c.id === selectedChatId)
+      : selectedChatType === 'group'
+        ? syncedGroups.find(g => g.id === selectedChatId)
+        : null;
+
+  // Bulk actions
+  const handleBulkDelete = async () => {
+    const token = getToken();
+    const allIds = [...syncedContacts.map(c => c.id), ...syncedGroups.map(g => g.id)];
+    await Promise.all(allIds.map(id => fetch(`${BACKEND_URL}/api/whatsapp/delete-synced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id })
+    })));
+    setSyncedContacts([]);
+    setSyncedGroups([]);
+  };
+  const handleBulkDisable = async () => {
+    const token = getToken();
+    const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
+    const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
+    try {
+      await Promise.all([
+        ...contacts.map(c => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: c.id, agenteHabilitado: false })
+        })),
+        ...groups.map(g => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: g.id, agenteHabilitado: false })
+        }))
+      ]);
+      setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: false })));
+      setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: false })));
+    } catch {
+      alert('Error al desactivar todos los agentes');
+    }
+  };
+  const handleBulkEnable = async () => {
+    const token = getToken();
+    const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
+    const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
+    try {
+      await Promise.all([
+        ...contacts.map(c => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: c.id, agenteHabilitado: true })
+        })),
+        ...groups.map(g => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: g.id, agenteHabilitado: true })
+        }))
+      ]);
+      setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: true })));
+      setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: true })));
+    } catch {
+      alert('Error al activar todos los agentes');
+    }
+  };
 
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
@@ -591,7 +692,7 @@ export default function Page() {
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
         />
-        {loadingContacts ? (
+        {loadingContacts && !currentAgent ? (
           <div className="flex flex-1 flex-col items-center justify-center h-full">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
             <p className="text-lg font-semibold">Cargando contactos...</p>
@@ -600,6 +701,7 @@ export default function Page() {
           <WhatsAppMainContent
             qrCodes={qrCodes}
             selectedNumber={selectedNumber}
+            selectedChat={selectedChat}
           />
         )}
       </div>
@@ -610,27 +712,25 @@ export default function Page() {
           groups={syncedGroups}
           onSelect={handleSelectSynced}
           onSyncClick={() => setContactsModalOpen(true)}
-          onRemoveContact={(id) => {
-            const updated = syncedContacts.filter((c) => c.id !== id);
-            setSyncedContacts(updated);
-            if (selectedNumber) localStorage.setItem(`syncedContacts_${selectedNumber.id}`, JSON.stringify(updated));
-          }}
-          onRemoveGroup={(id) => {
-            const updated = syncedGroups.filter((g) => g.id !== id);
-            setSyncedGroups(updated);
-            if (selectedNumber) localStorage.setItem(`syncedGroups_${selectedNumber.id}`, JSON.stringify(updated));
-          }}
-          selectedId={selectedNumber?.id?.toString()}
-          selectedType={
-            selectedNumber && syncedContacts.some(c => c.id === String(selectedNumber.id))
-              ? 'contact'
-              : (selectedNumber && syncedGroups.some(g => g.id === String(selectedNumber.id))
-                ? 'group'
-                : undefined)
-          }
+          onRemoveContact={handleRemoveContact}
+          onRemoveGroup={handleRemoveGroup}
+          selectedId={selectedChatId || undefined}
+          selectedType={selectedChatType || undefined}
+          onToggleAgente={handleToggleAgente}
+          onBulkDelete={handleBulkDelete}
+          onBulkDisable={handleBulkDisable}
+          onBulkEnable={handleBulkEnable}
         />
       </div>
-      <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
+      <Dialog 
+        open={contactsModalOpen} 
+        onOpenChange={(open) => {
+          setContactsModalOpen(open);
+          if (!open) {
+            setLoadingContacts(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold mb-2 text-primary">Sincronizar contactos y grupos</DialogTitle>
@@ -638,10 +738,32 @@ export default function Page() {
               Selecciona los contactos y grupos de WhatsApp que deseas sincronizar con el agente. Puedes actualizar tu selección en cualquier momento.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex justify-center gap-2 mb-4">
+            <button
+              className={`px-4 py-1 rounded-full font-semibold border transition ${filterType === 'all' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setFilterType('all')}
+            >
+              Todos
+            </button>
+            <button
+              className={`px-4 py-1 rounded-full font-semibold border transition ${filterType === 'contacts' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setFilterType('contacts')}
+            >
+              Contactos
+            </button>
+            <button
+              className={`px-4 py-1 rounded-full font-semibold border transition ${filterType === 'groups' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setFilterType('groups')}
+            >
+              Grupos
+            </button>
+          </div>
           <div className="max-h-96 overflow-y-auto space-y-6">
+            {(filterType === 'all' || filterType === 'contacts') && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-lg text-secondary">Contactos</h3>
+                  <div className="flex gap-2">
                 <button
                   className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
                   onClick={() => setSelectedContacts(personalContacts.map((c) => c.id))}
@@ -649,6 +771,14 @@ export default function Page() {
                 >
                   Seleccionar todos
                 </button>
+                    <button
+                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-red-400 hover:text-white transition"
+                      onClick={() => setSelectedContacts([])}
+                      disabled={selectedContacts.length === 0}
+                    >
+                      Deseleccionar todos
+                    </button>
+                  </div>
               </div>
               <input
                 type="text"
@@ -674,9 +804,12 @@ export default function Page() {
                 </ul>
               )}
             </div>
+            )}
+            {(filterType === 'all' || filterType === 'groups') && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-lg text-secondary">Grupos</h3>
+                  <div className="flex gap-2">
                 <button
                   className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
                   onClick={() => setSelectedGroups(groupContacts.map((g) => g.id))}
@@ -684,6 +817,14 @@ export default function Page() {
                 >
                   Seleccionar todos
                 </button>
+                    <button
+                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-red-400 hover:text-white transition"
+                      onClick={() => setSelectedGroups([])}
+                      disabled={selectedGroups.length === 0}
+                    >
+                      Deseleccionar todos
+                    </button>
+                  </div>
               </div>
               {groupContacts.length === 0 ? (
                 <div className="text-sm text-gray-500">No hay grupos disponibles.</div>
@@ -703,6 +844,7 @@ export default function Page() {
                 </ul>
               )}
             </div>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row gap-2 mt-6">
             <button

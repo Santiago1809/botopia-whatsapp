@@ -2,6 +2,7 @@
 
 import { WhatsappNumber } from "@/types/gobal";
 import WhatsAppMessageSection from "./WhatsAppMessageSection";
+import { Contact, Group } from "@/types/global";
 
 // Define interfaces for our types
 
@@ -12,6 +13,7 @@ interface QRCodes {
 interface WhatsAppMainContentProps {
   selectedNumber: WhatsappNumber | null;
   qrCodes: QRCodes;
+  selectedChat?: Contact | Group | null;
 }
 
 export default function WhatsAppMainContent({
