@@ -42,9 +42,14 @@ interface WhatsAppGroup {
   isGroup: boolean;
 }
 
+type SyncedItem = {
+  wa_id: string;
+  [key: string]: unknown;
+};
+
 // Utilidad para eliminar duplicados por id
-function uniqueById<T extends { id: string }>(arr: T[]): T[] {
-  const seen = new Set();
+function uniqueById<T extends { id: string | number }>(arr: T[]): T[] {
+  const seen = new Set<string | number>();
   return arr.filter(item => {
     if (seen.has(item.id)) return false;
     seen.add(item.id);
@@ -77,7 +82,6 @@ export default function Page() {
   const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups'>('all');
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
-  const [lastMessageTimestamps, setLastMessageTimestamps] = useState<Record<string, number>>({});
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(contacts.filter((c) => !c.isGroup && c.isMyContact).map(c => ({ ...c, id: String(c.id) })));
@@ -85,8 +89,8 @@ export default function Page() {
     contacts.filter((c) => c.isGroup && c.name && c.name.trim() !== "")
       .map(c => ({ ...c, id: String(c.id) }))
   );
-  const filteredPersonalContacts = uniqueById(
-    personalContacts.filter((c: Contact) =>
+  const filteredPersonalContacts = uniqueById<WhatsAppContact>(
+    personalContacts.filter((c: WhatsAppContact) =>
       (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase())
     )
   );
@@ -339,10 +343,6 @@ export default function Page() {
         // Siempre selecciona el chat del último mensaje recibido
         setSelectedChatId(data.to);
         setSelectedChatType(isGroup ? "group" : "contact");
-        // Guardar el timestamp del último mensaje
-        if (data.lastMessageTimestamp && data.to) {
-          setLastMessageTimestamps((prev) => ({ ...prev, [data.to]: data.lastMessageTimestamp }));
-        }
       }
     });
 
@@ -552,8 +552,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: any) => ({ ...x, id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: any) => ({ ...x, id: x.wa_id })));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
     } catch {
       alert('Error al sincronizar');
     } finally {
@@ -577,8 +577,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: any) => ({ ...x, id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: any) => ({ ...x, id: x.wa_id })));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
     };
     fetchSynced();
   }, [selectedNumber, getToken]);
@@ -698,10 +698,6 @@ export default function Page() {
       return () => clearTimeout(timeout);
     }
   }, [loadingContacts]);
-
-  // Ordenar sincronizados por último mensaje
-  const orderedSyncedContacts = [...syncedContacts].sort((a, b) => (lastMessageTimestamps[b.id] || 0) - (lastMessageTimestamps[a.id] || 0));
-  const orderedSyncedGroups = [...syncedGroups].sort((a, b) => (lastMessageTimestamps[b.id] || 0) - (lastMessageTimestamps[a.id] || 0));
 
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">

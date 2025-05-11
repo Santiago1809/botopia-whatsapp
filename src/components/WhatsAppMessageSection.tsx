@@ -99,7 +99,7 @@ export default function WhatsAppMessageSection({
       }
       socket.off("chat-history");
     };
-  }, [socket, selectedNumber, selectedChat?.id]);
+  }, [socket, selectedNumber, selectedChat]);
 
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement;

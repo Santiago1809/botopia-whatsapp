@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash, Users, UserCheck, UserX, RefreshCcw } from "lucide-react";
 import { Contact, Group } from '@/types/global';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
@@ -39,7 +39,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   // Filtro de búsqueda y tipo
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups'>('all');
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   // Inicializar socket
   React.useEffect(() => {
