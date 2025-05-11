@@ -42,9 +42,14 @@ interface WhatsAppGroup {
   isGroup: boolean;
 }
 
+type SyncedItem = {
+  wa_id: string;
+  [key: string]: unknown;
+};
+
 // Utilidad para eliminar duplicados por id
-function uniqueById<T extends { id: string }>(arr: T[]): T[] {
-  const seen = new Set();
+function uniqueById<T extends { id: string | number }>(arr: T[]): T[] {
+  const seen = new Set<string | number>();
   return arr.filter(item => {
     if (seen.has(item.id)) return false;
     seen.add(item.id);
@@ -84,8 +89,8 @@ export default function Page() {
     contacts.filter((c) => c.isGroup && c.name && c.name.trim() !== "")
       .map(c => ({ ...c, id: String(c.id) }))
   );
-  const filteredPersonalContacts = uniqueById(
-    personalContacts.filter((c: Contact) =>
+  const filteredPersonalContacts = uniqueById<WhatsAppContact>(
+    personalContacts.filter((c: WhatsAppContact) =>
       (c.name || c.number).toLowerCase().includes(contactSearch.toLowerCase())
     )
   );
@@ -175,9 +180,14 @@ export default function Page() {
         );
       } catch (error) {
         console.error("Error actualizando AI:", error);
+      } finally {
+        // NO tocar setLoadingContacts aquí, el loader solo se activa en flujos de carga reales
+        if (!currentAgent) {
+          setContactsModalOpen(false);
+        }
       }
     },
-    [getToken, isAuthenticated, logout, selectedNumber]
+    [getToken, isAuthenticated, logout, selectedNumber, currentAgent]
   );
 
   const handleGoBack  = async () => {
@@ -324,6 +334,16 @@ export default function Page() {
       });
       setWhatsappNumbers([]);
       setSelectedNumber(null);
+    });
+
+    // Al recibir un mensaje, selecciona automáticamente el chat
+    socket.on("chat-history", (data) => {
+      if (data && data.to) {
+        const isGroup = data.to.endsWith("@g.us");
+        // Siempre selecciona el chat del último mensaje recibido
+        setSelectedChatId(data.to);
+        setSelectedChatType(isGroup ? "group" : "contact");
+      }
     });
 
     return () => {
@@ -532,8 +552,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
     } catch {
       alert('Error al sincronizar');
     } finally {
@@ -557,8 +577,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact'));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group'));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
     };
     fetchSynced();
   }, [selectedNumber, getToken]);
@@ -662,6 +682,23 @@ export default function Page() {
     }
   };
 
+  // Cuando se selecciona un agente, apaga el loader
+  useEffect(() => {
+    if (currentAgent) {
+      setLoadingContacts(false);
+    }
+  }, [currentAgent]);
+
+  // Timeout de seguridad para el loader
+  useEffect(() => {
+    if (loadingContacts) {
+      const timeout = setTimeout(() => {
+        setLoadingContacts(false);
+      }, 1000); // 10 segundos
+      return () => clearTimeout(timeout);
+    }
+  }, [loadingContacts]);
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
       {/* Sidebar izquierdo */}
@@ -692,18 +729,11 @@ export default function Page() {
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
         />
-        {loadingContacts && !currentAgent ? (
-          <div className="flex flex-1 flex-col items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
-            <p className="text-lg font-semibold">Cargando contactos...</p>
-          </div>
-        ) : (
           <WhatsAppMainContent
             qrCodes={qrCodes}
             selectedNumber={selectedNumber}
-            selectedChat={selectedChat}
+          selectedChat={selectedChat}
           />
-        )}
       </div>
       {/* Sidebar derecho */}
       <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
@@ -720,6 +750,7 @@ export default function Page() {
           onBulkDelete={handleBulkDelete}
           onBulkDisable={handleBulkDisable}
           onBulkEnable={handleBulkEnable}
+          selectedNumberId={selectedNumber?.id.toString()}
         />
       </div>
       <Dialog 

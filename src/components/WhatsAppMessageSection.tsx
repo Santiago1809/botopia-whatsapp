@@ -38,14 +38,26 @@ interface ChatHistory {
   numberId: string;
 }
 
+interface Contact {
+  id: string;
+  name: string;
+}
+
+interface Group {
+  id: string;
+  name: string;
+}
+
 interface Props {
   selectedNumber: WhatsappNumber | null;
   qrCodes: QRCodes;
+  selectedChat?: Contact | Group | null;
 }
 
 export default function WhatsAppMessageSection({
   selectedNumber,
   qrCodes,
+  selectedChat,
 }: Props) {
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -68,8 +80,16 @@ export default function WhatsAppMessageSection({
 
     socket.emit("join-room", String(selectedNumber.id));
 
+    // Si hay un chat seleccionado, pedir su historial
+    if (selectedChat && selectedChat.id) {
+      console.log('[FRONTEND] Emit get-chat-history', selectedNumber?.id, selectedChat.id);
+      socket.emit("get-chat-history", {
+        numberId: selectedNumber.id,
+        to: selectedChat.id,
+      });
+    }
+
     socket.on("chat-history", (data: ChatHistory) => {
-      console.log(data);
       setMessages(data.chatHistory);
       setSendTo(data.to);
     });
@@ -79,7 +99,7 @@ export default function WhatsAppMessageSection({
       }
       socket.off("chat-history");
     };
-  }, [socket, selectedNumber]);
+  }, [socket, selectedNumber, selectedChat]);
 
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement;
@@ -105,16 +125,14 @@ export default function WhatsAppMessageSection({
   }, []);
 
   useEffect(() => {
-    if (isAtBottom && messagesEndRef.current) {
+    if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isAtBottom]);
+  }, [messages.length]);
 
   const handleSendMessage = () => {
     const newMessage: Message = { role: "assistant", content: message };
-
     setMessages((prevMessages) => [...prevMessages, newMessage]);
-
     fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
       method: "POST",
       headers: {
@@ -124,7 +142,7 @@ export default function WhatsAppMessageSection({
       body: JSON.stringify({
         number: selectedNumber?.number,
         content: message,
-        to: sendTo,
+        to: selectedChat?.id || sendTo,
         numberId: selectedNumber?.id,
       }),
     });
@@ -188,13 +206,17 @@ export default function WhatsAppMessageSection({
           // Cuando ya está conectado, mostrar los mensajes en orden cronológico inverso
           <>
             <div className="flex flex-col items-center w-full">
-              {[...messages].map((msg, index) => (
-                <WhatsAppChatBubble
-                  isMine={msg.role === "assistant"}
-                  message={msg.content}
-                  key={index}
-                />
-              ))}
+              {messages.length === 0 ? (
+                <div className="text-gray-400 text-base mt-10">No hay mensajes en este chat aún.</div>
+              ) : (
+                messages.map((msg, index) => (
+                  <WhatsAppChatBubble
+                    isMine={msg.role === "assistant"}
+                    message={msg.content}
+                    key={index}
+                  />
+                ))
+              )}
               <div ref={messagesEndRef} style={{ height: "30px" }} />
             </div>
             {!isAtBottom && (

@@ -19,12 +19,14 @@ interface WhatsAppMainContentProps {
 export default function WhatsAppMainContent({
   selectedNumber,
   qrCodes,
+  selectedChat,
 }: WhatsAppMainContentProps) {
   return selectedNumber ? (
     <div className="flex-1 overflow-auto">
       <WhatsAppMessageSection
         selectedNumber={selectedNumber}
         qrCodes={qrCodes}
+        selectedChat={selectedChat}
       />
     </div>
   ) : (
