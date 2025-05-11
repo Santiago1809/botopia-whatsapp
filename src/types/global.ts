@@ -3,6 +3,7 @@ export interface Contact {
   name: string;
   number: string;
   agenteHabilitado?: boolean;
+  wa_id?: string;
 }
 
 export interface Group {
@@ -10,4 +11,5 @@ export interface Group {
   name: string;
   number: string;
   agenteHabilitado?: boolean;
+  wa_id?: string;
 } 

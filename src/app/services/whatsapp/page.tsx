@@ -33,6 +33,7 @@ interface WhatsAppContact {
   number: string;
   isGroup: boolean;
   isMyContact: boolean;
+  wa_id?: string;
 }
 
 interface WhatsAppGroup {
@@ -40,6 +41,7 @@ interface WhatsAppGroup {
   name: string;
   number: string;
   isGroup: boolean;
+  wa_id?: string;
 }
 
 type SyncedItem = {
@@ -552,8 +554,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
     } catch {
       alert('Error al sincronizar');
     } finally {
@@ -563,7 +565,7 @@ export default function Page() {
 
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
     setLoadingContacts(false);
-    setSelectedChatId(item.id);
+    setSelectedChatId(item.wa_id || item.id);
     setSelectedChatType(type);
   };
 
@@ -577,8 +579,8 @@ export default function Page() {
       });
       let data = await res.json();
       if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.wa_id })));
+      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
+      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
     };
     fetchSynced();
   }, [selectedNumber, getToken]);
@@ -618,9 +620,9 @@ export default function Page() {
 
   const selectedChat =
     selectedChatType === 'contact'
-      ? syncedContacts.find(c => c.id === selectedChatId)
+      ? syncedContacts.find(c => c.wa_id === selectedChatId)
       : selectedChatType === 'group'
-        ? syncedGroups.find(g => g.id === selectedChatId)
+        ? syncedGroups.find(g => g.wa_id === selectedChatId)
         : null;
 
   // Bulk actions
