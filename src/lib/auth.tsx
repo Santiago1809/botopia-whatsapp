@@ -40,7 +40,8 @@ interface AuthContextType {
 // Creación del contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
 // Proveedor del contexto de autenticación
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("isAuthenticated", "true");
       setIsAuthenticated(true);
     } catch (error) {
-      console.error("Error al registrar:", error);
+      throw new Error((error as Error).message);
     }
   };
 
@@ -141,11 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token) {
       try {
         fetch(`${BACKEND_URL}/api/auth/logout`, {
-          method: 'POST',
+          method: "POST",
           headers: { Authorization: `Bearer ${getToken}` },
-        })
+        });
       } catch (err) {
-        console.log(err)
+        console.log(err);
       }
     }
     localStorage.removeItem("user");
@@ -167,15 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedUser && storedIsAuthenticated === "true" && storedToken) {
         try {
           // Verificar si el token es válido haciendo una petición al servidor
-          const response = await fetch(
-            `${BACKEND_URL}/api/auth/user-info`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${storedToken}`,
-              },
-            }
-          );
+          const response = await fetch(`${BACKEND_URL}/api/auth/user-info`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${storedToken}`,
+            },
+          });
 
           if (response.ok) {
             // Si la respuesta es exitosa, el token es válido
