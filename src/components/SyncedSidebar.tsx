@@ -59,7 +59,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     if (socket && selectedNumberId) {
       socket.emit('get-chat-history', {
         numberId: selectedNumberId,
-        to: item.id
+        to: item.wa_id || item.id
       });
     }
   };
