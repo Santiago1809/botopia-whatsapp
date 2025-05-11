@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash } from "lucide-react";
+import { Trash, Users, UserCheck, UserX, RefreshCcw } from "lucide-react";
 import { Contact, Group } from '@/types/global';
 
 interface SyncedSidebarProps {
@@ -29,41 +29,54 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
   return (
     <div className="h-full p-4 flex flex-col">
       <button
-        className="mb-4 px-4 py-2 bg-primary text-white rounded-full shadow hover:bg-secondary transition"
+        className="mb-4 px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white rounded-full shadow hover:from-secondary hover:to-primary transition font-bold text-base"
         onClick={onSyncClick}
       >
+        <RefreshCcw className="w-5 h-5" />
         Sincronizar contactos y grupos
       </button>
-      <h2 className="font-bold text-lg mb-4">Contactos y Grupos Sincronizados</h2>
+      <h2 className="font-bold text-lg mb-4 text-center w-full">Contactos y Grupos Sincronizados</h2>
       {/* Filtro visual */}
       <div className="flex gap-2 mb-2">
         <button
           className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${filterType === 'all' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
           onClick={() => setFilterType('all')}
-        >Todos</button>
+        ><Users className="inline w-4 h-4 mr-1" />Todos</button>
         <button
           className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${filterType === 'contacts' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
           onClick={() => setFilterType('contacts')}
-        >Contactos</button>
+        ><UserCheck className="inline w-4 h-4 mr-1" />Contactos</button>
         <button
           className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${filterType === 'groups' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
           onClick={() => setFilterType('groups')}
-        >Grupos</button>
+        ><UserX className="inline w-4 h-4 mr-1" />Grupos</button>
       </div>
       {/* Botones de acciones masivas */}
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-2 mb-2 justify-center">
         <button
-          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-700"
+          className="flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold hover:bg-red-200 border border-red-200 shadow-sm transition min-w-[0]"
+          style={{minWidth:32}}
           onClick={onBulkDelete}
-        >Eliminar todos</button>
+          title="Eliminar todos"
+        >
+          <Trash className="w-4 h-4" />
+        </button>
         <button
-          className="px-2 py-1 bg-gray-400 text-white rounded text-xs hover:bg-gray-600"
+          className="flex items-center gap-1 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold hover:bg-yellow-200 border border-yellow-200 shadow-sm transition min-w-[0]"
+          style={{minWidth:32}}
           onClick={onBulkDisable}
-        >Desactivar todos</button>
+          title="Desactivar IA en todos"
+        >
+          <UserX className="w-4 h-4" />
+        </button>
         <button
-          className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-700"
+          className="flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold hover:bg-green-200 border border-green-200 shadow-sm transition min-w-[0]"
+          style={{minWidth:32}}
           onClick={onBulkEnable}
-        >Activar todos</button>
+          title="Activar IA en todos"
+        >
+          <UserCheck className="w-4 h-4" />
+        </button>
       </div>
       {/* Input de búsqueda debajo de los botones masivos */}
       <input
@@ -88,13 +101,10 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
                     className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === contact.id && selectedType === 'contact' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
                     onClick={() => onSelect(contact, 'contact')}
                   >
-                    <span className="font-medium">
-                      {contact.name || contact.number}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {/* Switch para agenteHabilitado */}
+                    <div className="flex items-center gap-2 flex-1">
+                      {/* Switch para IA */}
                       {typeof contact.agenteHabilitado === 'boolean' && onToggleAgente && (
-                        <label className="flex items-center cursor-pointer">
+                        <label className="flex items-center cursor-pointer gap-1">
                           <input
                             type="checkbox"
                             checked={contact.agenteHabilitado}
@@ -102,24 +112,25 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
                               e.stopPropagation();
                               onToggleAgente(contact.id, e.target.checked);
                             }}
-                            className="accent-primary mr-1"
+                            className="accent-primary scale-110"
                           />
-                          <span className="text-xs">Agente</span>
+                          <span className="text-xs font-bold text-primary">IA</span>
                         </label>
                       )}
-                      <button
-                        className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
-                        title="Eliminar contacto"
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Eliminar este contacto sincronizado?')) {
-                            onRemoveContact(contact.id);
-                          }
-                        }}
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
+                      <span className="font-medium text-base truncate max-w-[140px]" title={contact.name || contact.number}>{contact.name || contact.number}</span>
                     </div>
+                    <button
+                      className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
+                      title="Eliminar contacto"
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (window.confirm('¿Eliminar este contacto sincronizado?')) {
+                          onRemoveContact(contact.id);
+                        }
+                      }}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -139,13 +150,10 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
                     className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === group.id && selectedType === 'group' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
                     onClick={() => onSelect(group, 'group')}
                   >
-                    <span className="font-medium">
-                      {group.name || group.number}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {/* Switch para agenteHabilitado */}
+                    <div className="flex items-center gap-2 flex-1">
+                      {/* Switch para IA */}
                       {typeof group.agenteHabilitado === 'boolean' && onToggleAgente && (
-                        <label className="flex items-center cursor-pointer">
+                        <label className="flex items-center cursor-pointer gap-1">
                           <input
                             type="checkbox"
                             checked={group.agenteHabilitado}
@@ -153,24 +161,25 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ contacts, groups, onSelec
                               e.stopPropagation();
                               onToggleAgente(group.id, e.target.checked);
                             }}
-                            className="accent-primary mr-1"
+                            className="accent-primary scale-110"
                           />
-                          <span className="text-xs">Agente</span>
+                          <span className="text-xs font-bold text-primary">IA</span>
                         </label>
                       )}
-                      <button
-                        className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
-                        title="Eliminar grupo"
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Eliminar este grupo sincronizado?')) {
-                            onRemoveGroup(group.id);
-                          }
-                        }}
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
+                      <span className="font-medium text-base truncate max-w-[140px]" title={group.name || group.number}>{group.name || group.number}</span>
                     </div>
+                    <button
+                      className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
+                      title="Eliminar grupo"
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (window.confirm('¿Eliminar este grupo sincronizado?')) {
+                          onRemoveGroup(group.id);
+                        }
+                      }}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
                   </li>
                 ))}
               </ul>

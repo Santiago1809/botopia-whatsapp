@@ -175,9 +175,14 @@ export default function Page() {
         );
       } catch (error) {
         console.error("Error actualizando AI:", error);
+      } finally {
+        // NO tocar setLoadingContacts aquí, el loader solo se activa en flujos de carga reales
+        if (!currentAgent) {
+          setContactsModalOpen(false);
+        }
       }
     },
-    [getToken, isAuthenticated, logout, selectedNumber]
+    [getToken, isAuthenticated, logout, selectedNumber, currentAgent]
   );
 
   const handleGoBack  = async () => {
@@ -324,6 +329,16 @@ export default function Page() {
       });
       setWhatsappNumbers([]);
       setSelectedNumber(null);
+    });
+
+    socket.on("chat-history", (data) => {
+      // Selecciona automáticamente el chat del último mensaje recibido
+      if (data && data.to) {
+        // Determina si es grupo o contacto
+        const isGroup = data.to.endsWith("@g.us");
+        setSelectedChatId(data.to);
+        setSelectedChatType(isGroup ? "group" : "contact");
+      }
     });
 
     return () => {
@@ -662,6 +677,23 @@ export default function Page() {
     }
   };
 
+  // Cuando se selecciona un agente, apaga el loader
+  useEffect(() => {
+    if (currentAgent) {
+      setLoadingContacts(false);
+    }
+  }, [currentAgent]);
+
+  // Timeout de seguridad para el loader
+  useEffect(() => {
+    if (loadingContacts) {
+      const timeout = setTimeout(() => {
+        setLoadingContacts(false);
+      }, 1000); // 10 segundos
+      return () => clearTimeout(timeout);
+    }
+  }, [loadingContacts]);
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
       {/* Sidebar izquierdo */}
@@ -692,18 +724,11 @@ export default function Page() {
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
         />
-        {loadingContacts && !currentAgent ? (
-          <div className="flex flex-1 flex-col items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
-            <p className="text-lg font-semibold">Cargando contactos...</p>
-          </div>
-        ) : (
           <WhatsAppMainContent
             qrCodes={qrCodes}
             selectedNumber={selectedNumber}
-            selectedChat={selectedChat}
+          selectedChat={selectedChat}
           />
-        )}
       </div>
       {/* Sidebar derecho */}
       <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
