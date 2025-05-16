@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import WhatsAppChatBubble from "./WhatsAppMessageBubble";
 import QRDisplay from "./WhatsAppQrDisplay";
+import React from "react";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -19,6 +20,9 @@ const BACKEND_URL =
 interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp: number;
+  fromMe?: boolean;
+  pending?: boolean;
 }
 
 interface Model {
@@ -41,11 +45,13 @@ interface ChatHistory {
 interface Contact {
   id: string;
   name: string;
+  wa_id?: string;
 }
 
 interface Group {
   id: string;
   name: string;
+  wa_id?: string;
 }
 
 interface Props {
@@ -61,6 +67,7 @@ export default function WhatsAppMessageSection({
 }: Props) {
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [numberId, setNumberId] = useState<string | null>(null);
   const [sendTo, setSendTo] = useState<string>("");
@@ -90,7 +97,23 @@ export default function WhatsAppMessageSection({
     }
 
     socket.on("chat-history", (data: ChatHistory) => {
-      setMessages(data.chatHistory);
+      // Merge: mantén los mensajes pendientes que no estén en el historial
+      setMessages(prev => {
+        // Un mensaje se considera "confirmado" si hay uno igual en el historial (por contenido, fromMe y timestamp cercano)
+        const confirmed = (pendingMessages || []).filter(pendingMsg =>
+          data.chatHistory.some(hMsg =>
+            hMsg.content === pendingMsg.content &&
+            hMsg.fromMe === true &&
+            Math.abs(hMsg.timestamp - pendingMsg.timestamp) < 120000 // 2 minutos de tolerancia
+          )
+        );
+        // Solo mantenemos los pendientes que NO están confirmados y que no han expirado
+        const stillPending = (pendingMessages || []).filter(pendingMsg =>
+          !confirmed.includes(pendingMsg) && (Date.now() - pendingMsg.timestamp < 10000)
+        );
+        return [...data.chatHistory, ...stillPending];
+      });
+      setPendingMessages((prev) => prev.filter(msg => Date.now() - msg.timestamp < 10000));
       setSendTo(data.to);
     });
     return () => {
@@ -130,23 +153,71 @@ export default function WhatsAppMessageSection({
     }
   }, [messages.length]);
 
-  const handleSendMessage = () => {
-    const newMessage: Message = { role: "assistant", content: message };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify({
-        number: selectedNumber?.number,
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPendingMessages((prev) => prev.filter(msg => Date.now() - msg.timestamp < 10000)); // Elimina los que llevan más de 10s
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSendMessage = async () => {
+    try {
+      console.log('selectedChat:', selectedChat);
+      const toValue = selectedChat?.wa_id || selectedChat?.id || sendTo;
+      console.log('to (WhatsApp ID a enviar):', toValue);
+      const newMessage = {
+        role: 'user' as const,
         content: message,
-        to: selectedChat?.id || sendTo,
-        numberId: selectedNumber?.id,
-      }),
-    });
-    setMessage("");
+        timestamp: Date.now(),
+        fromMe: true,
+        pending: true,
+      };
+      setPendingMessages(prev => [...prev, newMessage]);
+      setMessage("");
+      const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          content: message,
+          to: toValue,
+          numberId: selectedNumber?.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.message && data.message.includes('no está sincronizado')) {
+          alert('Este grupo/contacto no está sincronizado. Por favor, sincronízalo desde la lista de contactos y grupos para poder enviar mensajes.');
+          // Si tienes acceso a setContactsModalOpen desde props o contexto, puedes abrir el modal aquí
+          // Por ejemplo: setContactsModalOpen?.(true);
+        } else {
+          alert(data.message || 'Error al enviar el mensaje');
+        }
+        // Si falló, elimina el mensaje pendiente
+        setPendingMessages(prev => prev.filter(m => m !== newMessage));
+        return;
+      }
+      // Fuerza la recarga del historial del chat para que el mensaje se vea inmediatamente
+      if (socket && selectedNumber && (selectedChat?.wa_id || selectedChat?.id || sendTo)) {
+        socket.emit("get-chat-history", {
+          numberId: selectedNumber.id,
+          to: selectedChat?.wa_id || selectedChat?.id || sendTo,
+        });
+        // Vuelve a pedir el historial después de 1 segundo para asegurar que el mensaje se vea
+        setTimeout(() => {
+          socket.emit("get-chat-history", {
+            numberId: selectedNumber.id,
+            to: selectedChat?.wa_id || selectedChat?.id || sendTo,
+          });
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error al enviar el mensaje. Por favor, intenta de nuevo.');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -206,16 +277,32 @@ export default function WhatsAppMessageSection({
           // Cuando ya está conectado, mostrar los mensajes en orden cronológico inverso
           <>
             <div className="flex flex-col items-center w-full">
-              {messages.length === 0 ? (
+              {messages.length === 0 && pendingMessages.length === 0 ? (
                 <div className="text-gray-400 text-base mt-10">No hay mensajes en este chat aún.</div>
               ) : (
-                messages.map((msg, index) => (
-                  <WhatsAppChatBubble
-                    isMine={msg.role === "assistant"}
-                    message={msg.content}
-                    key={index}
-                  />
-                ))
+                (() => {
+                  // Junta mensajes confirmados y pendientes (que no estén ya confirmados)
+                  const allMessages = [
+                    ...messages,
+                    ...pendingMessages.filter(
+                      pendingMsg =>
+                        !messages.some(
+                          m =>
+                            m.content === pendingMsg.content &&
+                            m.fromMe === true &&
+                            Math.abs(m.timestamp - pendingMsg.timestamp) < 120000
+                        )
+                    ),
+                  ].sort((a, b) => a.timestamp - b.timestamp);
+
+                  return allMessages.map((msg, idx) => (
+                    <WhatsAppChatBubble
+                      key={idx}
+                      isMine={msg.fromMe === true}
+                      message={msg.content}
+                    />
+                  ));
+                })()
               )}
               <div ref={messagesEndRef} style={{ height: "30px" }} />
             </div>

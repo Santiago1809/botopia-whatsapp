@@ -9,13 +9,13 @@ export default function WhatsAppChatBubble({
 }: ChatBubbleProps) {
   return (
     <div
-      className={`flex items-center space-x-2 w-full mb-2 ${
+      className={`flex items-center w-full mb-2 ${
         isMine ? "justify-end" : "justify-start"
       }`}
     >
       <div
-        className={`p-3 rounded-lg break-words max-w-prose ${
-          isMine ? "bg-green-400 text-black text-sm font-medium" : "bg-gray-200"
+        className={`p-3 rounded-lg break-words max-w-prose text-sm font-medium ${
+          isMine ? "bg-[#d6bcfa] text-black" : "bg-gray-200 text-black"
         }`}
       >
         {message}
