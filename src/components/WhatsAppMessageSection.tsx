@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import WhatsAppChatBubble from "./WhatsAppMessageBubble";
 import QRDisplay from "./WhatsAppQrDisplay";
+import React from "react";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -19,6 +20,7 @@ const BACKEND_URL =
 interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp: number;
 }
 
 interface Model {
@@ -130,23 +132,40 @@ export default function WhatsAppMessageSection({
     }
   }, [messages.length]);
 
-  const handleSendMessage = () => {
-    const newMessage: Message = { role: "assistant", content: message };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify({
-        number: selectedNumber?.number,
+  const handleSendMessage = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          content: message,
+          to: selectedChat?.id || sendTo,
+          numberId: selectedNumber?.id,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        alert(data.message || 'Error al enviar el mensaje');
+        return;
+      }
+
+      // Add the message to the local state
+      const newMessage = {
+        role: 'user' as const,
         content: message,
-        to: selectedChat?.id || sendTo,
-        numberId: selectedNumber?.id,
-      }),
-    });
-    setMessage("");
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, newMessage]);
+      setMessage("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error al enviar el mensaje. Por favor, intenta de nuevo.');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -209,13 +228,38 @@ export default function WhatsAppMessageSection({
               {messages.length === 0 ? (
                 <div className="text-gray-400 text-base mt-10">No hay mensajes en este chat aún.</div>
               ) : (
-                messages.map((msg, index) => (
-                  <WhatsAppChatBubble
-                    isMine={msg.role === "assistant"}
-                    message={msg.content}
-                    key={index}
-                  />
-                ))
+                (() => {
+                  // Ordena por timestamp y agrupa en pares [user, assistant]
+                  const sorted = [...messages].sort((a, b) => {
+                    if (a.timestamp === b.timestamp) {
+                      if (a.role === "user" && b.role === "assistant") return -1;
+                      if (a.role === "assistant" && b.role === "user") return 1;
+                      return 0;
+                    }
+                    return a.timestamp - b.timestamp;
+                  });
+                  const grouped = [];
+                  for (let i = 0; i < sorted.length; i++) {
+                    if (sorted[i].role === "user") {
+                      grouped.push([
+                        sorted[i],
+                        sorted[i + 1]?.role === "assistant" ? sorted[i + 1] : null
+                      ]);
+                      if (sorted[i + 1]?.role === "assistant") i++;
+                    }
+                  }
+                  return grouped
+                    .map(([userMsg, iaMsg], idx) => {
+                      if (!userMsg) return null;
+                      return (
+                        <React.Fragment key={idx}>
+                          <WhatsAppChatBubble isMine={false} message={userMsg.content} />
+                          {iaMsg && <WhatsAppChatBubble isMine={true} message={iaMsg.content} />}
+                        </React.Fragment>
+                      );
+                    })
+                    .filter(Boolean);
+                })()
               )}
               <div ref={messagesEndRef} style={{ height: "30px" }} />
             </div>
