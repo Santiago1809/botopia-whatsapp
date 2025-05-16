@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import Image from "next/image";
 import DiagonalBackground from "@/components/DiagonalBackground";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -73,12 +74,12 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
-              <label
+              <Label
                 htmlFor="identifier"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Correo, usuario o teléfono
-              </label>
+              </Label>
               <Input
                 id="identifier"
                 type="text"
@@ -92,12 +93,12 @@ export default function Login() {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label
+                <Label
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700"
                 >
                   Contraseña
-                </label>
+                </Label>
                 <a
                   href="/reset-password"
                   className="text-xs text-primary hover:text-primary/80"

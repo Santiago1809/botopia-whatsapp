@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 interface RequestOTPCodeProps {
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -34,12 +35,12 @@ export default function RequestOTPCode({
       )}
       <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
         <div>
-          <label
+          <Label
             htmlFor="email"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Correo electrónico
-          </label>
+          </Label>
           <Input
             id="email"
             type="email"

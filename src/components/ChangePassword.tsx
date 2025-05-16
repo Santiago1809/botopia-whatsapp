@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 interface ChangePasswordProps {
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -35,12 +36,12 @@ export default function ChangePassword({
       <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
         <div>
           {" "}
-          <label
+          <Label
             htmlFor="password"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Nueva contraseña
-          </label>
+          </Label>
           <Input
             id="password"
             type="password"

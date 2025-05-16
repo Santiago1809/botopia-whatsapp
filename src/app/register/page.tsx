@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import Image from "next/image";
 import DiagonalBackground from "@/components/DiagonalBackground";
+import { Label } from "@/components/ui/label";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -105,12 +106,12 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <label
+              <Label
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Nombre de usuario
-              </label>
+              </Label>
               <input
                 id="username"
                 type="text"
@@ -122,12 +123,12 @@ export default function Register() {
             </div>
 
             <div>
-              <label
+              <Label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Correo electrónico
-              </label>
+              </Label>
               <input
                 id="email"
                 type="email"
@@ -139,12 +140,12 @@ export default function Register() {
             </div>
 
             <div>
-              <label
+              <Label
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Número de teléfono
-              </label>
+              </Label>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
                 <select
                   id="countryCode"
@@ -171,12 +172,12 @@ export default function Register() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label
+                <Label
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Contraseña
-                </label>
+                </Label>
                 <input
                   id="password"
                   type="password"
@@ -188,12 +189,12 @@ export default function Register() {
               </div>
 
               <div>
-                <label
+                <Label
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Confirmar contraseña
-                </label>
+                </Label>
                 <input
                   id="confirmPassword"
                   type="password"

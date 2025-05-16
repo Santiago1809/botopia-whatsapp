@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 interface VerityOTPCodeProps {
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -44,12 +45,12 @@ export default function VerityOTPCode({
       <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
         <div>
           {" "}
-          <label
+          <Label
             htmlFor="code"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Código de verificación
-          </label>{" "}
+          </Label>{" "}
           <div className="flex gap-2 justify-between" onPaste={handlePaste}>
             {[0, 1, 2, 3, 4, 5].map((index) => (
               <Input
