@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import Image from "next/image";
 import DiagonalBackground from "@/components/DiagonalBackground";
+import { Input } from "@/components/ui/input";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -78,7 +79,7 @@ export default function Login() {
               >
                 Correo, usuario o teléfono
               </label>
-              <input
+              <Input
                 id="identifier"
                 type="text"
                 value={identifier}
@@ -98,7 +99,7 @@ export default function Login() {
                   Contraseña
                 </label>
                 <a
-                  href="#"
+                  href="/reset-password"
                   className="text-xs text-primary hover:text-primary/80"
                 >
                   ¿Olvidaste tu contraseña?
