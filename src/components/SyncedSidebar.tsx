@@ -51,8 +51,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   }, []);
 
   // Filtrado
-  const filteredContacts = contacts.filter(c => (c.name || c.number).toLowerCase().includes(search.toLowerCase()));
-  const filteredGroups = groups.filter(g => (g.name || g.number).toLowerCase().includes(search.toLowerCase()));
+  const filteredContacts = contacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
+  const filteredGroups = groups.filter(g => ((g.name ?? g.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
 
   const handleSelect = (item: Contact | Group, type: 'contact' | 'group') => {
     onSelect(item, type);

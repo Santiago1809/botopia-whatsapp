@@ -107,6 +107,32 @@ export default function Page() {
     )
   );
 
+  // --- fetchSynced global ---
+  const fetchSynced = async () => {
+    if (!selectedNumber) return;
+    const token = getToken();
+    const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+    const contacts = data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id }));
+    const groups = data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id }));
+    setSyncedContacts(contacts);
+    setSyncedGroups(groups);
+    // Selecciona automáticamente el primer contacto o grupo sincronizado si hay alguno
+    if (contacts.length > 0) {
+      setSelectedChatId(contacts[0].wa_id || contacts[0].id);
+      setSelectedChatType('contact');
+    } else if (groups.length > 0) {
+      setSelectedChatId(groups[0].wa_id || groups[0].id);
+      setSelectedChatType('group');
+    } else {
+      setSelectedChatId(null);
+      setSelectedChatType(null);
+    }
+  };
+
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
     if (!isAuthenticated) {
@@ -117,8 +143,7 @@ export default function Page() {
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
     setSocket(newSocket);
 
-    newSocket.on("qr-code", (data: QrCodeEvent) => {
-      console.log(data);
+    newSocket.on("qr-code", () => {
       /* if (data.numberId === selectedNumber?.id) {
         setQrCodes((prev) => ({ ...prev, [data.numberId]: data.qr }));
       } */
@@ -202,7 +227,7 @@ export default function Page() {
           const syncedContacts = dataContacts.filter((x: { type: string }) => x.type === 'contact');
           // Actualizar agenteHabilitado para todos los contactos
           await Promise.all(
-            syncedContacts.map((c: any) =>
+            syncedContacts.map((c: { id: string; agenteHabilitado: boolean }) =>
               fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -273,7 +298,7 @@ export default function Page() {
           const syncedGroups = dataGroups.filter((x: { type: string }) => x.type === 'group');
           // Actualizar agenteHabilitado para todos los grupos
           await Promise.all(
-            syncedGroups.map((g: any) =>
+            syncedGroups.map((g: { id: string; agenteHabilitado: boolean }) =>
               fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -371,7 +396,7 @@ export default function Page() {
               const contactList = await res.json();
               setContacts(uniqueById((contactList as WhatsAppContact[]).map((c: WhatsAppContact) => ({ ...c, id: String(c.id) }))));
               setLoadingContacts(false); // Loader: termina la carga
-              setContactsModalOpen(true);
+              setContactsModalOpen(true); // Abre el modal automáticamente tras escanear el QR
             } else {
               setLoadingContacts(false);
             }
@@ -619,13 +644,7 @@ export default function Page() {
       });
       setContactsModalOpen(false);
       // Refresca sincronizados desde la base de datos
-      const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      let data = await res.json();
-      if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
+      fetchSynced();
     } catch {
       alert('Error al sincronizar');
     } finally {
@@ -639,20 +658,10 @@ export default function Page() {
     setSelectedChatType(type);
   };
 
-  // NUEVO: Cargar sincronizados desde la base de datos
+  // Reemplaza el useEffect de fetchSynced por:
   useEffect(() => {
-    if (!selectedNumber) return;
-    const fetchSynced = async () => {
-      const token = getToken();
-      const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      let data = await res.json();
-      if (!Array.isArray(data)) data = [];
-      setSyncedContacts(data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
-      setSyncedGroups(data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id })));
-    };
     fetchSynced();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNumber, getToken]);
 
   // NUEVO: Actualizar agenteHabilitado
@@ -711,21 +720,17 @@ export default function Page() {
     const token = getToken();
     const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
     const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
+    const updates = [
+      ...contacts.map(c => ({ id: c.id, agenteHabilitado: false })),
+      ...groups.map(g => ({ id: g.id, agenteHabilitado: false }))
+    ];
     try {
-      await Promise.all([
-        ...contacts.map(c => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id: c.id, agenteHabilitado: false })
-        })),
-        ...groups.map(g => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id: g.id, agenteHabilitado: false })
-        }))
-      ]);
-      setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: false })));
-      setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: false })));
+      await fetch(`${BACKEND_URL}/api/whatsapp/bulk-update-agente-habilitado`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ updates })
+      });
+      await fetchSynced();
     } catch {
       alert('Error al desactivar todos los agentes');
     }
@@ -734,21 +739,17 @@ export default function Page() {
     const token = getToken();
     const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
     const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
+    const updates = [
+      ...contacts.map(c => ({ id: c.id, agenteHabilitado: true })),
+      ...groups.map(g => ({ id: g.id, agenteHabilitado: true }))
+    ];
     try {
-      await Promise.all([
-        ...contacts.map(c => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id: c.id, agenteHabilitado: true })
-        })),
-        ...groups.map(g => fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id: g.id, agenteHabilitado: true })
-        }))
-      ]);
-      setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: true })));
-      setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: true })));
+      await fetch(`${BACKEND_URL}/api/whatsapp/bulk-update-agente-habilitado`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ updates })
+      });
+      await fetchSynced();
     } catch {
       alert('Error al activar todos los agentes');
     }
@@ -839,7 +840,7 @@ export default function Page() {
           />
       </div>
       {/* Sidebar derecho */}
-      {selectedNumber?.status === "connected" && (
+      {selectedNumber && (
         <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
           <SyncedSidebar
             contacts={uniqueById(syncedContacts)}
