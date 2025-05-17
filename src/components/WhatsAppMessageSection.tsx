@@ -163,7 +163,12 @@ export default function WhatsAppMessageSection({
   const handleSendMessage = async () => {
     try {
       console.log('selectedChat:', selectedChat);
-      const toValue = selectedChat?.wa_id || selectedChat?.id || sendTo;
+      // Siempre usa wa_id si existe, para grupos y contactos
+      const toValue = selectedChat?.wa_id;
+      if (!toValue) {
+        alert('No se puede enviar el mensaje: el chat seleccionado no tiene un WhatsApp ID válido (wa_id).');
+        return;
+      }
       console.log('to (WhatsApp ID a enviar):', toValue);
       const newMessage = {
         role: 'user' as const,
@@ -201,16 +206,15 @@ export default function WhatsAppMessageSection({
         return;
       }
       // Fuerza la recarga del historial del chat para que el mensaje se vea inmediatamente
-      if (socket && selectedNumber && (selectedChat?.wa_id || selectedChat?.id || sendTo)) {
+      if (socket && selectedNumber && toValue) {
         socket.emit("get-chat-history", {
           numberId: selectedNumber.id,
-          to: selectedChat?.wa_id || selectedChat?.id || sendTo,
+          to: toValue,
         });
-        // Vuelve a pedir el historial después de 1 segundo para asegurar que el mensaje se vea
         setTimeout(() => {
           socket.emit("get-chat-history", {
             numberId: selectedNumber.id,
-            to: selectedChat?.wa_id || selectedChat?.id || sendTo,
+            to: toValue,
           });
         }, 1000);
       }

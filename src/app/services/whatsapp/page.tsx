@@ -85,6 +85,7 @@ export default function Page() {
   const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups'>('all');
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
+  const [isManualSelection, setIsManualSelection] = useState(false);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -116,22 +117,38 @@ export default function Page() {
     });
     let data = await res.json();
     if (!Array.isArray(data)) data = [];
-    const contacts = data.filter((x: { type: string }) => x.type === 'contact').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id }));
-    const groups = data.filter((x: { type: string }) => x.type === 'group').map((x: SyncedItem) => ({ ...x, id: x.id, wa_id: x.wa_id }));
+    // Ordenar contactos y grupos por lastMessageTimestamp descendente
+    const contacts = data
+      .filter((x: { type: string }) => x.type === 'contact')
+      .map((x: SyncedItem) => ({ ...x, id: x.wa_id || x.id, wa_id: x.wa_id }))
+      .sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+    const groups = data
+      .filter((x: { type: string }) => x.type === 'group')
+      .map((x: SyncedItem) => ({ ...x, id: x.wa_id || x.id, wa_id: x.wa_id }))
+      .sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
+    // Pedir historial de todos los chats sincronizados (contactos y grupos)
+    if (socket && selectedNumber) {
+      [...contacts, ...groups].forEach((item: any) => {
+        socket.emit('get-chat-history', {
+          numberId: selectedNumber.id,
+          to: item.wa_id || item.id
+        });
+      });
+    }
     // Selecciona automáticamente el primer contacto o grupo sincronizado si hay alguno
     if (contacts.length > 0) {
-      setSelectedChatId(contacts[0].wa_id || contacts[0].id);
+      setSelectedChatId(contacts[0].wa_id);
       setSelectedChatType('contact');
     } else if (groups.length > 0) {
-      setSelectedChatId(groups[0].wa_id || groups[0].id);
+      setSelectedChatId(groups[0].wa_id);
       setSelectedChatType('group');
     } else {
       setSelectedChatId(null);
       setSelectedChatType(null);
     }
-  };
+  }
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -419,13 +436,34 @@ export default function Page() {
       setSelectedNumber(null);
     });
 
-    // Al recibir un mensaje, selecciona automáticamente el chat
+    // Al recibir un mensaje, selecciona automáticamente el chat y actualiza el orden
     socket.on("chat-history", (data) => {
       if (data && data.to) {
         const isGroup = data.to.endsWith("@g.us");
-        // Siempre selecciona el chat del último mensaje recibido
-        setSelectedChatId(data.to);
-        setSelectedChatType(isGroup ? "group" : "contact");
+        if (!isManualSelection) {
+          setSelectedChatId(data.to);
+          setSelectedChatType(isGroup ? "group" : "contact");
+        }
+        // Actualiza el timestamp y preview del chat correspondiente y reordena la lista
+        if (isGroup) {
+          setSyncedGroups((prev) => {
+            const updated = prev.map((g: any) =>
+              g.wa_id === data.to
+                ? { ...g, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
+                : g
+            );
+            return [...updated].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+          });
+        } else {
+          setSyncedContacts((prev) => {
+            const updated = prev.map((c: any) =>
+              c.wa_id === data.to
+                ? { ...c, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
+                : c
+            );
+            return [...updated].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+          });
+        }
       }
     });
 
@@ -653,8 +691,9 @@ export default function Page() {
   };
 
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
+    setIsManualSelection(true);
     setLoadingContacts(false);
-    setSelectedChatId(item.wa_id || item.id);
+    setSelectedChatId(item.wa_id ? String(item.wa_id) : null);
     setSelectedChatType(type);
   };
 
@@ -803,6 +842,10 @@ export default function Page() {
     }
   }, [contactsModalOpen, selectedNumber]);
 
+  const isContacts = filterType === 'contacts';
+  const isGroups = filterType === 'groups';
+  const isAll = filterType === 'all';
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
       {/* Sidebar izquierdo */}
@@ -944,15 +987,41 @@ export default function Page() {
                   <div className="flex gap-2">
                     <button
                       className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
-                      onClick={() => setSelectedContacts(personalContacts.map((c) => c.id))}
-                      disabled={personalContacts.length === 0}
+                      onClick={() => {
+                        if (filterType === 'all') {
+                          setSelectedContacts(personalContacts.map((c) => c.id));
+                          setSelectedGroups(groupContacts.map((g) => g.id));
+                        } else if (filterType === 'contacts') {
+                          setSelectedContacts(personalContacts.map((c) => c.id));
+                        } else if (filterType === 'groups') {
+                          setSelectedGroups(groupContacts.map((g) => g.id));
+                        }
+                      }}
+                      disabled={
+                        (isContacts && personalContacts.length === 0) ||
+                        (isGroups && groupContacts.length === 0) ||
+                        (isAll && personalContacts.length === 0 && groupContacts.length === 0)
+                      }
                     >
                       Seleccionar todos
                     </button>
                     <button
                       className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-red-400 hover:text-white transition"
-                      onClick={() => setSelectedContacts([])}
-                      disabled={selectedContacts.length === 0}
+                      onClick={() => {
+                        if (filterType === 'all') {
+                          setSelectedContacts([]);
+                          setSelectedGroups([]);
+                        } else if (filterType === 'contacts') {
+                          setSelectedContacts([]);
+                        } else if (filterType === 'groups') {
+                          setSelectedGroups([]);
+                        }
+                      }}
+                      disabled={
+                        (isContacts && selectedContacts.length === 0) ||
+                        (isGroups && selectedGroups.length === 0) ||
+                        (isAll && selectedContacts.length === 0 && selectedGroups.length === 0)
+                      }
                     >
                       Deseleccionar todos
                     </button>
