@@ -50,9 +50,13 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     };
   }, []);
 
+  // Ordenar contactos y grupos por último mensaje
+  const orderedContacts = [...contacts].sort((a: Contact, b: Contact) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+  const orderedGroups = [...groups].sort((a: Group, b: Group) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+
   // Filtrado
-  const filteredContacts = contacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
-  const filteredGroups = groups.filter(g => ((g.name ?? g.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
+  const filteredContacts = orderedContacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
+  const filteredGroups = orderedGroups.filter(g => ((g.name ?? g.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
 
   const handleSelect = (item: Contact | Group, type: 'contact' | 'group') => {
     onSelect(item, type);
@@ -66,14 +70,14 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
 
   return (
     <div className="h-full p-4 flex flex-col">
-      <button
-        className="mb-4 px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white rounded-full shadow hover:from-secondary hover:to-primary transition font-bold text-base"
-        onClick={onSyncClick}
-      >
-        <RefreshCcw className="w-5 h-5" />
-        Sincronizar contactos y grupos
-      </button>
-      <h2 className="font-bold text-lg mb-4 text-center w-full">Contactos y Grupos Sincronizados</h2>
+      {/* Input de búsqueda en la parte superior */}
+      <input
+        type="text"
+        placeholder="Buscar..."
+        className="w-full mb-3 px-2 py-1 rounded-full border border-gray-200 text-xs"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
       {/* Filtro visual */}
       <div className="flex gap-2 mb-2">
         <button
@@ -110,7 +114,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         <button
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold hover:bg-yellow-200 border border-yellow-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={onBulkDisable}
+          onClick={async () => {
+            if (onBulkDisable) {
+              await onBulkDisable();
+            }
+          }}
         >
           <UserX className="w-5 h-5" />
           <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
@@ -120,7 +128,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         <button
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold hover:bg-green-200 border border-green-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={onBulkEnable}
+          onClick={async () => {
+            if (onBulkEnable) {
+              await onBulkEnable();
+            }
+          }}
         >
           <UserCheck className="w-5 h-5" />
           <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
@@ -128,15 +140,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           </span>
         </button>
       </div>
-      {/* Input de búsqueda debajo de los botones masivos */}
-      <input
-        type="text"
-        placeholder="Buscar..."
-        className="w-full mb-3 px-2 py-1 rounded border border-gray-200 text-xs"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
-
+      {/* Lista de contactos y grupos */}
       <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1">
         {(filterType === 'all' || filterType === 'contacts') && (
           <div className="mb-4">
@@ -168,7 +172,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                         </label>
                       )}
                       <span
-                        className="font-medium text-base truncate max-w-[140px] cursor-pointer"
+                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
                         title={contact.name || contact.number}
                         onClick={e => {
                           e.stopPropagation();
@@ -196,7 +200,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             )}
           </div>
         )}
-
         {(filterType === 'all' || filterType === 'groups') && (
           <div>
             <h3 className="font-semibold mb-2">Grupos</h3>
@@ -227,7 +230,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                         </label>
                       )}
                       <span
-                        className="font-medium text-base truncate max-w-[140px] cursor-pointer"
+                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
                         title={group.name || group.number}
                         onClick={e => {
                           e.stopPropagation();
@@ -255,6 +258,17 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             )}
           </div>
         )}
+      </div>
+      {/* Botón de sincronizar en la parte inferior, texto pequeño y en una línea */}
+      <div className="mt-auto mb-4 flex justify-center">
+        <button
+          className="px-4 py-2 flex items-center gap-2 text-xs bg-primary text-white rounded-full shadow hover:bg-secondary transition whitespace-nowrap"
+          onClick={onSyncClick}
+          style={{ fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Sincronizar contactos y grupos
+        </button>
       </div>
     </div>
   );
