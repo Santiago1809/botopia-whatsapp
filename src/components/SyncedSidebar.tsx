@@ -51,8 +51,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   }, []);
 
   // Ordenar contactos y grupos por último mensaje
-  const orderedContacts = [...contacts].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
-  const orderedGroups = [...groups].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+  const orderedContacts = [...contacts].sort((a: Contact, b: Contact) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+  const orderedGroups = [...groups].sort((a: Group, b: Group) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
 
   // Filtrado
   const filteredContacts = orderedContacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));

@@ -18,7 +18,6 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import SyncedSidebar from '@/components/SyncedSidebar';
-import { Button } from "@/components/ui/button";
 import { RefreshCw } from 'lucide-react';
 
 const BACKEND_URL =
@@ -36,6 +35,10 @@ interface WhatsAppContact {
   isGroup: boolean;
   isMyContact: boolean;
   wa_id?: string;
+  lastMessageTimestamp?: number;
+  lastMessagePreview?: string;
+  agenteHabilitado?: boolean;
+  [key: string]: unknown;
 }
 
 interface WhatsAppGroup {
@@ -44,12 +47,28 @@ interface WhatsAppGroup {
   number: string;
   isGroup: boolean;
   wa_id?: string;
+  lastMessageTimestamp?: number;
+  lastMessagePreview?: string;
+  agenteHabilitado?: boolean;
+  [key: string]: unknown;
 }
 
-type SyncedItem = {
+interface SyncedItem {
+  type: string;
   wa_id: string;
+  id: string;
+  lastMessageTimestamp?: number;
   [key: string]: unknown;
-};
+}
+
+interface ChatHistoryData {
+  to: string;
+  lastMessageTimestamp?: number;
+  chatHistory?: Array<{
+    content: string;
+    [key: string]: unknown;
+  }>;
+}
 
 // Utilidad para eliminar duplicados por id
 function uniqueById<T extends { id: string | number }>(arr: T[]): T[] {
@@ -61,14 +80,6 @@ function uniqueById<T extends { id: string | number }>(arr: T[]): T[] {
   });
 }
 
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-  return result;
-}
-
 export default function Page() {
   const { logout, isAuthenticated, getToken } = useAuth();
   const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsappNumber[]>([]);
@@ -77,9 +88,7 @@ export default function Page() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [newNumber, setNewNumber] = useState<string>("");
   const [newName, setNewName] = useState<string>("");
-  const [selectedNumber, setSelectedNumber] = useState<WhatsappNumber | null>(
-    null
-  );
+  const [selectedNumber, setSelectedNumber] = useState<WhatsappNumber | null>(null);
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const { setNumberStatus } = useChat();
   const router = useRouter()
@@ -96,9 +105,8 @@ export default function Page() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
-  const [contactsProgress, setContactsProgress] = useState({ loaded: 0, total: 0 });
-  const [groupsProgress, setGroupsProgress] = useState({ loaded: 0, total: 0 });
   const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string, timestamp: number } | null>(null);
+  const [isManualSelection, setIsManualSelection] = useState(false);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -163,26 +171,25 @@ export default function Page() {
     if (!Array.isArray(data)) data = [];
     // Ordenar contactos y grupos por lastMessageTimestamp descendente
     const contacts = data
-      .filter((x: { type: string }) => x.type === 'contact')
+      .filter((x: SyncedItem) => x.type === 'contact')
       .map((x: SyncedItem) => ({
         ...x,
-        id: x.wa_id || x.id,
+        id: x.id,
         wa_id: x.wa_id,
         lastMessageTimestamp: x.lastMessageTimestamp || 0
       }))
-      .sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+      .sort((a: SyncedItem, b: SyncedItem) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     const groups = data
-      .filter((x: { type: string }) => x.type === 'group')
+      .filter((x: SyncedItem) => x.type === 'group')
       .map((x: SyncedItem) => ({
         ...x,
-        id: x.wa_id || x.id,
+        id: x.id,
         wa_id: x.wa_id,
         lastMessageTimestamp: x.lastMessageTimestamp || 0
       }))
-      .sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+      .sort((a: SyncedItem, b: SyncedItem) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
-    // NO seleccionar automáticamente ningún chat tras sincronizar
     setSelectedChatId(null);
     setSelectedChatType(null);
   }
@@ -472,35 +479,40 @@ export default function Page() {
     });
 
     // Al recibir un mensaje, selecciona el chat del mensaje más reciente
-    socket.on("chat-history", (data) => {
-      if (data && data.to) {
-        const isGroup = data.to.endsWith("@g.us");
-        // Cambia siempre al chat del mensaje más reciente
-        if (!lastAutoChat || (data.lastMessageTimestamp && data.lastMessageTimestamp > lastAutoChat.timestamp)) {
-          setSelectedChatId(data.to);
-          setSelectedChatType(isGroup ? "group" : "contact");
-          setLastAutoChat({ wa_id: data.to, timestamp: data.lastMessageTimestamp || Date.now() });
-        }
-        // Actualiza el timestamp y preview del chat correspondiente y reordena la lista
-        if (isGroup) {
-          setSyncedGroups((prev) => {
-            const updated = prev.map((g: any) =>
-              g.wa_id === data.to
-                ? { ...g, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
-                : g
-            );
-            return [...updated].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
-          });
-        } else {
-          setSyncedContacts((prev) => {
-            const updated = prev.map((c: any) =>
-              c.wa_id === data.to
-                ? { ...c, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
-                : c
-            );
-            return [...updated].sort((a: any, b: any) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
-          });
-        }
+    socket.on("chat-history", (data: ChatHistoryData) => {
+      if (!data || !data.to) return;
+      const isGroup = data.to.endsWith("@g.us");
+      if (
+        (isGroup && !syncedGroups.some(g => g.wa_id === data.to)) ||
+        (!isGroup && !syncedContacts.some(c => c.wa_id === data.to))
+      ) {
+        // Si NO está sincronizado, ignora el mensaje
+        return;
+      }
+      // SIEMPRE priorizar el chat del último mensaje recibido y dejarlo fijo
+      setSelectedChatId(data.to);
+      setSelectedChatType(isGroup ? "group" : "contact");
+      setLastAutoChat({ wa_id: data.to, timestamp: data.lastMessageTimestamp || Date.now() });
+      setIsManualSelection(false); // Ahora la selección es automática por mensaje recibido
+      // Actualiza el timestamp y preview del chat correspondiente y reordena la lista
+      if (isGroup) {
+        setSyncedGroups((prev) => {
+          const updated = prev.map((g) =>
+            g.wa_id === data.to
+              ? { ...g, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
+              : g
+          );
+          return [...updated].sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+        });
+      } else {
+        setSyncedContacts((prev) => {
+          const updated = prev.map((c) =>
+            c.wa_id === data.to
+              ? { ...c, lastMessageTimestamp: data.lastMessageTimestamp, lastMessagePreview: data.chatHistory?.slice(-1)[0]?.content || "" }
+              : c
+          );
+          return [...updated].sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+        });
       }
     });
 
@@ -731,7 +743,7 @@ export default function Page() {
             .map(c => ({
               ...c,
               wa_id: c.wa_id || c.id,
-              id: c.wa_id || c.id,
+              id: c.id,
               name: c.name
             })),
           groups: groupContacts
@@ -739,7 +751,7 @@ export default function Page() {
             .map(g => ({
               ...g,
               wa_id: g.wa_id || g.id,
-              id: g.wa_id || g.id,
+              id: g.id,
               name: g.name
             })),
           clearAll: false
@@ -797,6 +809,10 @@ export default function Page() {
     setSyncedGroups([]);
   };
   const handleBulkDisable = async () => {
+    // Optimismo visual: desactiva todos en el frontend
+    setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: false })));
+    setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: false })));
+
     const token = getToken();
     const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
     const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
@@ -813,9 +829,14 @@ export default function Page() {
       await fetchSynced();
     } catch {
       alert('Error al desactivar todos los agentes');
+      await fetchSynced();
     }
   };
   const handleBulkEnable = async () => {
+    // Optimismo visual: activa todos en el frontend
+    setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: true })));
+    setSyncedGroups(prev => prev.map(g => ({ ...g, agenteHabilitado: true })));
+
     const token = getToken();
     const contacts = Array.isArray(syncedContacts) ? syncedContacts : [];
     const groups = Array.isArray(syncedGroups) ? syncedGroups : [];
@@ -832,6 +853,7 @@ export default function Page() {
       await fetchSynced();
     } catch {
       alert('Error al activar todos los agentes');
+      await fetchSynced();
     }
   };
 
@@ -839,7 +861,29 @@ export default function Page() {
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
     setSelectedChatId(item.wa_id ? String(item.wa_id) : null);
     setSelectedChatType(type);
+    setIsManualSelection(true); // El usuario seleccionó manualmente
   };
+
+  // Limpiar selección si el chat ya no está sincronizado
+  useEffect(() => {
+    if (selectedChatType === 'contact' && !syncedContacts.some(c => c.wa_id === selectedChatId)) {
+      setSelectedChatId(null);
+      setSelectedChatType(null);
+      setIsManualSelection(false);
+    }
+    if (selectedChatType === 'group' && !syncedGroups.some(g => g.wa_id === selectedChatId)) {
+      setSelectedChatId(null);
+      setSelectedChatType(null);
+      setIsManualSelection(false);
+    }
+  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType]);
+
+  // Actualizar sincronizados cada vez que se selecciona un número
+  useEffect(() => {
+    if (selectedNumber) {
+      fetchSynced();
+    }
+  }, [selectedNumber]);
 
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
@@ -874,11 +918,13 @@ export default function Page() {
         <WhatsAppMainContent
           qrCodes={qrCodes}
           selectedNumber={selectedNumber}
-          selectedChat={selectedChatType === 'contact'
-            ? syncedContacts.find(c => c.wa_id === selectedChatId)
-            : selectedChatType === 'group'
-              ? syncedGroups.find(g => g.wa_id === selectedChatId)
-              : null}
+          selectedChat={
+            selectedChatType === 'contact'
+              ? syncedContacts.find(c => c.wa_id === selectedChatId)
+              : selectedChatType === 'group'
+                ? syncedGroups.find(g => g.wa_id === selectedChatId)
+                : null
+          }
         />
       </div>
       {/* Sidebar derecho */}
@@ -918,6 +964,12 @@ export default function Page() {
               Selecciona los contactos y grupos de WhatsApp que deseas sincronizar con el agente. Puedes actualizar tu selección en cualquier momento.
             </DialogDescription>
           </DialogHeader>
+          {loadingContacts && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+              <span className="ml-2 text-primary">Cargando contactos...</span>
+            </div>
+          )}
           <div className="flex justify-between gap-2 mb-4 items-center">
             <div className="flex gap-2">
               <button

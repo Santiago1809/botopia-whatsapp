@@ -4,6 +4,8 @@ export interface Contact {
   number: string;
   agenteHabilitado?: boolean;
   wa_id?: string;
+  lastMessageTimestamp?: number;
+  lastMessagePreview?: string;
 }
 
 export interface Group {
@@ -12,4 +14,6 @@ export interface Group {
   number: string;
   agenteHabilitado?: boolean;
   wa_id?: string;
+  lastMessageTimestamp?: number;
+  lastMessagePreview?: string;
 } 
