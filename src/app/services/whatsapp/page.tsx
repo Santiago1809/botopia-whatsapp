@@ -106,7 +106,6 @@ export default function Page() {
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
   const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string, timestamp: number } | null>(null);
-  const [isManualSelection, setIsManualSelection] = useState(false);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -493,7 +492,6 @@ export default function Page() {
       setSelectedChatId(data.to);
       setSelectedChatType(isGroup ? "group" : "contact");
       setLastAutoChat({ wa_id: data.to, timestamp: data.lastMessageTimestamp || Date.now() });
-      setIsManualSelection(false); // Ahora la selección es automática por mensaje recibido
       // Actualiza el timestamp y preview del chat correspondiente y reordena la lista
       if (isGroup) {
         setSyncedGroups((prev) => {
@@ -861,22 +859,19 @@ export default function Page() {
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
     setSelectedChatId(item.wa_id ? String(item.wa_id) : null);
     setSelectedChatType(type);
-    setIsManualSelection(true); // El usuario seleccionó manualmente
   };
 
-  // Limpiar selección si el chat ya no está sincronizado
+  // useEffect para limpiar selección si el chat ya no está sincronizado
   useEffect(() => {
     if (selectedChatType === 'contact' && !syncedContacts.some(c => c.wa_id === selectedChatId)) {
       setSelectedChatId(null);
       setSelectedChatType(null);
-      setIsManualSelection(false);
     }
     if (selectedChatType === 'group' && !syncedGroups.some(g => g.wa_id === selectedChatId)) {
       setSelectedChatId(null);
       setSelectedChatType(null);
-      setIsManualSelection(false);
     }
-  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType]);
+  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType, fetchSynced]);
 
   // Actualizar sincronizados cada vez que se selecciona un número
   useEffect(() => {

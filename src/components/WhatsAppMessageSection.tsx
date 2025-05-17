@@ -122,7 +122,7 @@ export default function WhatsAppMessageSection({
       }
       socket.off("chat-history");
     };
-  }, [socket, selectedNumber, selectedChat]);
+  }, [socket, selectedNumber, selectedChat, pendingMessages]);
 
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement;
