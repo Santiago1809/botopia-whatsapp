@@ -114,7 +114,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         <button
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold hover:bg-yellow-200 border border-yellow-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={onBulkDisable}
+          onClick={async () => {
+            if (onBulkDisable) {
+              await onBulkDisable();
+            }
+          }}
         >
           <UserX className="w-5 h-5" />
           <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
@@ -124,7 +128,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         <button
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold hover:bg-green-200 border border-green-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={onBulkEnable}
+          onClick={async () => {
+            if (onBulkEnable) {
+              await onBulkEnable();
+            }
+          }}
         >
           <UserCheck className="w-5 h-5" />
           <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
@@ -164,7 +172,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                         </label>
                       )}
                       <span
-                        className="font-medium text-base truncate max-w-[140px] cursor-pointer"
+                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
                         title={contact.name || contact.number}
                         onClick={e => {
                           e.stopPropagation();
@@ -222,7 +230,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                         </label>
                       )}
                       <span
-                        className="font-medium text-base truncate max-w-[140px] cursor-pointer"
+                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
                         title={group.name || group.number}
                         onClick={e => {
                           e.stopPropagation();
