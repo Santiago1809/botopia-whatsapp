@@ -189,8 +189,7 @@ export default function Page() {
       .sort((a: SyncedItem, b: SyncedItem) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
-    setSelectedChatId(null);
-    setSelectedChatType(null);
+    // NO limpiar el chat seleccionado aquí
   }
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
@@ -275,33 +274,10 @@ export default function Page() {
         setSelectedNumber((prev) =>
           prev ? { ...prev, aiEnabled: newVal } : null
         );
-
-        // NUEVO: Actualizar agenteHabilitado en todos los contactos sincronizados
-        if (selectedNumber) {
-          // Obtener los contactos sincronizados actuales
-          const resContacts = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          let dataContacts = await resContacts.json();
-          if (!Array.isArray(dataContacts)) dataContacts = [];
-          const syncedContacts = dataContacts.filter((x: { type: string }) => x.type === 'contact');
-          // Actualizar agenteHabilitado para todos los contactos
-          await Promise.all(
-            syncedContacts.map((c: { id: string; agenteHabilitado: boolean }) =>
-              fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ id: c.id, agenteHabilitado: newVal })
-              })
-            )
-          );
-          // Actualizar el estado local
-          setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: newVal })));
-        }
+        // Ya no se actualizan los contactos sincronizados aquí
       } catch (error) {
         console.error("Error actualizando AI:", error);
       } finally {
-        // NO tocar setLoadingContacts aquí, el loader solo se activa en flujos de carga reales
         if (!currentAgent) {
           setContactsModalOpen(false);
         }
@@ -857,7 +833,7 @@ export default function Page() {
 
   // Restaurar la función para selección manual desde la sidebar
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
-    setSelectedChatId(item.wa_id ? String(item.wa_id) : null);
+    setSelectedChatId(item.wa_id ? String(item.wa_id) : String(item.id));
     setSelectedChatType(type);
   };
 
@@ -915,9 +891,9 @@ export default function Page() {
           selectedNumber={selectedNumber}
           selectedChat={
             selectedChatType === 'contact'
-              ? syncedContacts.find(c => c.wa_id === selectedChatId)
+              ? syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
               : selectedChatType === 'group'
-                ? syncedGroups.find(g => g.wa_id === selectedChatId)
+                ? syncedGroups.find(g => g.wa_id === selectedChatId || g.id === selectedChatId)
                 : null
           }
         />
