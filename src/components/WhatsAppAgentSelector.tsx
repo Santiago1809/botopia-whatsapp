@@ -35,6 +35,8 @@ interface AgentSelectorProps {
 
 const PROMPT_ASESOR = `\nSi detectas que el cliente quiere hablar con un asesor humano, responde exactamente: "Ya en un momento te ponemos en contacto con uno". No intentes resolver tú la solicitud, solo informa que será transferido a un asesor. No des más detalles ni alternativas. Si el cliente responde con un "gracias" o algo similar, responde: "¡Estamos para servirle!"`;
 
+const PROMPT_IGNORE_CONTEXT = `\nIgnora el contexto de mensajes antiguos. Solo toma en cuenta los mensajes recientes del usuario (por ejemplo, los últimos 2-3 mensajes, o los de los últimos 5 minutos). No uses mensajes de hace más de 5 minutos. Si el usuario solo saluda, olvida el contexto.`;
+
 export default function WhatsAppAgentSelector({
   selectedNumber,
   setSelectedNumber,
@@ -98,6 +100,10 @@ export default function WhatsAppAgentSelector({
         // Evita duplicar el prompt asesor si ya existe
         if (!finalPrompt.includes('Si detectas que el cliente quiere hablar con un asesor humano')) {
           finalPrompt = `${finalPrompt}\n${PROMPT_ASESOR}`;
+        }
+        // Añadir instrucción de ignorar contexto si no está
+        if (!finalPrompt.includes('Ignora el contexto de mensajes antiguos')) {
+          finalPrompt = `${finalPrompt}\n${PROMPT_IGNORE_CONTEXT}`;
         }
       }
       const response = await fetch(`${BACKEND_URL}/api/user/agents`, {
