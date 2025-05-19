@@ -22,6 +22,8 @@ const BACKEND_URL =
 interface NewAgent {
   title: string;
   prompt: string;
+  allowAdvisor: boolean;
+  advisorEmail: string;
 }
 
 interface AgentSelectorProps {
@@ -31,6 +33,19 @@ interface AgentSelectorProps {
   setCurrentAgent: (agent: Agent | null) => void;
 }
 
+// --- Utilidad para detectar y extraer correo del prompt ---
+function extractAdvisorInfo(prompt: string) {
+  const regex = /notifica al correo ([^ ]+) cuando esto ocurra/;
+  const match = prompt.match(regex);
+  const hasAdvisor = prompt.includes("Si detectas que el cliente quiere hablar con un asesor humano");
+  return {
+    allowAdvisor: hasAdvisor,
+    advisorEmail: match ? match[1] : ""
+  };
+}
+
+const PROMPT_ASESOR = `\nSi detectas que el cliente quiere hablar con un asesor humano, responde exactamente: "Ya en un momento te ponemos en contacto con uno". No intentes resolver tú la solicitud, solo informa que será transferido a un asesor. No des más detalles ni alternativas. Si el cliente responde con un "gracias" o algo similar, responde: "¡Estamos para servirle!"`;
+
 export default function WhatsAppAgentSelector({
   selectedNumber,
   setSelectedNumber,
@@ -39,11 +54,18 @@ export default function WhatsAppAgentSelector({
 }: AgentSelectorProps) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [newAgent, setNewAgent] = useState<NewAgent>({ title: "", prompt: "" });
+  const [newAgent, setNewAgent] = useState<NewAgent>({ 
+    title: "", 
+    prompt: "", 
+    allowAdvisor: false,
+    advisorEmail: ""
+  });
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
   const { token } = useAuth();
+  const [editingAllowAdvisor, setEditingAllowAdvisor] = useState(false);
+  const [editingAdvisorEmail, setEditingAdvisorEmail] = useState("");
 
   const handleClick = (agent: Agent) => {
     if (currentAgent?.id !== agent.id) {
@@ -82,24 +104,33 @@ export default function WhatsAppAgentSelector({
 
   const createAgent = async () => {
     if (!newAgent.title || !newAgent.prompt) return;
-
     try {
+      let finalPrompt = newAgent.prompt;
+      if (newAgent.allowAdvisor) {
+        // Evita duplicar el prompt asesor si ya existe
+        if (!finalPrompt.includes('Si detectas que el cliente quiere hablar con un asesor humano')) {
+          finalPrompt = `${finalPrompt}\n${PROMPT_ASESOR}`;
+        }
+      }
       const response = await fetch(`${BACKEND_URL}/api/user/agents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newAgent),
+        body: JSON.stringify({
+          ...newAgent,
+          prompt: finalPrompt,
+          allowAdvisor: !!newAgent.allowAdvisor,
+          advisorEmail: newAgent.allowAdvisor ? newAgent.advisorEmail : null
+        }),
       });
-
       if (!response.ok) {
         throw new Error("Error creando agente");
       }
-
       await fetchAgents();
-      setNewAgent({ title: "", prompt: "" });
-      setIsCreateModalOpen(false); // Close the modal
+      setNewAgent({ title: "", prompt: "", allowAdvisor: false, advisorEmail: "" });
+      setIsCreateModalOpen(false);
     } catch (error) {
       console.error("❌ Error creando agente:", error);
     }
@@ -107,8 +138,17 @@ export default function WhatsAppAgentSelector({
 
   const updateAgent = async () => {
     if (!editingAgent?.title || !editingAgent?.prompt) return;
-
     try {
+      let finalPrompt = editingAgent.prompt;
+      if (editingAllowAdvisor) {
+        // Evita duplicar el prompt asesor si ya existe
+        if (!finalPrompt.includes('Si detectas que el cliente quiere hablar con un asesor humano')) {
+          finalPrompt = `${finalPrompt}\n${PROMPT_ASESOR}`;
+        }
+      } else {
+        // Si se desactiva, elimina el prompt asesor si estaba
+        finalPrompt = finalPrompt.replace(/\n?Si detectas que el cliente quiere hablar con un asesor humano[\s\S]*/, '').trim();
+      }
       const response = await fetch(
         `${BACKEND_URL}/api/user/agents/${editingAgent.id}`,
         {
@@ -117,14 +157,17 @@ export default function WhatsAppAgentSelector({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(editingAgent),
+          body: JSON.stringify({
+            ...editingAgent,
+            prompt: finalPrompt,
+            allowAdvisor: !!editingAllowAdvisor,
+            advisorEmail: editingAllowAdvisor ? editingAdvisorEmail : null
+          }),
         }
       );
-
       if (!response.ok) {
         throw new Error("Error actualizando agente");
       }
-
       await fetchAgents();
       setEditingAgent(null);
     } catch (error) {
@@ -177,6 +220,14 @@ export default function WhatsAppAgentSelector({
       }, 50);
 
       return () => clearTimeout(timer);
+    }
+  }, [editingAgent]);
+
+  // Cuando se abre el modal de edición, usa los valores reales del agente
+  useEffect(() => {
+    if (editingAgent) {
+      setEditingAllowAdvisor(!!editingAgent.allowAdvisor);
+      setEditingAdvisorEmail(editingAgent.advisorEmail || "");
     }
   }, [editingAgent]);
 
@@ -246,11 +297,46 @@ export default function WhatsAppAgentSelector({
                   className="w-full min-h-[120px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newAgent.allowAdvisor}
+                    onChange={(e) =>
+                      setNewAgent({ ...newAgent, allowAdvisor: e.target.checked })
+                    }
+                    className="accent-primary scale-110"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Permitir enviar mensajes a un asesor
+                  </span>
+                </label>
+                {newAgent.allowAdvisor && (
+                  <div className="mt-2">
+                    <label
+                      htmlFor="advisorEmail"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Correo del asesor
+                    </label>
+                    <Input
+                      id="advisorEmail"
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={newAgent.advisorEmail}
+                      onChange={(e) =>
+                        setNewAgent({ ...newAgent, advisorEmail: e.target.value })
+                      }
+                      className="focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <Button
               className="w-full bg-secondary hover:bg-primary text-white font-medium py-2"
               onClick={createAgent}
-              disabled={!newAgent.title || !newAgent.prompt}
+              disabled={!newAgent.title || !newAgent.prompt || (newAgent.allowAdvisor && !newAgent.advisorEmail)}
             >
               Crear Agente
             </Button>
@@ -307,7 +393,10 @@ export default function WhatsAppAgentSelector({
                       variant="outline"
                       size="sm"
                       className="text-gray-600 hover:text-purple-600 hover:border-purple-300"
-                      onClick={() => setEditingAgent(agent)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingAgent(agent);
+                      }}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                     </Button>
@@ -315,7 +404,8 @@ export default function WhatsAppAgentSelector({
                       variant="outline"
                       size="sm"
                       className="text-red-600 hover:bg-red-50 hover:border-red-300"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm("¿Estás seguro de eliminar este agente?")) {
                           deleteAgent(agent.id);
                         }
@@ -327,7 +417,10 @@ export default function WhatsAppAgentSelector({
                       variant="outline"
                       size="sm"
                       className="text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-                      onClick={() => setViewingAgent(agent)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewingAgent(agent);
+                      }}
                     >
                       Ver
                     </Button>
@@ -376,18 +469,49 @@ export default function WhatsAppAgentSelector({
                 </label>
                 <textarea
                   id="edit-prompt"
-                  value={editingAgent.prompt}
+                  value={editingAgent.prompt.replace(/\n?Si detectas que el cliente quiere hablar con un asesor humano[\s\S]*/, "").trim()}
                   onChange={(e) =>
                     setEditingAgent({ ...editingAgent, prompt: e.target.value })
                   }
                   className="w-full min-h-[120px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingAllowAdvisor}
+                    onChange={(e) => setEditingAllowAdvisor(e.target.checked)}
+                    className="accent-primary scale-110"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Permitir enviar mensajes a un asesor
+                  </span>
+                </label>
+                {editingAllowAdvisor && (
+                  <div className="mt-2">
+                    <label
+                      htmlFor="edit-advisorEmail"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Correo del asesor
+                    </label>
+                    <Input
+                      id="edit-advisorEmail"
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={editingAdvisorEmail}
+                      onChange={(e) => setEditingAdvisorEmail(e.target.value)}
+                      className="focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <Button
               className="w-full bg-secondary hover:bg-primary text-white"
               onClick={updateAgent}
-              disabled={!editingAgent.title || !editingAgent.prompt}
+              disabled={!editingAgent.title || !editingAgent.prompt || (editingAllowAdvisor && !editingAdvisorEmail)}
             >
               Guardar Cambios
             </Button>

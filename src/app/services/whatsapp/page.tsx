@@ -712,22 +712,25 @@ export default function Page() {
         },
         body: JSON.stringify({
           numberId: selectedNumber.id,
-          contacts: personalContacts
-            .filter(c => selectedContacts.includes(c.id))
-            .map(c => ({
-              ...c,
-              wa_id: c.wa_id || c.id,
-              id: c.id,
-              name: c.name
-            })),
-          groups: groupContacts
-            .filter(g => selectedGroups.includes(g.id))
-            .map(g => ({
-              ...g,
-              wa_id: g.wa_id || g.id,
-              id: g.id,
-              name: g.name
-            })),
+          contacts: uniqueById(
+            personalContacts
+              .filter(c => selectedContacts.includes(c.id))
+              .filter(c => typeof c.id === 'string' && c.id.endsWith('@c.us'))
+          ).map(c => ({
+            ...c,
+            id: c.wa_id || c.id,
+            wa_id: c.wa_id || c.id,
+            name: c.name
+          })),
+          groups: uniqueById(
+            groupContacts
+              .filter(g => selectedGroups.includes(g.id))
+          ).map(g => ({
+            ...g,
+            id: g.wa_id || g.id,
+            wa_id: g.wa_id || g.id,
+            name: g.name
+          })),
           clearAll: false
         })
       });
@@ -856,6 +859,39 @@ export default function Page() {
     }
   }, [selectedNumber]);
 
+  const toggleUnknownAi = useCallback(
+    async (number: string | number, newVal: boolean) => {
+      if (!isAuthenticated) {
+        logout();
+        return;
+      }
+      const token = getToken();
+      if (!token) {
+        alert("No hay token");
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/whatsapp/toggle-unknown-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ enabled: newVal, number: selectedNumber?.number }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(`⚠️ Error: ${data.message}`);
+          return;
+        }
+        setSelectedNumber((prev) => prev ? { ...prev, aiUnknownEnabled: newVal } : prev);
+      } catch (err) {
+        alert("Error actualizando IA para no agregados");
+      }
+    },
+    [isAuthenticated, logout, getToken, selectedNumber, setSelectedNumber]
+  );
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
       {/* Sidebar izquierdo */}
@@ -882,6 +918,7 @@ export default function Page() {
           selectedNumber={selectedNumber}
           toggleAi={toggleAi}
           toggleGroups={toggleResponseGroups}
+          toggleUnknownAi={toggleUnknownAi}
           setSelectedNumber={setSelectedNumber}
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}

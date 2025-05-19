@@ -6,6 +6,7 @@ export interface WhatsappNumber {
   aiPrompt?: string;
   aiModel?: string;
   responseGroups?: boolean;
+  aiUnknownEnabled?: boolean;
   status: "disconnected" | "connected" | 'connecting';
 }
 export interface QrCodeEvent {
@@ -19,4 +20,6 @@ export interface Agent {
   prompt: string;
   owner: string;
   isGlobal: boolean;
+  allowAdvisor?: boolean;
+  advisorEmail?: string | null;
 }

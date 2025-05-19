@@ -12,6 +12,7 @@ interface WhatsAppHeaderProps {
   selectedNumber: WhatsappNumber | null;
   toggleAi: (numberId: string | number, newVal: boolean) => void;
   toggleGroups: (numberId: string | number, newVal: boolean) => void;
+  toggleUnknownAi: (numberId: string | number, newVal: boolean) => void;
   setSelectedNumber: (number: WhatsappNumber | null) => void;
   currentAgent: Agent | null;
   setCurrentAgent: (agent: Agent | null) => void;
@@ -22,6 +23,7 @@ export default function WhatsAppHeader({
   selectedNumber,
   toggleAi,
   toggleGroups,
+  toggleUnknownAi,
   setSelectedNumber,
   currentAgent,
   setCurrentAgent,
@@ -88,6 +90,17 @@ export default function WhatsAppHeader({
                   }
                 />
                 <span className="text-xs sm:text-sm font-semibold">Grupos</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 p-1 rounded-full">
+                <Switch
+                  id={`unknown-${selectedNumber.id}`}
+                  checked={Boolean(selectedNumber?.aiUnknownEnabled)}
+                  className="data-[state=checked]:bg-secondary data-[state=unchecked]:bg-gray-400"
+                  onCheckedChange={(check) =>
+                    toggleUnknownAi(selectedNumber.number, check)
+                  }
+                />
+                <span className="text-xs sm:text-sm font-semibold">No agregados</span>
               </div>
             </div>
           </>
