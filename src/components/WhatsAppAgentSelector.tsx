@@ -33,17 +33,6 @@ interface AgentSelectorProps {
   setCurrentAgent: (agent: Agent | null) => void;
 }
 
-// --- Utilidad para detectar y extraer correo del prompt ---
-function extractAdvisorInfo(prompt: string) {
-  const regex = /notifica al correo ([^ ]+) cuando esto ocurra/;
-  const match = prompt.match(regex);
-  const hasAdvisor = prompt.includes("Si detectas que el cliente quiere hablar con un asesor humano");
-  return {
-    allowAdvisor: hasAdvisor,
-    advisorEmail: match ? match[1] : ""
-  };
-}
-
 const PROMPT_ASESOR = `\nSi detectas que el cliente quiere hablar con un asesor humano, responde exactamente: "Ya en un momento te ponemos en contacto con uno". No intentes resolver tú la solicitud, solo informa que será transferido a un asesor. No des más detalles ni alternativas. Si el cliente responde con un "gracias" o algo similar, responde: "¡Estamos para servirle!"`;
 
 export default function WhatsAppAgentSelector({

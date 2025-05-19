@@ -159,7 +159,7 @@ export default function Page() {
   })();
 
   // --- fetchSynced global ---
-  const fetchSynced = async () => {
+  const fetchSynced = useCallback(async () => {
     if (!selectedNumber) return;
     const token = getToken();
     const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
@@ -190,7 +190,7 @@ export default function Page() {
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
     // NO limpiar el chat seleccionado aquí
-  }
+  }, [selectedNumber, getToken]);
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -240,7 +240,7 @@ export default function Page() {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, logout, getToken]);
+  }, [isAuthenticated, logout, getToken, setSocket, setWhatsappNumbers]);
 
   const toggleAi = useCallback(
     async (number: string | number, newVal: boolean) => {
@@ -434,9 +434,9 @@ export default function Page() {
             } else {
               setLoadingContacts(false);
             }
-          } catch (err) {
+          } catch (error) {
             setLoadingContacts(false);
-            console.error("Error fetching contacts:", err);
+            console.error("Error fetching contacts:", error);
           }
         } else {
           setLoadingContacts(false);
@@ -627,12 +627,12 @@ export default function Page() {
 
         // Emit join-room for the new number so QR events are received
         socket?.emit("join-room", String(numberId));
-      } catch (qrError) {
-        console.error("❌ Error al solicitar código QR:", qrError);
+      } catch (error) {
+        console.error("❌ Error al solicitar código QR:", error);
         alert("⚠️ Error al solicitar el código QR de WhatsApp");
       }
     } catch (error) {
-      console.error("❌ Error agregando número:", error);
+      console.error("Error:", error);
       alert("⚠️ Error de conexión al intentar agregar el número");
     } finally {
       // no-op
@@ -850,14 +850,14 @@ export default function Page() {
       setSelectedChatId(null);
       setSelectedChatType(null);
     }
-  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType, fetchSynced]);
+  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType, setSelectedChatId, setSelectedChatType]);
 
   // Actualizar sincronizados cada vez que se selecciona un número
   useEffect(() => {
     if (selectedNumber) {
       fetchSynced();
     }
-  }, [selectedNumber]);
+  }, [selectedNumber, fetchSynced]);
 
   const toggleUnknownAi = useCallback(
     async (number: string | number, newVal: boolean) => {
@@ -885,7 +885,7 @@ export default function Page() {
           return;
         }
         setSelectedNumber((prev) => prev ? { ...prev, aiUnknownEnabled: newVal } : prev);
-      } catch (err) {
+      } catch {
         alert("Error actualizando IA para no agregados");
       }
     },
@@ -1019,8 +1019,8 @@ export default function Page() {
                   } else {
                     console.error('Error al obtener contactos:', res.status);
                   }
-                } catch (err) {
-                  console.error('Error fetching contacts:', err);
+                } catch (error) {
+                  console.error('Error fetching contacts:', error);
                 } finally {
                   setLoadingContacts(false);
                 }
