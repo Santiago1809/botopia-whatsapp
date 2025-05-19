@@ -1,33 +1,57 @@
+import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+
+// Define the payment request interface
+interface PaymentRequest {
+  planToken: string;
+  amount: number;
+  planName: string;
+  customerId?: string;
+  metadata?: Record<string, string>;
+}
+
+// Define the payment response interface
+interface PaymentResponse {
+  redirect_url: string;
+  payment_id: string;
+  status: string;
+  message?: string; // Add optional message for error responses
+}
 
 export function useCreatePayment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
-  const createPayment = async (body: Record<string, any>) => {
+  const createPayment = async (body: PaymentRequest) => {
     setLoading(true);
     setError(null);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payments/create-payment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      const data: PaymentResponse = await res.json();
       setLoading(false);
 
       if (!res.ok) {
-        setError(data.message || "Error al crear el pago");
-        throw new Error(data.message);
+        const errorMessage = data.message || "Error al crear el pago";
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
 
-      return data; // debe incluir redirect_url
-    } catch (err: any) {
-      setError(err.message || "Error desconocido");
+      return data;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+      setError(errorMessage);
       setLoading(false);
-      throw err;
+      throw error;
     }
   };
 

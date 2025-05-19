@@ -4,49 +4,102 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import SidebarLayout from "@/components/SidebarLayout";
 import { PlanCard } from "@/components/plans/PlanCard";
-import { useCreatePayment } from "@/app/hooks/useCreatePayment";
-
+import { useAuth } from "@/lib/auth";
+import { useCreateSubscription } from "../hooks/useCreateSubscription";
+import { SubscriptionDashboard } from "../../components/subscription/SubscriptionDashboard";
 
 const PLANS = [
   {
     id: "basic",
-    title: "PLAN BASIC",
-    phones: "Puedes vincular hasta 1 número de teléfono",
-    flows: "Puedes crear y tener hasta 1 flujo activo",
-    credits: "10.000 créditos gratis",
-    creditPrice: "0,00009",
-    price: "49 USD / MES",
-    amount: 4900,
-    order_id: 1012,
+    title: "PLAN BÁSICO",
+    phones: "2 números de teléfono",
+    flows: "3 flujos",
+    credits: "Límite de 1000 mensajes al mes",
+    creditPrice: "14,00",
+    price: "14.90 USD / MES",
+    amount: 14.90,
+    order_id: 1030,
+    features: [
+      "2 números de teléfono",
+      "Límite de 1000 mensajes al mes",
+      "2 agentes",
+      "3 flujos",
+      "Soporte por email",
+    ],
+    description: "Para equipos pequeños y profesionales individuales",
+    dloToken: "VDgGiFZqrHCdy3YyXcvskOp4z1Xrd6kG",
+    theme: {
+      gradient: "from-[#FAECD4] to-[#FAECD4]",
+      text: "text-[#010009]",
+      border: "border-blue-200",
+      button: "bg-blue-500 hover:bg-blue-600",
+      icon: "text-blue-500",
+    },
   },
   {
     id: "pro",
     title: "PLAN PRO",
-    phones: "Puedes vincular hasta 3 números de teléfono",
-    flows: "Puedes crear infinitos flujos y tener hasta 5 flujos activos",
-    credits: "100.000 créditos gratis",
-    creditPrice: "0,00005",
-    price: "149 USD / MES",
-    amount: 14900,
-    order_id: 1013,
+    phones: "5 números de teléfono",
+    flows: "20 flujos",
+    credits: "Límite de 5000 mensajes al mes",
+    creditPrice: "79,00",
+    price: "79 USD / MES",
+    amount: 79,
+    order_id: 1031,
+    features: [
+      "5 números de teléfono",
+      "Límite de 5000 mensajes al mes",
+      "10 agentes",
+      "20 flujos",
+      "Catálogo de modelos AI completo",
+      "Soporte por email y WhatsApp",
+    ],
+    description: "Para compañías que quieren escalar y crecer",
+    popular: true,
+    dloToken: "AjAPNLCY3xDjhg9Xfm5iGw4Yul42c9Lc",
+    theme: {
+      gradient: "from-purple-200 to-purple-200",
+      text: "text-[#010009]",
+      border: "border-purple-200",
+      button: "bg-purple-500 hover:bg-purple-600 shadow-lg shadow-purple-200",
+      icon: "text-purple-500",
+    },
   },
   {
-    id: "premium",
-    title: "PLAN PREMIUM",
-    phones: "Puedes vincular infinitos números de teléfono",
-    flows: "Puedes crear y tener hasta 50 flujos activos",
-    credits: "1.000.000 créditos gratis",
-    creditPrice: "0,00003",
-    price: "409 USD / MES",
-    amount: 40900,
-    order_id: 1014,
+    id: "industrial",
+    title: "PLAN INDUSTRIAL",
+    phones: "20 números de teléfono",
+    flows: "20 flujos",
+    credits: "Límite de 10.000 mensajes al mes",
+    creditPrice: "249,00",
+    price: "249 USD / MES",
+    amount: 249,
+    order_id: 1032,
+    features: [
+      "20 números de teléfono",
+      "Límite de 10.000 mensajes al mes",
+      "50 agentes",
+      "20 flujos",
+      "Catálogo de modelos AI completo",
+      "Soporte 1-1 con el equipo entero",
+      "Ingeniero de cuenta dedicado",
+      "Integra pagos dentro de WhatsApp",
+    ],
+    description: "Para compañías que realmente desean usar IA",
+    dloToken: "AjAPNLCY3xDjhg9Xfm5iGw4Yul42c9Lc",
+    theme: {
+      gradient: "from-[#FAECD4] to-[#FAECD4]",
+      text: "text-[#010009]",
+      border: "border-indigo-200",
+      button: "bg-indigo-500 hover:bg-indigo-600",
+      icon: "text-indigo-500",
+    },
   },
 ];
 
 export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const { createPayment, loading, error } = useCreatePayment();
-  const router = useRouter();
+  const { createSubscription, loading } = useCreateSubscription();
 
   const handleSelectPlan = async (planId: string) => {
     setSelectedPlan(planId);
@@ -54,69 +107,49 @@ export default function BillingPage() {
     if (!plan) return;
 
     try {
-      const { redirect_url } = await createPayment({
-        currency: "COP",
+      const result = await createSubscription({
+        planToken: plan.dloToken,
         amount: plan.amount,
-        country: "CO",
-        order_id: plan.order_id,
-        description: `Suscripción ${plan.title}`,
-        success_url: `${window.location.origin}/billing/processing`,
-        back_url: window.location.origin,
-        notification_url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payments/notification`,
+        planName: plan.title,
       });
-      window.location.href = redirect_url;
+
+      if (result?.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+      }
     } catch (err) {
-      console.error("Error creando el pago:", err);
+      console.error("Error creando la suscripción:", err);
     }
   };
 
   return (
     <SidebarLayout>
       <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Facturación
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
-            Gestiona tus planes y métodos de pago
-          </p>
+        {/* Existing SubscriptionDashboard */}
+        <div className="mb-10">
+          <SubscriptionDashboard />
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm py-6 mt-6 mb-10">
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-semibold text-gray-800 mb-2">
-              Planes
-            </h2>
+        <div className="bg-white rounded-xl shadow-sm p-8 mt-6 mb-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Planes</h2>
+            <p className="text-gray-600 text-lg">
+              Elige el plan que mejor se adapte a tus necesidades
+            </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {PLANS.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                id={plan.id}
-                title={plan.title}
-                phones={plan.phones}
-                flows={plan.flows}
-                credits={plan.credits}
-                creditPrice={plan.creditPrice}
-                price={plan.price}
-                isPro={plan.id === "pro"}
-                isSelected={selectedPlan === plan.id}
-                loading={loading}   
-                onSelect={handleSelectPlan}
-              />
+              <div key={plan.id} className={plan.popular ? "relative z-10" : ""}>
+                <PlanCard
+                  {...plan}
+                  isSelected={selectedPlan === plan.id}
+                  loading={loading}
+                  onSelect={handleSelectPlan}
+                />
+              </div>
             ))}
           </div>
-
-          {loading && (
-            <p className="text-center mt-4 text-gray-600">Cargando pago…</p>
-          )}
-          {error && (
-            <p className="text-center mt-2 text-red-500">Error: {error}</p>
-          )}
         </div>
-
-        {/* Aquí puedes seguir con el resto de la sección de consumos de créditos, métodos de pago, etc. */}
       </div>
     </SidebarLayout>
   );
