@@ -159,7 +159,7 @@ export default function Page() {
   })();
 
   // --- fetchSynced global ---
-  const fetchSynced = async () => {
+  const fetchSynced = useCallback(async () => {
     if (!selectedNumber) return;
     const token = getToken();
     const res = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
@@ -189,9 +189,8 @@ export default function Page() {
       .sort((a: SyncedItem, b: SyncedItem) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
-    setSelectedChatId(null);
-    setSelectedChatType(null);
-  }
+    // NO limpiar el chat seleccionado aquí
+  }, [selectedNumber, getToken]);
 
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
@@ -241,7 +240,7 @@ export default function Page() {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, logout, getToken]);
+  }, [isAuthenticated, logout, getToken, setSocket, setWhatsappNumbers]);
 
   const toggleAi = useCallback(
     async (number: string | number, newVal: boolean) => {
@@ -275,33 +274,10 @@ export default function Page() {
         setSelectedNumber((prev) =>
           prev ? { ...prev, aiEnabled: newVal } : null
         );
-
-        // NUEVO: Actualizar agenteHabilitado en todos los contactos sincronizados
-        if (selectedNumber) {
-          // Obtener los contactos sincronizados actuales
-          const resContacts = await fetch(`${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          let dataContacts = await resContacts.json();
-          if (!Array.isArray(dataContacts)) dataContacts = [];
-          const syncedContacts = dataContacts.filter((x: { type: string }) => x.type === 'contact');
-          // Actualizar agenteHabilitado para todos los contactos
-          await Promise.all(
-            syncedContacts.map((c: { id: string; agenteHabilitado: boolean }) =>
-              fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ id: c.id, agenteHabilitado: newVal })
-              })
-            )
-          );
-          // Actualizar el estado local
-          setSyncedContacts(prev => prev.map(c => ({ ...c, agenteHabilitado: newVal })));
-        }
+        // Ya no se actualizan los contactos sincronizados aquí
       } catch (error) {
         console.error("Error actualizando AI:", error);
       } finally {
-        // NO tocar setLoadingContacts aquí, el loader solo se activa en flujos de carga reales
         if (!currentAgent) {
           setContactsModalOpen(false);
         }
@@ -458,9 +434,9 @@ export default function Page() {
             } else {
               setLoadingContacts(false);
             }
-          } catch (err) {
+          } catch (error) {
             setLoadingContacts(false);
-            console.error("Error fetching contacts:", err);
+            console.error("Error fetching contacts:", error);
           }
         } else {
           setLoadingContacts(false);
@@ -651,12 +627,12 @@ export default function Page() {
 
         // Emit join-room for the new number so QR events are received
         socket?.emit("join-room", String(numberId));
-      } catch (qrError) {
-        console.error("❌ Error al solicitar código QR:", qrError);
+      } catch (error) {
+        console.error("❌ Error al solicitar código QR:", error);
         alert("⚠️ Error al solicitar el código QR de WhatsApp");
       }
     } catch (error) {
-      console.error("❌ Error agregando número:", error);
+      console.error("Error:", error);
       alert("⚠️ Error de conexión al intentar agregar el número");
     } finally {
       // no-op
@@ -736,22 +712,25 @@ export default function Page() {
         },
         body: JSON.stringify({
           numberId: selectedNumber.id,
-          contacts: personalContacts
-            .filter(c => selectedContacts.includes(c.id))
-            .map(c => ({
-              ...c,
-              wa_id: c.wa_id || c.id,
-              id: c.id,
-              name: c.name
-            })),
-          groups: groupContacts
-            .filter(g => selectedGroups.includes(g.id))
-            .map(g => ({
-              ...g,
-              wa_id: g.wa_id || g.id,
-              id: g.id,
-              name: g.name
-            })),
+          contacts: uniqueById(
+            personalContacts
+              .filter(c => selectedContacts.includes(c.id))
+              .filter(c => typeof c.id === 'string' && c.id.endsWith('@c.us'))
+          ).map(c => ({
+            ...c,
+            id: c.wa_id || c.id,
+            wa_id: c.wa_id || c.id,
+            name: c.name
+          })),
+          groups: uniqueById(
+            groupContacts
+              .filter(g => selectedGroups.includes(g.id))
+          ).map(g => ({
+            ...g,
+            id: g.wa_id || g.id,
+            wa_id: g.wa_id || g.id,
+            name: g.name
+          })),
           clearAll: false
         })
       });
@@ -857,7 +836,7 @@ export default function Page() {
 
   // Restaurar la función para selección manual desde la sidebar
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
-    setSelectedChatId(item.wa_id ? String(item.wa_id) : null);
+    setSelectedChatId(item.wa_id ? String(item.wa_id) : String(item.id));
     setSelectedChatType(type);
   };
 
@@ -871,14 +850,47 @@ export default function Page() {
       setSelectedChatId(null);
       setSelectedChatType(null);
     }
-  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType, fetchSynced]);
+  }, [syncedContacts, syncedGroups, selectedChatId, selectedChatType, setSelectedChatId, setSelectedChatType]);
 
   // Actualizar sincronizados cada vez que se selecciona un número
   useEffect(() => {
     if (selectedNumber) {
       fetchSynced();
     }
-  }, [selectedNumber]);
+  }, [selectedNumber, fetchSynced]);
+
+  const toggleUnknownAi = useCallback(
+    async (number: string | number, newVal: boolean) => {
+      if (!isAuthenticated) {
+        logout();
+        return;
+      }
+      const token = getToken();
+      if (!token) {
+        alert("No hay token");
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/whatsapp/toggle-unknown-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ enabled: newVal, number: selectedNumber?.number }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(`⚠️ Error: ${data.message}`);
+          return;
+        }
+        setSelectedNumber((prev) => prev ? { ...prev, aiUnknownEnabled: newVal } : prev);
+      } catch {
+        alert("Error actualizando IA para no agregados");
+      }
+    },
+    [isAuthenticated, logout, getToken, selectedNumber, setSelectedNumber]
+  );
 
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
@@ -906,6 +918,7 @@ export default function Page() {
           selectedNumber={selectedNumber}
           toggleAi={toggleAi}
           toggleGroups={toggleResponseGroups}
+          toggleUnknownAi={toggleUnknownAi}
           setSelectedNumber={setSelectedNumber}
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
@@ -915,9 +928,9 @@ export default function Page() {
           selectedNumber={selectedNumber}
           selectedChat={
             selectedChatType === 'contact'
-              ? syncedContacts.find(c => c.wa_id === selectedChatId)
+              ? syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
               : selectedChatType === 'group'
-                ? syncedGroups.find(g => g.wa_id === selectedChatId)
+                ? syncedGroups.find(g => g.wa_id === selectedChatId || g.id === selectedChatId)
                 : null
           }
         />
@@ -1006,8 +1019,8 @@ export default function Page() {
                   } else {
                     console.error('Error al obtener contactos:', res.status);
                   }
-                } catch (err) {
-                  console.error('Error fetching contacts:', err);
+                } catch (error) {
+                  console.error('Error fetching contacts:', error);
                 } finally {
                   setLoadingContacts(false);
                 }
