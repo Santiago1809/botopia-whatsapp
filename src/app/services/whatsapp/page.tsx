@@ -106,6 +106,7 @@ export default function Page() {
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
   const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string, timestamp: number } | null>(null);
+  const [unsyncedContacts, setUnsyncedContacts] = useState([]);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -891,6 +892,20 @@ export default function Page() {
     [isAuthenticated, logout, getToken, selectedNumber, setSelectedNumber]
   );
 
+  useEffect(() => {
+    if (selectedNumber) {
+      fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
+        .then(res => res.json())
+        .then(data => {
+          // No sobrescribas el id, usa el id real de la tabla Unsyncedcontact
+          setUnsyncedContacts(Array.isArray(data) ? data : []);
+        })
+        .catch(() => setUnsyncedContacts([]));
+    } else {
+      setUnsyncedContacts([]);
+    }
+  }, [selectedNumber]);
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-white">
       {/* Sidebar izquierdo */}
@@ -951,6 +966,7 @@ export default function Page() {
             onBulkDisable={handleBulkDisable}
             onBulkEnable={handleBulkEnable}
             selectedNumberId={selectedNumber?.id.toString()}
+            unsyncedContacts={unsyncedContacts}
           />
         </div>
       )}
