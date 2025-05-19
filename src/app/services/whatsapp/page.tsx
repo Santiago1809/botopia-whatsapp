@@ -106,7 +106,7 @@ export default function Page() {
   const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
   const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string, timestamp: number } | null>(null);
-  const [unsyncedContacts, setUnsyncedContacts] = useState([]);
+  const [unsyncedContacts, setUnsyncedContacts] = useState<Contact[]>([]);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -748,6 +748,8 @@ export default function Page() {
   const handleRemoveContact = async (id: string) => {
     // Elimina de la base de datos
     const token = getToken();
+    // Optimismo visual: elimina localmente si es un contacto no sincronizado
+    setUnsyncedContacts(prev => prev.filter(c => c.id !== id));
     await fetch(`${BACKEND_URL}/api/whatsapp/delete-synced`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -766,13 +768,45 @@ export default function Page() {
   };
   const handleToggleAgente = async (id: string, newValue: boolean) => {
     const token = getToken();
-    await fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
+    // Buscar si el id está en los sincronizados o no sincronizados
+    const isSynced = syncedContacts.some(c => c.id === id) || syncedGroups.some(g => g.id === id);
+    //console.log('handleToggleAgente', { id, newValue, isSynced });
+    if (isSynced) {
+      const res = await fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ id, agenteHabilitado: newValue })
     });
+      await res.json().catch(() => ({}));
+      //console.log('PATCH synced response', res.status, data);
     setSyncedContacts(prev => prev.map(c => c.id === id ? { ...c, agenteHabilitado: newValue } : c));
     setSyncedGroups(prev => prev.map(g => g.id === id ? { ...g, agenteHabilitado: newValue } : g));
+    } else {
+      // PATCH para Unsyncedcontact
+      const res = await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentehabilitado: newValue })
+      });
+      await res.json().catch(() => ({}));
+      //console.log('PATCH unsynced response', res.status, data);
+      // Refresca la lista de no sincronizados
+      if (selectedNumber) {
+        fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
+          .then(res => res.json())
+          .then(data => {
+            // Forzar agenteHabilitado booleano para evitar problemas de tipado
+            const fixed = Array.isArray(data)
+              ? data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
+              : [];
+            setUnsyncedContacts(fixed);
+          })
+          .catch((err) => {
+            console.error('Error refrescando unsyncedContacts', err);
+            setUnsyncedContacts([]);
+          });
+      }
+    }
   };
   const handleBulkDelete = async () => {
     const token = getToken();
@@ -897,10 +931,16 @@ export default function Page() {
       fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
         .then(res => res.json())
         .then(data => {
-          // No sobrescribas el id, usa el id real de la tabla Unsyncedcontact
-          setUnsyncedContacts(Array.isArray(data) ? data : []);
+          // Forzar agenteHabilitado booleano para evitar problemas de tipado
+          const fixed = Array.isArray(data)
+            ? data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
+            : [];
+          setUnsyncedContacts(fixed);
         })
-        .catch(() => setUnsyncedContacts([]));
+        .catch((err) => {
+          console.error('Error refrescando unsyncedContacts', err);
+          setUnsyncedContacts([]);
+        });
     } else {
       setUnsyncedContacts([]);
     }

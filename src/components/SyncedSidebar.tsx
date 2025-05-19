@@ -47,9 +47,40 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   React.useEffect(() => {
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
     setSocket(newSocket);
+
+    // Escuchar actualizaciones de contactos no sincronizados
+    newSocket.on('unsynced-contacts-updated', (data) => {
+      if (data.numberid && data.numberid.toString() === selectedNumberId?.toString()) {
+        fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumberId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data)) {
+              // Actualiza el estado local de los contactos no sincronizados
+              if (typeof window !== 'undefined' && window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('updateUnsyncedContacts', { detail: data }));
+              }
+            }
+          });
+      }
+    });
+
     return () => {
       newSocket.disconnect();
+      newSocket.off('unsynced-contacts-updated');
     };
+  }, [selectedNumberId]);
+
+  // Escuchar evento global para actualizar la prop unsyncedContacts si el padre lo permite
+  React.useEffect(() => {
+    function handleUpdateUnsyncedContacts(e: CustomEvent) {
+      if (typeof e.detail !== 'undefined' && Array.isArray(e.detail)) {
+        // Si tienes un setter para unsyncedContacts, úsalo aquí
+        // Si no, puedes levantar un callback al padre si lo deseas
+        // Por defecto, solo fuerza un re-render si la prop cambia en el padre
+      }
+    }
+    window.addEventListener('updateUnsyncedContacts', handleUpdateUnsyncedContacts as EventListener);
+    return () => window.removeEventListener('updateUnsyncedContacts', handleUpdateUnsyncedContacts as EventListener);
   }, []);
 
   // Ordenar contactos y grupos por último mensaje
@@ -136,10 +167,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold hover:bg-yellow-200 border border-yellow-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
           onClick={async () => {
+            // Optimismo visual: desactiva todos en el frontend
+            if (unsyncedContacts.length > 0) {
+              unsyncedContacts.forEach(c => {
+                if (onToggleAgente) onToggleAgente(c.id, false);
+              });
+            }
             // Desactivar IA en todos los sincronizados y no sincronizados
             if (onBulkDisable) await onBulkDisable();
-            if (selectedNumberId && filteredUnsyncedContacts.length > 0) {
-              await Promise.all(filteredUnsyncedContacts.map(async (contact) => {
+            if (selectedNumberId && unsyncedContacts.length > 0) {
+              await Promise.all(unsyncedContacts.map(async (contact) => {
                 await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
@@ -158,10 +195,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold hover:bg-green-200 border border-green-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
           style={{ minWidth: 32, maxWidth: 120 }}
           onClick={async () => {
+            // Optimismo visual: activa todos en el frontend
+            if (unsyncedContacts.length > 0) {
+              unsyncedContacts.forEach(c => {
+                if (onToggleAgente) onToggleAgente(c.id, true);
+              });
+            }
             // Activar IA en todos los sincronizados y no sincronizados
             if (onBulkEnable) await onBulkEnable();
-            if (selectedNumberId && filteredUnsyncedContacts.length > 0) {
-              await Promise.all(filteredUnsyncedContacts.map(async (contact) => {
+            if (selectedNumberId && unsyncedContacts.length > 0) {
+              await Promise.all(unsyncedContacts.map(async (contact) => {
                 await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
@@ -298,6 +341,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         {(filterType === 'all' || filterType === 'unsynced') && (
           <div className="mb-4">
             <h3 className="font-semibold mb-2">No Sincronizados</h3>
+            {/* Solo contactos no sincronizados, sin filtrar por isGroup */}
             {filteredUnsyncedContacts.length === 0 ? (
               <div className="text-sm text-gray-500">No hay contactos no sincronizados.</div>
             ) : (
@@ -309,21 +353,25 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     onClick={() => handleSelect(contact, 'contact')}
                   >
                     <div className="flex items-center gap-2 flex-1">
-                      {/* Switch para IA */}
+                      {/* Switch para IA independiente */}
                       <label className="flex items-center cursor-pointer gap-1">
                         <input
                           type="checkbox"
-                          checked={contact.agenteHabilitado || false}
+                          checked={contact.agenteHabilitado === true}
                           onChange={async e => {
                             e.stopPropagation();
+                            // Optimismo visual: actualiza el estado local inmediatamente
+                            if (onToggleAgente) onToggleAgente(contact.id, e.target.checked);
                             try {
                               await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ agentehabilitado: e.target.checked })
                               });
-                              if (onToggleAgente) onToggleAgente(contact.id, e.target.checked);
+                              // El padre refrescará la lista cuando llegue el evento socket
                             } catch (error) {
+                              // Si falla, revierte el cambio local
+                              if (onToggleAgente) onToggleAgente(contact.id, !e.target.checked);
                               console.error('Error al actualizar el estado del agente:', error);
                             }
                           }}
