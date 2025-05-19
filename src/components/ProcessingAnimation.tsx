@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, CheckCircle } from "lucide-react";
+import { Shield } from "lucide-react";
 
 export function ProcessingAnimation() {
   return (

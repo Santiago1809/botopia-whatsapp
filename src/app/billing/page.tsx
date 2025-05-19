@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import SidebarLayout from "@/components/SidebarLayout";
 import { PlanCard } from "@/components/plans/PlanCard";
-import { useAuth } from "@/lib/auth";
-import { useCreateSubscription } from "../hooks/useCreateSubscription";
+import { useState } from "react";
 import { SubscriptionDashboard } from "../../components/subscription/SubscriptionDashboard";
+import { useCreateSubscription } from "../hooks/useCreateSubscription";
 
 const PLANS = [
   {
