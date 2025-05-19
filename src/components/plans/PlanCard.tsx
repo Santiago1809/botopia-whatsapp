@@ -1,10 +1,7 @@
 // components/plans/PlanCard.tsx
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import React from "react";
-import { Phone, GitBranch, Check } from 'lucide-react';
+import { Check, GitBranch, Phone } from 'lucide-react';
 
 interface PlanCardProps {
   id: string;
@@ -37,10 +34,8 @@ export function PlanCard({
   flows,
   credits,
   creditPrice,
-  price,
   features,
   description,
-  isPro,
   popular,
   isSelected,
   loading,
