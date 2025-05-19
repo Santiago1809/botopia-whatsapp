@@ -166,7 +166,6 @@ export default function Page() {
       headers: { Authorization: `Bearer ${token}` }
     });
     let data = await res.json();
-    console.log("[DEBUG] Datos recibidos de synced-contacts:", data);
     if (!Array.isArray(data)) data = [];
     // Ordenar contactos y grupos por lastMessageTimestamp descendente
     const contacts = data

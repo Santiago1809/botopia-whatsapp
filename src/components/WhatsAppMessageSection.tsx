@@ -89,7 +89,6 @@ export default function WhatsAppMessageSection({
 
     // Si hay un chat seleccionado, pedir su historial
     if (selectedChat && selectedChat.id) {
-      console.log('[FRONTEND] Emit get-chat-history', selectedNumber?.id, selectedChat.id);
       socket.emit("get-chat-history", {
         numberId: selectedNumber.id,
         to: selectedChat.id,

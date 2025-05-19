@@ -82,7 +82,6 @@ export default function WhatsAppAgentSelector({
       }
 
       const data = await res.json();
-      console.log(data);
       setAgents(data);
     } catch (error) {
       console.error("❌ Error obteniendo la lista de agentes:", error);
