@@ -541,10 +541,10 @@ export default function Page() {
     }
 
     try {
-      console.log("Enviando solicitud para agregar número:", {
-        number: newNumber,
-        name: newName,
-      });
+      // console.log("Enviando solicitud para agregar número:", {
+      //   number: newNumber,
+      //   name: newName,
+      // });
 
       const res = await fetch(`${BACKEND_URL}/api/user/add-number`, {
         method: "POST",
@@ -570,7 +570,7 @@ export default function Page() {
         return;
       }
 
-      console.log("Respuesta exitosa:", data);
+      // console.log("Respuesta exitosa:", data);
       const { numberId } = data;
 
       if (!numberId) {
