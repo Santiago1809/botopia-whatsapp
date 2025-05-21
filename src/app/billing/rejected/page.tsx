@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function RejectedPage() {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get("payment_id");
+  const paymentId = searchParams ? searchParams.get("payment_id") || "" : "";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-red-100 to-gray-100 p-6">

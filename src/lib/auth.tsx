@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: { Authorization: `Bearer ${getToken}` },
         });
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     }
     localStorage.removeItem("user");
