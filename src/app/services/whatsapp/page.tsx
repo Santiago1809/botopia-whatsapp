@@ -870,6 +870,7 @@ export default function Page() {
 
   // Restaurar la función para selección manual desde la sidebar
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
+    // Si el item tiene wa_id, úsalo como selectedChatId, si no, usa id
     setSelectedChatId(item.wa_id ? String(item.wa_id) : String(item.id));
     setSelectedChatType(type);
   };
@@ -982,7 +983,8 @@ export default function Page() {
           selectedNumber={selectedNumber}
           selectedChat={
             selectedChatType === 'contact'
-              ? syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
+              ? (syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
+                || unsyncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId))
               : selectedChatType === 'group'
                 ? syncedGroups.find(g => g.wa_id === selectedChatId || g.id === selectedChatId)
                 : null

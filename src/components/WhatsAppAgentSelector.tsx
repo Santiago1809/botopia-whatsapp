@@ -33,7 +33,7 @@ interface AgentSelectorProps {
   setCurrentAgent: (agent: Agent | null) => void;
 }
 
-const PROMPT_ASESOR = `\nSi detectas que el cliente quiere hablar con un asesor humano, responde exactamente: "Ya en un momento te ponemos en contacto con uno". No intentes resolver tú la solicitud, solo informa que será transferido a un asesor. No des más detalles ni alternativas. Si el cliente responde con un "gracias" o algo similar, responde: "¡Estamos para servirle!"`;
+const PROMPT_ASESOR = `\nSi detectas que el cliente quiere hablar con un asesor humano, responde exactamente: "Ya en un momento te ponemos en contacto con uno". No intentes resolver tú la solicitud, solo informa que será transferido a un asesor. No des más detalles ni alternativas. Si el cliente responde con un "gracias" o algo similar, responde: "¡Estamos para servirle!, Nunca repitas literalmente el mensaje del usuario. "`;
 
 const PROMPT_IGNORE_CONTEXT = `\nIgnora el contexto de mensajes antiguos. Solo toma en cuenta los mensajes recientes del usuario (por ejemplo, los últimos 2-3 mensajes, o los de los últimos 5 minutos). No uses mensajes de hace más de 5 minutos. Si el usuario solo saluda, olvida el contexto.`;
 
