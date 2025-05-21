@@ -91,10 +91,17 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   const filteredContacts = orderedContacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
   const filteredGroups = orderedGroups.filter(g => ((g.name ?? g.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
 
-  // Filter unsynced contacts
-  const filteredUnsyncedContacts = unsyncedContacts.filter(c => 
-    ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter unsynced contacts (excluye grupos y contactos especiales de WhatsApp)
+  const filteredUnsyncedContacts = unsyncedContacts.filter(c => {
+    const name = (c.name ?? '').toLowerCase().trim();
+    if (["status", "estado", "ia status", "ia", "statuses", "estados"].includes(name)) return false;
+    // Excluir grupos: si wa_id o id termina en '@g.us' o si el número/id tiene más de 15 dígitos
+    const waId = (c.wa_id ?? c.id ?? '').toLowerCase();
+    if (waId.endsWith('@g.us')) return false;
+    const num = (c.number ?? c.id ?? '').replace(/[^0-9]/g, '');
+    if (num.length > 15) return false;
+    return ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase());
+  });
 
   const handleSelect = (item: Contact | Group, type: 'contact' | 'group') => {
     onSelect(item, type);
