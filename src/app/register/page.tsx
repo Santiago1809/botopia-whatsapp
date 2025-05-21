@@ -31,6 +31,7 @@ export default function Register() {
     { code: "+57", country: "Colombia" },
     { code: "+58", country: "Venezuela" },
     { code: "+593", country: "Ecuador" },
+    { code: "+81", country: "Japón" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
