@@ -554,7 +554,7 @@ export default function Page() {
     });
 
     // NUEVO: refrescar sincronizados cuando el backend desactive IA tras email
-    socket.on("synced-contacts-updated", (data) => {
+    socket.on("synced-contacts-updated", () => {
       if (selectedNumber) {
         fetchSynced();
         setSidebarRefreshKey((k) => k + 1);
@@ -568,13 +568,13 @@ export default function Page() {
     });
 
     // NUEVO: refrescar no sincronizados cuando el backend desactive IA tras email
-    socket.on("unsynced-contacts-updated", (data) => {
+    socket.on("unsynced-contacts-updated", () => {
       if (selectedNumber) {
         fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
           .then(res => res.json())
-          .then(data => {
-            const fixed = Array.isArray(data)
-              ? data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
+          .then(responseData => {
+            const fixed = Array.isArray(responseData)
+              ? responseData.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
               : [];
             setUnsyncedContacts(fixed);
             setSidebarRefreshKey((k) => k + 1);
@@ -611,6 +611,8 @@ export default function Page() {
     lastAutoChat,
     syncedContacts,
     syncedGroups,
+    fetchSynced,
+    selectedChatId
   ]);
 
   // Resetear lastAutoChat cuando el usuario selecciona manualmente un chat o cambia de número
