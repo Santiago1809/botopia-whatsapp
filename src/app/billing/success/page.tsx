@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function SuccessPage() {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get("payment_id");
+  const paymentId = searchParams ? searchParams.get("payment_id") || "" : "";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-100 to-blue-100 p-6">
