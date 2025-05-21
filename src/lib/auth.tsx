@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         fetch(`${BACKEND_URL}/api/auth/logout`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${getToken}` },
+          headers: { Authorization: `Bearer ${getToken()}` },
         });
       } catch (err) {
         console.error(err);
