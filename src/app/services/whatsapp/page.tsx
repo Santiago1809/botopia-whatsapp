@@ -80,39 +80,48 @@ function uniqueById<T extends { id: string | number }>(arr: T[]): T[] {
   });
 }
 
+// Utilidad para normalizar unsyncedContacts
+function normalizeUnsyncedContacts(arr: WhatsAppContact[]): WhatsAppContact[] {
+  return arr.map(c => {
+    const wa_id = c.wa_id || (typeof c.id === 'string' && c.id.match(/^\d+$/) ? c.id + '@c.us' : c.id);
+    let id = c.id;
+    if (typeof id === 'string' && id.match(/^\d+$/)) {
+      id = id + '@c.us';
+    }
+    return { ...c, wa_id, id };
+  });
+}
+
 export default function Page() {
   const { logout, isAuthenticated, getToken } = useAuth();
-  const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsappNumber[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-  const [qrCodes, setQrCodes] = useState<Record<string, string | null>>({});
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [newNumber, setNewNumber] = useState<string>("");
-  const [newName, setNewName] = useState<string>("");
-  const [selectedNumber, setSelectedNumber] = useState<WhatsappNumber | null>(
-    null
-  );
-  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
   const { setNumberStatus } = useChat();
-  const router = useRouter();
+  const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsappNumber[]>([]);
+  const [selectedNumber, setSelectedNumber] = useState<WhatsappNumber | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatType, setSelectedChatType] = useState<'contact' | 'group' | null>(null);
+  const [qrCodes, setQrCodes] = useState<{ [key: number]: string | null }>({});
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [syncedContacts, setSyncedContacts] = useState<Contact[]>([]);
+  const [syncedGroups, setSyncedGroups] = useState<Group[]>([]);
+  const [unsyncedContacts, setUnsyncedContacts] = useState<Contact[]>([]);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
+  const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string; timestamp: number } | null>(null);
   const [contactsModalOpen, setContactsModalOpen] = useState(false);
+  const router = useRouter();
+
+  // Estados y variables auxiliares restaurados
   const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [syncedContacts, setSyncedContacts] = useState<WhatsAppContact[]>([]);
-  const [syncedGroups, setSyncedGroups] = useState<WhatsAppGroup[]>([]);
-  const [contactSearch, setContactSearch] = useState("");
-  const [groupSearch, setGroupSearch] = useState("");
+  const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups'>('all');
+  const [contactSearch, setContactSearch] = useState('');
+  const [groupSearch, setGroupSearch] = useState('');
   const [loadingContacts, setLoadingContacts] = useState(false);
-  const [filterType, setFilterType] = useState<"all" | "contacts" | "groups">(
-    "all"
-  );
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [selectedChatType, setSelectedChatType] = useState<
-    "contact" | "group" | null
-  >(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
-  const [lastAutoChat, setLastAutoChat] = useState<{ wa_id: string, timestamp: number } | null>(null);
-  const [unsyncedContacts, setUnsyncedContacts] = useState<Contact[]>([]);
+  const [newNumber, setNewNumber] = useState('');
+  const [newName, setNewName] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -190,6 +199,8 @@ export default function Page() {
         ...x,
         id: x.id,
         wa_id: x.wa_id,
+        name: x.name || x.wa_id || x.id,
+        number: x.wa_id || x.id,
         lastMessageTimestamp: x.lastMessageTimestamp || 0,
       }))
       .sort(
@@ -500,11 +511,25 @@ export default function Page() {
     socket.on("chat-history", (data: ChatHistoryData) => {
       if (!data || !data.to) return;
       const isGroup = data.to.endsWith("@g.us");
-      if (
-        (isGroup && !syncedGroups.some((g) => g.wa_id === data.to)) ||
-        (!isGroup && !syncedContacts.some((c) => c.wa_id === data.to))
-      ) {
-        // Si NO está sincronizado, ignora el mensaje
+      // Si NO está sincronizado, refresca la lista de no sincronizados y selecciónalo SIEMPRE
+      const isSynced = (isGroup && syncedGroups.some((g) => g.wa_id === data.to)) || (!isGroup && syncedContacts.some((c) => c.wa_id === data.to));
+      if (!isSynced) {
+        // Siempre refresca la lista de no sincronizados
+        if (selectedNumber) {
+          fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
+            .then(res => res.json())
+            .then(data => {
+              const fixed = Array.isArray(data)
+                ? normalizeUnsyncedContacts(data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado })))
+                : [];
+              setUnsyncedContacts(fixed);
+            })
+            .catch(() => setUnsyncedContacts([]));
+        }
+        // Selecciona el chat recibido
+        setSelectedChatId(data.to);
+        setSelectedChatType(isGroup ? "group" : "contact");
+        setSidebarRefreshKey((k) => k + 1); // Fuerza actualización del sidebar
         return;
       }
       // SIEMPRE priorizar el chat del último mensaje recibido y dejarlo fijo
@@ -552,6 +577,43 @@ export default function Page() {
       }
     });
 
+    // Refuerza el evento unsynced-contacts-updated para que siempre actualice la lista
+    socket.on("unsynced-contacts-updated", () => {
+      console.log("Evento unsynced-contacts-updated recibido"); // DEPURACIÓN
+      if (selectedNumber) {
+        fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
+          .then(res => res.json())
+          .then(responseData => {
+            const fixed = Array.isArray(responseData)
+              ? normalizeUnsyncedContacts(responseData.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado })))
+              : [];
+            setUnsyncedContacts(fixed);
+            setSidebarRefreshKey((k) => k + 1);
+            if (selectedChatId) {
+              const updated = fixed.find(c => c.wa_id === selectedChatId || c.id === selectedChatId);
+              if (updated) {
+                setSelectedChatId(updated.wa_id || updated.id);
+              }
+            }
+          })
+          .catch(() => setUnsyncedContacts([]));
+      }
+    });
+
+    // NUEVO: refrescar sincronizados cuando el backend desactive IA tras email
+    socket.on("synced-contacts-updated", () => {
+      if (selectedNumber) {
+        fetchSynced();
+        setSidebarRefreshKey((k) => k + 1);
+        if (selectedChatId) {
+          const updated = syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId);
+          if (updated) {
+            setSelectedChatId(updated.wa_id || updated.id);
+          }
+        }
+      }
+    });
+
     return () => {
       if (selectedNumber) {
         socket.emit("leave-room", String(selectedNumber.id));
@@ -560,6 +622,9 @@ export default function Page() {
       socket.off("whatsapp-ready");
       socket.off("whatsapp-numbers-updated");
       socket.off("chat-history");
+      // Limpiar también los nuevos listeners
+      socket.off("synced-contacts-updated");
+      socket.off("unsynced-contacts-updated");
     };
   }, [
     socket,
@@ -571,6 +636,8 @@ export default function Page() {
     lastAutoChat,
     syncedContacts,
     syncedGroups,
+    fetchSynced,
+    selectedChatId
   ]);
 
   // Resetear lastAutoChat cuando el usuario selecciona manualmente un chat o cambia de número
@@ -793,6 +860,7 @@ export default function Page() {
             id: c.wa_id || c.id,
             wa_id: c.wa_id || c.id,
             name: c.name,
+            number: c.number || c.wa_id || c.id,
           })),
           groups: uniqueById(
             groupContacts.filter((g) => selectedGroups.includes(g.id))
@@ -806,7 +874,19 @@ export default function Page() {
         }),
       });
       setContactsModalOpen(false); // Cierra el modal automáticamente
-      fetchSynced();
+      await fetchSynced();
+      // Refresca los no sincronizados también
+      if (selectedNumber) {
+        fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
+          .then(res => res.json())
+          .then(data => {
+            const fixed = Array.isArray(data)
+              ? normalizeUnsyncedContacts(data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado })))
+              : [];
+            setUnsyncedContacts(fixed);
+          })
+          .catch(() => setUnsyncedContacts([]));
+      }
     } catch {
       alert("Error al sincronizar");
     } finally {
@@ -869,9 +949,8 @@ export default function Page() {
         fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
           .then(res => res.json())
           .then(data => {
-            // Forzar agenteHabilitado booleano para evitar problemas de tipado
             const fixed = Array.isArray(data)
-              ? data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
+              ? normalizeUnsyncedContacts(data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado })))
               : [];
             setUnsyncedContacts(fixed);
           })
@@ -968,7 +1047,27 @@ export default function Page() {
 
   // Restaurar la función para selección manual desde la sidebar
   const handleSelectSynced = (item: Contact | Group, type: 'contact' | 'group') => {
-    // Si el item tiene wa_id, úsalo como selectedChatId, si no, usa id
+    if (type === 'contact') {
+      const found = syncedContacts.find(c => c.id === item.id || c.wa_id === item.wa_id)
+        || unsyncedContacts.find(c => c.id === item.id || c.wa_id === item.wa_id);
+      if (found) {
+        // Si no tiene wa_id pero el id termina en @c.us, asígnalo
+        const updatedFound = !found.wa_id && found.id && found.id.endsWith('@c.us')
+          ? { ...found, wa_id: found.id }
+          : found;
+        setSelectedChatId(updatedFound.wa_id ? String(updatedFound.wa_id) : String(updatedFound.id));
+        setSelectedChatType('contact');
+        return;
+      }
+    } else if (type === 'group') {
+      const found = syncedGroups.find(g => g.id === item.id || g.wa_id === item.wa_id);
+      if (found) {
+        setSelectedChatId(found.wa_id ? String(found.wa_id) : String(found.id));
+        setSelectedChatType('group');
+        return;
+      }
+    }
+    // Fallback: usa el id y tipo del item recibido
     setSelectedChatId(item.wa_id ? String(item.wa_id) : String(item.id));
     setSelectedChatType(type);
   };
@@ -977,7 +1076,8 @@ export default function Page() {
   useEffect(() => {
     if (
       selectedChatType === "contact" &&
-      !syncedContacts.some((c) => c.wa_id === selectedChatId)
+      !syncedContacts.some((c) => c.wa_id === selectedChatId) &&
+      !unsyncedContacts.some((c) => c.wa_id === selectedChatId)
     ) {
       setSelectedChatId(null);
       setSelectedChatType(null);
@@ -992,6 +1092,7 @@ export default function Page() {
   }, [
     syncedContacts,
     syncedGroups,
+    unsyncedContacts,
     selectedChatId,
     selectedChatType,
     setSelectedChatId,
@@ -1051,9 +1152,8 @@ export default function Page() {
       fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`)
         .then(res => res.json())
         .then(data => {
-          // Forzar agenteHabilitado booleano para evitar problemas de tipado
           const fixed = Array.isArray(data)
-            ? data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado }))
+            ? normalizeUnsyncedContacts(data.map(c => ({ ...c, agenteHabilitado: !!c.agentehabilitado })))
             : [];
           setUnsyncedContacts(fixed);
         })
@@ -1101,12 +1201,19 @@ export default function Page() {
           qrCodes={qrCodes}
           selectedNumber={selectedNumber}
           selectedChat={
-            selectedChatType === 'contact'
-              ? (syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
-                || unsyncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId))
-              : selectedChatType === 'group'
-                ? syncedGroups.find(g => g.wa_id === selectedChatId || g.id === selectedChatId)
-                : null
+            (() => {
+              const chat = selectedChatId
+                ? (
+                    selectedChatType === 'contact'
+                      ? (syncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId)
+                          || unsyncedContacts.find(c => c.wa_id === selectedChatId || c.id === selectedChatId))
+                      : selectedChatType === 'group'
+                        ? syncedGroups.find(g => g.wa_id === selectedChatId || g.id === selectedChatId)
+                        : null
+                  )
+                : null;
+              return chat;
+            })()
           }
         />
       </div>
@@ -1114,6 +1221,7 @@ export default function Page() {
       {selectedNumber && (
         <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
           <SyncedSidebar
+            key={sidebarRefreshKey}
             contacts={uniqueById(syncedContacts)}
             groups={uniqueById(syncedGroups)}
             onSelect={handleSelectSynced}

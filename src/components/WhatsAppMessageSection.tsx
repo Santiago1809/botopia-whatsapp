@@ -161,8 +161,15 @@ export default function WhatsAppMessageSection({
 
   const handleSendMessage = async () => {
     try {
-      // Siempre usa wa_id si existe, para grupos y contactos
-      const toValue = selectedChat?.wa_id;
+      // Usa wa_id si existe, si no, usa id si es un WhatsApp ID válido
+      let toValue = selectedChat?.wa_id;
+      if (!toValue && selectedChat?.id &&
+        (selectedChat.id.endsWith('@c.us') || selectedChat.id.endsWith('@g.us'))
+      ) {
+        toValue = selectedChat.id;
+      }
+      // LOG de depuración frontend
+      //.log('ENVIANDO MENSAJE:', { toValue, selectedChat });
       if (!toValue) {
         alert('No se puede enviar el mensaje: el chat seleccionado no tiene un WhatsApp ID válido (wa_id).');
         return;
