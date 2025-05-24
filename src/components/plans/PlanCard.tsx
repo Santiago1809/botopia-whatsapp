@@ -1,7 +1,8 @@
 // components/plans/PlanCard.tsx
 "use client";
 
-import { Check, GitBranch, Phone } from 'lucide-react';
+import React from "react";
+import { Phone, GitBranch, Check } from 'lucide-react';
 
 interface PlanCardProps {
   id: string;

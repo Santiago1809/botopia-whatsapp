@@ -9,6 +9,8 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { useSubscriptionInfo } from "@/app/hooks/useSubscriptionInfo";
 import { ProcessingAnimation } from "@/components/ProcessingAnimation";
 
+const DELAY = 5000;
+
 export default function SuccessPage() {
   const [isProcessing, setIsProcessing] = useState(true);
   const { subscriptionInfo, loading, error } = useSubscriptionInfo();
@@ -30,7 +32,7 @@ export default function SuccessPage() {
     const timer = setTimeout(() => {
       console.log('✅ Processing delay completed');
       setIsProcessing(false);
-    }, 4000);
+    }, DELAY);
 
     return () => {
       console.log('🧹 Cleaning up timer');
@@ -137,7 +139,7 @@ export default function SuccessPage() {
                 <span>Límite de {subscriptionInfo.limits.maxMessages} mensajes</span>
               </div>
               {Object.entries(subscriptionInfo.features)
-                .filter(([_, enabled]) => enabled)
+                .filter(([, enabled]) => enabled)
                 .map(([feature]) => (
                   <div key={feature} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -149,7 +151,7 @@ export default function SuccessPage() {
 
           <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
-              href="/billling"
+              href="/billing"
               className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium shadow-lg"
             >
               Ir al Dashboard

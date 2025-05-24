@@ -627,17 +627,15 @@ export default function Page() {
       socket.off("unsynced-contacts-updated");
     };
   }, [
-    socket,
-    selectedNumber,
-    setNumberStatus,
-    whatsappNumbers,
-    removeNumber,
-    getToken,
+    socket, 
+    selectedNumber, 
+    setNumberStatus, 
+    whatsappNumbers, 
+    removeNumber, 
+    getToken, 
     lastAutoChat,
-    syncedContacts,
-    syncedGroups,
-    fetchSynced,
-    selectedChatId
+    syncedContacts,  // Añadido
+    syncedGroups     // Añadido
   ]);
 
   // Resetear lastAutoChat cuando el usuario selecciona manualmente un chat o cambia de número

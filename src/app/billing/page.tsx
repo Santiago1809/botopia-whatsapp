@@ -1,31 +1,68 @@
 "use client";
 
+import React, { useState } from "react";
 import SidebarLayout from "@/components/SidebarLayout";
 import { PlanCard } from "@/components/plans/PlanCard";
-import { useState } from "react";
 import { SubscriptionDashboard } from "../../components/subscription/SubscriptionDashboard";
 import { useCreateSubscription } from "../hooks/useCreateSubscription";
 
+const dlo_BASIC_token = process.env.NODE_ENV === 'production'
+  ? "IjISC1nT2PL9t7KnGDA9WNUI2KzLO2yF"
+  : "VDgGiFZqrHCdy3YyXcvskOp4z1Xrd6kG";
+const dlo_PRO_token = process.env.NODE_ENV === 'production'
+  ? "oVf3b85mCCmUFukb60doJ8YGciCHlzfD"
+  : "Hc7EmOi9YN9RIGya6tMAznse8CW9RX6y";
+const dlo_INDUSTRIAL_token = process.env.NODE_ENV === 'production'
+  ? "hGojfInMTDTPQIOuoNmpfDfgVtFEKZsW"
+  : "Q6wEzUzsVsbfFRWdRQk4vp4BaWewbGwU";
+
+const freeToken =
+  process.env.NODE_ENV === 'production'
+    ? "TokenFree_Prod"
+    : "TokenFree_Dev";
+
 const PLANS = [
+  {
+    id: "free",
+    title: "PLAN GRATUITO",
+    phones: "1 número de teléfono",
+    flows: "1 flujo",
+    credits: "Límite de 50 mensajes al mes",
+    creditPrice: "0,00",
+    price: "Gratis",
+    amount: 0,
+    order_id: 1029,
+    features: [
+      "Sin agentes",
+      "Respuesta en 20-30 segundos",
+    ],
+    description: "Ideal para experimentar la IA",
+    dloToken: freeToken,
+    theme: {
+      gradient: "from-blue-100 to-blue-200",
+      text: "text-green-700",
+      border: "border-green-200",
+      button: "bg-lila-600 hover:bg-lila-600",
+      icon: "text-green-600",
+    },
+  },
   {
     id: "basic",
     title: "PLAN BÁSICO",
     phones: "2 números de teléfono",
-    flows: "3 flujos",
+    flows: "1 flujo",
     credits: "Límite de 1000 mensajes al mes",
     creditPrice: "14,00",
     price: "14.90 USD / MES",
-    amount: 14.90,
+    amount: 14.00,
     order_id: 1030,
     features: [
-      "2 números de teléfono",
-      "Límite de 1000 mensajes al mes",
       "2 agentes",
-      "3 flujos",
+      "Respuesta entre 10-20 segundos",
       "Soporte por email",
     ],
     description: "Para equipos pequeños y profesionales individuales",
-    dloToken: "VDgGiFZqrHCdy3YyXcvskOp4z1Xrd6kG",
+    dloToken: dlo_BASIC_token,
     theme: {
       gradient: "from-[#FAECD4] to-[#FAECD4]",
       text: "text-[#010009]",
@@ -42,19 +79,18 @@ const PLANS = [
     credits: "Límite de 5000 mensajes al mes",
     creditPrice: "79,00",
     price: "79 USD / MES",
-    amount: 79,
+    amount: 79.00,
     order_id: 1031,
     features: [
-      "5 números de teléfono",
-      "Límite de 5000 mensajes al mes",
       "10 agentes",
-      "20 flujos",
-      "Catálogo de modelos AI completo",
+      "Respuesta entre 7-15 segundos",
+      "Catálogo de modelos AI incompleto",
+      "Responde grupos de Whatsapp",
       "Soporte por email y WhatsApp",
     ],
     description: "Para compañías que quieren escalar y crecer",
     popular: true,
-    dloToken: "AjAPNLCY3xDjhg9Xfm5iGw4Yul42c9Lc",
+    dloToken: dlo_PRO_token,
     theme: {
       gradient: "from-purple-200 to-purple-200",
       text: "text-[#010009]",
@@ -69,22 +105,20 @@ const PLANS = [
     phones: "20 números de teléfono",
     flows: "20 flujos",
     credits: "Límite de 10.000 mensajes al mes",
-    creditPrice: "249,00",
-    price: "249 USD / MES",
-    amount: 249,
+    creditPrice: "549,00",
+    price: "549 USD / MES",
+    amount: 549,
     order_id: 1032,
     features: [
-      "20 números de teléfono",
-      "Límite de 10.000 mensajes al mes",
       "50 agentes",
-      "20 flujos",
       "Catálogo de modelos AI completo",
       "Soporte 1-1 con el equipo entero",
       "Ingeniero de cuenta dedicado",
+      "Respuesta entre 2-7 segundos",
       "Integra pagos dentro de WhatsApp",
     ],
     description: "Para compañías que realmente desean usar IA",
-    dloToken: "AjAPNLCY3xDjhg9Xfm5iGw4Yul42c9Lc",
+    dloToken: dlo_INDUSTRIAL_token,
     theme: {
       gradient: "from-[#FAECD4] to-[#FAECD4]",
       text: "text-[#010009]",
