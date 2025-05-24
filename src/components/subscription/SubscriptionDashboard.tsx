@@ -2,8 +2,6 @@ import { motion } from 'framer-motion';
 import { Calendar, CreditCard, CheckCircle } from 'lucide-react';
 import { useSubscriptionInfo } from '@/app/hooks/useSubscriptionInfo';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { Calendar, CheckCircle, CreditCard } from 'lucide-react';
 
 export function SubscriptionDashboard() {
   const { subscriptionInfo, loading, error } = useSubscriptionInfo();
