@@ -37,6 +37,9 @@ interface SubscriptionInfo {
   features: Features;
 }
 
+// Define la duración en milisegundos
+const DELAY = 5000;
+
 export const useSubscriptionInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,12 +48,6 @@ export const useSubscriptionInfo = () => {
 
   useEffect(() => {
     const fetchSubscriptionInfo = async () => {
-      if (!token) {
-        setError('No hay token de autenticación');
-        setLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/subscriptions/info`,
@@ -74,8 +71,18 @@ export const useSubscriptionInfo = () => {
       }
     };
 
-    fetchSubscriptionInfo();
-  }, [token]); // Agregamos token como única dependencia
+    // Espera DELAY milisegundos antes de llamar a la API
+    const timer = setTimeout(() => {
+      if (!token) {
+        setError('No hay token de autenticación');
+        setLoading(false);
+        return;
+      }
+      fetchSubscriptionInfo();
+    }, DELAY);
+
+    return () => clearTimeout(timer);
+  }, [token]);
 
   return { subscriptionInfo, loading, error };
 };

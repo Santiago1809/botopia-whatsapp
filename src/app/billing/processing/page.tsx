@@ -51,7 +51,7 @@ export default function ProcessingPage() {
     const interval = setInterval(checkStatus, 3000); // Polling cada 3 segundos
 
     return () => clearInterval(interval);
-  }, [router, token]);
+  }, [router, token]); // Agregamos token al array de dependencias
 
   if (error) {
     return (
