@@ -32,7 +32,7 @@ export const useCreateSubscription = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/subscriptions/create`, {
+      const response = await fetch(`https://botopia-whatsapp-api-production.up.railway.app/api/subscriptions/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

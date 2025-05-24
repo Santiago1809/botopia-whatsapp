@@ -50,7 +50,7 @@ export const useSubscriptionInfo = () => {
     const fetchSubscriptionInfo = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/subscriptions/info`,
+          `https://botopia-whatsapp-api-production.up.railway.app/api/subscriptions/info`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
