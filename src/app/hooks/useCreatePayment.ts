@@ -28,7 +28,7 @@ export function useCreatePayment() {
     setError(null);
 
     try {
-      const res = await fetch(`https://botopia-whatsapp-api-production.up.railway.app/api/payments/create-payment`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payments/create-payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
