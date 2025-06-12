@@ -255,7 +255,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:ml-60 w-full flex flex-col min-h-screen">
         {/* Mobile header */}
-        <header className="lg:hidden bg-[#075e54] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
+        <header className="lg:hidden bg-gradient-to-l from-[#411E8A] to-[#050044] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
           <button
             onClick={toggleSidebar}
             className="text-white focus:outline-none"
