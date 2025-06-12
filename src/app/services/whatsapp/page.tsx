@@ -1326,10 +1326,9 @@ export default function Page() {
             return chat;
           })()}
         />
-      </div>
-      {/* Sidebar derecho */}
+      </div>      {/* Sidebar derecho */}
       {selectedNumber && (
-        <div className="hidden md:block w-64 bg-gray-50 border-l shadow-lg flex-col">
+        <div className="hidden md:block  bg-gray-50 border-l shadow-lg flex-col">
           <SyncedSidebar
             key={sidebarRefreshKey}
             contacts={uniqueById(syncedContacts)}

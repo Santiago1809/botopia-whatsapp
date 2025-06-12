@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
 // Middleware desactivado - El servicio ha vuelto a la normalidad
-export function middleware(request: NextRequest) {
+export function middleware() {
   // Permitir todas las rutas normalmente
   return NextResponse.next();
 }

@@ -39,7 +39,7 @@ export default function WhatsAppSideBar({
 }: WhatsAppSideBarProps) {
   return (
     <div
-      className={`w-full md:w-[340px] border-r flex flex-col bg-white fixed md:relative z-20 
+      className={`w-full md:w-[280px] border-r flex flex-col bg-white fixed md:relative z-20 
             transition-all duration-300 ease-in-out 
             h-full
             ${sidebarOpen ? "left-0" : "-left-full md:left-0"}`}
