@@ -14,7 +14,7 @@ export default function ProcessingPage() {
     const checkStatus = async () => {
       try {
         const res = await fetch(`
-          https://botopia-whatsapp-api-production.up.railway.app/api/payments/latest-success`,
+          ${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payments/latest-success`,
           {
             method: "GET",
             headers: {
