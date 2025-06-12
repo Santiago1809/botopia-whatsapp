@@ -8,7 +8,7 @@ import ReactFlow, {
   Panel
 } from 'reactflow'
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 
 interface FlowCanvasProps {
