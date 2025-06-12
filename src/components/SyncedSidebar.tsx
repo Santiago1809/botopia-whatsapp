@@ -180,30 +180,26 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         month: "2-digit",
       });
     }
-  };
-
-  return (
-    <div className="h-full flex flex-col bg-white relative">
-      {/* Cabecera con estilo WhatsApp */}
-      <div className="bg-[#f0f2f5] flex justify-between items-center px-4 py-2 shadow-sm z-10">
-        <h2 className="text-lg font-medium text-[#075e54]">Chats</h2>
+  };  return (
+    <div className="h-full w-[320px] flex flex-col relative">
+      {/* Cabecera con estilo Botopia */}
+      <div className="bg-gradient-to-l h-8 from-[#411E8A] to-[#050044] text-white flex justify-between items-center px-4 py-8 shadow-md z-10">
+        <h2 className="text-lg font-semibold">Chats</h2>
         <div className="flex items-center gap-3">
-          <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">
-            <Filter className="w-5 h-5 text-[#54656f]" />
+          <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+            <Filter className="w-5 h-5 text-white" />
           </button>
           <button
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
             onClick={() => setShowActions(!showActions)}
           >
-            <MoreVertical className="w-5 h-5 text-[#54656f]" />
+            <MoreVertical className="w-5 h-5 text-white" />
           </button>
-        </div>
-
-        {/* Menú desplegable de acciones */}
+        </div>        {/* Menú desplegable de acciones */}
         {showActions && (
-          <div className="absolute right-4 top-12 bg-white shadow-lg rounded-md py-1 z-20 w-48 border border-gray-200">
+          <div className="absolute right-4 top-12 bg-white rounded-xl py-2 z-50 w-52 border border-gray-100">
             <button
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (
@@ -222,10 +218,10 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               }}
             >
               <Trash className="w-4 h-4 text-red-500" />
-              <span>Eliminar todos</span>
+              <span className="text-[#010009]">Eliminar todos</span>
             </button>
             <button
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (unsyncedContacts.length > 0) {
@@ -250,11 +246,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 }
               }}
             >
-              <UserX className="w-4 h-4 text-yellow-500" />
-              <span>Desactivar todos</span>
+              <UserX className="w-4 h-4 text-yellow-600" />
+              <span className="text-[#010009]">Desactivar todos</span>
             </button>
             <button
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (unsyncedContacts.length > 0) {
@@ -279,90 +275,84 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 }
               }}
             >
-              <UserCheck className="w-4 h-4 text-green-500" />
-              <span>Activar todos</span>
+              <UserCheck className="w-4 h-4 text-green-600" />
+              <span className="text-[#010009]">Activar todos</span>
             </button>
-            <div className="border-t border-gray-200 my-1"></div>
+            <div className="my-2 border-t border-gray-100"></div>
             <button
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
               onClick={() => {
                 setShowActions(false);
                 onSyncClick();
               }}
             >
-              <RefreshCcw className="w-4 h-4 text-[#075e54]" />
-              <span>Sincronizar ahora</span>
+              <RefreshCcw className="w-4 h-4 text-[#411E8A]" />
+              <span className="text-[#010009]">Sincronizar ahora</span>
             </button>
           </div>
         )}
-      </div>
-
-      {/* Input de búsqueda en la parte superior con estilo WhatsApp */}
-      <div className="sticky top-0 z-10 bg-[#f0f2f5] px-3 py-2">
+      </div>      {/* Input de búsqueda en la parte superior con estilo Botopia */}
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 to-white px-4 py-3">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-[#54656f]" />
+            <Search className="h-4 w-4 text-[#411E8A]" />
           </div>
           <input
             type="text"
             placeholder="Buscar o iniciar un nuevo chat"
-            className="w-full pl-10 pr-4 py-2 rounded-lg text-sm bg-white border-none focus:ring-0 focus:outline-none shadow-sm"
+            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-white border border-[#411E8A]/20 focus:ring-2 focus:ring-[#411E8A]/30 focus:border-[#411E8A] focus:outline-none transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-      </div>
-
-      {/* Filtro visual mejorado tipo WhatsApp */}
-      <div className="flex gap-2 px-3 py-2 overflow-x-auto bg-white border-b">
+      </div>      {/* Filtro visual mejorado tipo Botopia */}
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-[#FAECD4]">
         <button
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "all"
-              ? "bg-[#e9edef] text-[#075e54]"
-              : "text-[#54656f]"
+              ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
+              : "text-[#050044] hover:bg-[#FAECD4]/50"
           }`}
           onClick={() => setFilterType("all")}
         >
           Todos
         </button>
         <button
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "contacts"
-              ? "bg-[#e9edef] text-[#075e54]"
-              : "text-[#54656f]"
+              ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
+              : "text-[#050044] hover:bg-[#FAECD4]/50"
           }`}
           onClick={() => setFilterType("contacts")}
         >
           Contactos
         </button>
         <button
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "groups"
-              ? "bg-[#e9edef] text-[#075e54]"
-              : "text-[#54656f]"
+              ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
+              : "text-[#050044] hover:bg-[#FAECD4]/50"
           }`}
           onClick={() => setFilterType("groups")}
         >
           Grupos
         </button>
         <button
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "unsynced"
-              ? "bg-[#e9edef] text-[#075e54]"
-              : "text-[#54656f]"
+              ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
+              : "text-[#050044] hover:bg-[#FAECD4]/50"
           }`}
           onClick={() => setFilterType("unsynced")}
         >
           No Sincronizados
         </button>
-      </div>
-
-      {/* Lista de contactos y grupos con estilo WhatsApp */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      </div>      {/* Lista de contactos y grupos con estilo Botopia */}
+      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-[#FAECD4]/20">
         {(filterType === "all" || filterType === "contacts") && (
           <div>
             {filteredContacts.length === 0 ? (
-              <div className="text-sm text-gray-500 p-4 text-center">
+              <div className="text-sm text-[#050044] p-4 text-center">
                 No hay contactos sincronizados
               </div>
             ) : (
@@ -370,30 +360,28 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 ${
                       selectedId === contact.id && selectedType === "contact"
-                        ? "bg-[#f0f2f5]"
+                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 border-l-4 border-[#411E8A]"
                         : ""
                     }`}
                     onClick={() => handleSelect(contact, "contact")}
                   >
-                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3">
-                      {contact.name?.charAt(0)?.toUpperCase() || (
-                        <img src={contact.profilePic} />
-                      ) }
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#411E8A] to-[#050044] flex items-center justify-center text-white font-bold flex-shrink-0 mr-3">
+                      {contact.name?.charAt(0)?.toUpperCase() || "C"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                        <h3 className="font-semibold text-[#010009] truncate pr-2">
                           {contact.name || contact.number || "Sin nombre"}
                         </h3>
-                        <span className="text-xs text-[#667781] whitespace-nowrap">
+                        <span className="text-xs text-[#411E8A] whitespace-nowrap font-medium">
                           {formatLastMessageTime(contact.lastMessageTimestamp)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         {" "}
-                        <p className="text-sm text-[#667781] truncate pr-2">
+                        <p className="text-sm text-[#050044] truncate pr-2">
                           {contact.lastMessagePreview || "Sin mensajes"}
                         </p>
                         <div className="flex items-center gap-1">
@@ -409,24 +397,24 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                                 const target = e.currentTarget;
                                 const originalClass = target.className;
                                 target.className +=
-                                  " ring-2 ring-[#25D366] ring-opacity-50";
+                                  " ring-2 ring-[#411E8A] ring-opacity-50";
                                 setTimeout(() => {
                                   target.className = originalClass;
                                 }, 300);
                               }
                             }}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
                               contact.agenteHabilitado
-                                ? "bg-[#25D366] text-white"
-                                : "bg-gray-200 text-[#54656f]"
-                            } transition-colors duration-200`}
+                                ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
+                                : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
+                            }`}
                             title={
                               contact.agenteHabilitado
                                 ? "Desactivar IA"
                                 : "Activar IA"
                             }
                           >
-                            <UserCheck className="size-3.5" />
+                            <UserCheck className="size-4" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -434,10 +422,10 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este contacto?"))
                                 onRemoveContact(contact.id);
                             }}
-                            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
                             title="Eliminar contacto"
                           >
-                            <Trash className="w-3.5 h-3.5" />
+                            <Trash className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -447,37 +435,35 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               </ul>
             )}
           </div>
-        )}
-
-        {(filterType === "all" || filterType === "groups") &&
+        )}        {(filterType === "all" || filterType === "groups") &&
           filteredGroups.length > 0 && (
             <div>
               <ul>
                 {filteredGroups.map((group) => (
                   <li
                     key={group.id}
-                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 ${
                       selectedId === group.id && selectedType === "group"
-                        ? "bg-[#f0f2f5]"
+                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 border-l-4 border-[#411E8A]"
                         : ""
                     }`}
                     onClick={() => handleSelect(group, "group")}
                   >
-                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#411E8A] to-[#050044] flex items-center justify-center text-white flex-shrink-0 mr-3">
                       <Users className="w-6 h-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                        <h3 className="font-semibold text-[#010009] truncate pr-2">
                           {group.name || "Grupo sin nombre"}
                         </h3>
-                        <span className="text-xs text-[#667781] whitespace-nowrap">
+                        <span className="text-xs text-[#411E8A] whitespace-nowrap font-medium">
                           {formatLastMessageTime(group.lastMessageTimestamp)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         {" "}
-                        <p className="text-sm text-[#667781] truncate pr-2">
+                        <p className="text-sm text-[#050044] truncate pr-2">
                           {group.lastMessagePreview || "Sin mensajes"}
                         </p>
                         <div className="flex items-center gap-1">
@@ -493,24 +479,24 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                                 const target = e.currentTarget;
                                 const originalClass = target.className;
                                 target.className +=
-                                  " ring-2 ring-[#25D366] ring-opacity-50";
+                                  " ring-2 ring-[#411E8A] ring-opacity-50";
                                 setTimeout(() => {
                                   target.className = originalClass;
                                 }, 300);
                               }
                             }}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
                               group.agenteHabilitado
-                                ? "bg-[#25D366] text-white"
-                                : "bg-gray-200 text-[#54656f]"
-                            } transition-colors duration-200`}
+                                ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
+                                : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
+                            }`}
                             title={
                               group.agenteHabilitado
                                 ? "Desactivar IA"
                                 : "Activar IA"
                             }
                           >
-                            <UserCheck className="w-3.5 h-3.5" />
+                            <UserCheck className="w-4 h-4" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -518,10 +504,10 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este grupo?"))
                                 onRemoveGroup(group.id);
                             }}
-                            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
                             title="Eliminar grupo"
                           >
-                            <Trash className="w-3.5 h-3.5" />
+                            <Trash className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -535,7 +521,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         {(filterType === "all" || filterType === "unsynced") &&
           filteredUnsyncedContacts.length > 0 && (
             <div>
-              <div className="py-2 px-4 bg-[#f0f2f5] border-y border-[#e9edef]">
+              <div className="py-2 px-4 bg-[#f0f2f5]">
                 <h3 className="text-xs font-medium text-[#54656f] uppercase">
                   Contactos no sincronizados
                 </h3>
@@ -544,7 +530,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 {filteredUnsyncedContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                    className={`py-3 flex items-center px-3 cursor-pointer ${
                       selectedId === contact.id && selectedType === "contact"
                         ? "bg-[#f0f2f5]"
                         : ""
@@ -580,7 +566,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                             );
                           }
                         }}
-                        className="absolute -bottom-1 -right-1 w-5 h-5 accent-[#25D366] border-gray-300 rounded"
+                        className="absolute -bottom-1 -right-1 w-5 h-5 accent-[#25D366] rounded"
                       />
                     </div>
                     <div className="flex-1 min-w-0">

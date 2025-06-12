@@ -88,7 +88,7 @@ export default function WhatsAppHeader({
   };
 
   return (
-    <div className="flex items-center justify-between p-2 bg-secondary text-white border-b sticky top-0 z-20">
+    <div className="flex items-center justify-between h-4 p-8 bg-secondary text-white sticky top-0 z-20 w-full">
       <div className="flex items-center gap-2 w-full">
         <Button
           variant="ghost"
@@ -98,7 +98,7 @@ export default function WhatsAppHeader({
         >
           <MenuIcon className="h-5 w-5" />
         </Button>{" "}
-        {selectedNumber && selectedNumber.status === "connected" && (
+        {selectedNumber && (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center justify-center gap-2">
               <Avatar className="h-8 w-8 bg-gray-300 flex items-center justify-center">
@@ -211,7 +211,7 @@ export default function WhatsAppHeader({
       {/* Modal de contactos para móvil */}
       <Dialog open={contactsModalOpen} onOpenChange={setContactsModalOpen}>
         <DialogContent className="sm:max-w-md p-0 h-[85vh] flex flex-col">
-          <div className="sticky top-0 bg-white p-4 flex justify-between items-center border-b">
+          <div className="sticky top-0 bg-white p-4 flex justify-between items-center">
             <DialogTitle className="text-lg font-semibold">
               Contactos
             </DialogTitle>
@@ -226,13 +226,13 @@ export default function WhatsAppHeader({
           </div>
 
           {/* Barra de búsqueda */}
-          <div className="p-3 border-b bg-gray-50">
+          <div className="p-3 bg-gray-50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
                 placeholder="Buscar contactos..."
-                className="w-full pl-10 py-2 pr-4 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-10 py-2 pr-4 bg-white rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -240,11 +240,11 @@ export default function WhatsAppHeader({
           </div>
 
           {/* Pestañas */}
-          <div className="flex border-b">
+          <div className="flex">
             <button
               className={`flex-1 py-2 text-sm font-medium ${
                 activeTab === "contacts"
-                  ? "text-primary border-b-2 border-primary"
+                  ? "text-primary"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("contacts")}
@@ -254,7 +254,7 @@ export default function WhatsAppHeader({
             <button
               className={`flex-1 py-2 text-sm font-medium ${
                 activeTab === "groups"
-                  ? "text-primary border-b-2 border-primary"
+                  ? "text-primary"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("groups")}
@@ -264,7 +264,7 @@ export default function WhatsAppHeader({
             <button
               className={`flex-1 py-2 text-sm font-medium ${
                 activeTab === "unsynced"
-                  ? "text-primary border-b-2 border-primary"
+                  ? "text-primary"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("unsynced")}
@@ -286,7 +286,7 @@ export default function WhatsAppHeader({
                     {filteredContacts.map((contact) => (
                       <li
                         key={contact.id}
-                        className="py-3 px-4 border-b flex items-center"
+                        className="py-3 px-4 flex items-center"
                         onClick={() => handleSelectContact(contact, "contact")}
                       >
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 flex-shrink-0 mr-3">
@@ -355,7 +355,7 @@ export default function WhatsAppHeader({
                     {filteredGroups.map((group) => (
                       <li
                         key={group.id}
-                        className="py-3 px-4 border-b flex items-center"
+                        className="py-3 px-4 flex items-center"
                         onClick={() => handleSelectContact(group, "group")}
                       >
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 flex-shrink-0 mr-3">
@@ -424,7 +424,7 @@ export default function WhatsAppHeader({
                     {filteredUnsyncedContacts.map((contact) => (
                       <li
                         key={contact.id}
-                        className="py-3 px-4 border-b flex items-center"
+                        className="py-3 px-4 flex items-center"
                         onClick={() => handleSelectContact(contact, "contact")}
                       >
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 flex-shrink-0 mr-3">
