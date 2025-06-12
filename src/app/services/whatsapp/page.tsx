@@ -230,6 +230,7 @@ export default function Page() {
         (a: SyncedItem, b: SyncedItem) =>
           (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)
       );
+      console.log(contacts)
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
     // NO limpiar el chat seleccionado aquí
@@ -522,6 +523,7 @@ export default function Page() {
     socket.on("chat-history", (data: ChatHistoryData) => {
       if (!data || !data.to) return;
       const isGroup = data.to.endsWith("@g.us");
+      console.log("chat-history recibido:", data); // DEPURACIÓN
       // Si NO está sincronizado, refresca la lista de no sincronizados y selecciónalo SIEMPRE
       const isSynced =
         (isGroup && syncedGroups.some((g) => g.wa_id === data.to)) ||
@@ -828,6 +830,7 @@ export default function Page() {
     );
     if (!res.ok) {
       alert("Error al actualizar el prompt");
+      setCurrentAgent(null)
       return;
     }
   }, [currentAgent, getToken, selectedNumber]);
@@ -1266,7 +1269,7 @@ export default function Page() {
         handleLogout={handleGoBack}
         removeNumber={removeNumber}
       />
-      {/* Contenido central */}
+      {/* Contenido central */}{" "}
       <div className="flex-1 flex flex-col overflow-hidden bg-white w-full">
         <WhatsAppHeader
           setSidebarOpen={setSidebarOpen}
@@ -1277,6 +1280,30 @@ export default function Page() {
           setSelectedNumber={setSelectedNumber}
           currentAgent={currentAgent}
           setCurrentAgent={setCurrentAgent}
+          selectedChat={(() => {
+            const chat = selectedChatId
+              ? selectedChatType === "contact"
+                ? syncedContacts.find(
+                    (c) => c.wa_id === selectedChatId || c.id === selectedChatId
+                  ) ||
+                  unsyncedContacts.find(
+                    (c) => c.wa_id === selectedChatId || c.id === selectedChatId
+                  )
+                : selectedChatType === "group"
+                ? syncedGroups.find(
+                    (g) => g.wa_id === selectedChatId || g.id === selectedChatId
+                  )
+                : null
+              : null;
+            return chat;
+          })()}
+          syncedContacts={syncedContacts}
+          syncedGroups={syncedGroups}
+          unsyncedContacts={unsyncedContacts}
+          onSelectContact={handleSelectSynced}
+          onToggleAgente={handleToggleAgente}
+          onRemoveContact={handleRemoveContact}
+          onRemoveGroup={handleRemoveGroup}
         />
         <WhatsAppMainContent
           qrCodes={qrCodes}
@@ -1302,7 +1329,7 @@ export default function Page() {
       </div>
       {/* Sidebar derecho */}
       {selectedNumber && (
-        <div className="w-64 bg-gray-50 border-l shadow-lg flex flex-col">
+        <div className="hidden md:block w-64 bg-gray-50 border-l shadow-lg flex-col">
           <SyncedSidebar
             key={sidebarRefreshKey}
             contacts={uniqueById(syncedContacts)}

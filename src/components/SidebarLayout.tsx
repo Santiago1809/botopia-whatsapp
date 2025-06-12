@@ -56,32 +56,44 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Mobile sidebar backdrop */}
+    <div className="flex h-full bg-gray-50">
+      {/* Overlay para móvil */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-gray-800 bg-opacity-50 z-10 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          onClick={toggleSidebar}
+        ></div>
       )}
 
       {/* Sidebar */}
       <aside
-        className={`${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } w-72 sm:w-60 bg-white border-r border-gray-200 fixed inset-y-0 left-0 z-20 transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col`}
+        className={`fixed lg:fixed inset-y-0 left-0 transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 transition-transform duration-300 ease-in-out w-60 bg-white border-r border-gray-200 z-30 flex flex-col h-full`}
       >
-        {/* Logo */}
-        <div className="p-5 border-b border-gray-200">
-          <div className="flex items-center">
-            <Image
-              src="/logo.svg"
-              alt="Botopia Logo"
-              width={100}
-              height={30}
-              className="mr-2"
-            />
-          </div>
+        {/* Logo y nombre */}
+        <div className="flex items-center justify-between px-4 py-3 text-gray-700">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/Logo.png" alt="Botopia Logo" width={32} height={32} />
+            <span className="font-bold text-lg">Botopia</span>
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden text-white hover:text-gray-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* Navigation */}
@@ -243,10 +255,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:ml-60 w-full flex flex-col min-h-screen">
         {/* Mobile header */}
-        <header className="lg:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
+        <header className="lg:hidden bg-[#075e54] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
           <button
             onClick={toggleSidebar}
-            className="text-gray-600 focus:outline-none"
+            className="text-white focus:outline-none"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -264,16 +276,26 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </svg>
           </button>
           <div className="flex items-center">
-            <Image
-              src="/logo.svg"
-              alt="Botopia Logo"
-              width={80}
-              height={24}
-              className="mr-2"
-            />
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/Logo.png"
+                alt="Botopia Logo"
+                width={32}
+                height={32}
+              />
+              <span className="font-bold text-lg text-white">Botopia</span>
+            </Link>
           </div>
-          <div className="w-6"></div>{" "}
-          {/* Spacer para mantener centrado el logo */}
+          <div className="relative">
+            <button
+              className="text-white hover:text-gray-200"
+              onClick={() => router.push("/profile")}
+            >
+              <div className="w-8 h-8 bg-white rounded-full text-[#075e54] flex items-center justify-center font-semibold">
+                {user?.username?.charAt(0) || "U"}
+              </div>
+            </button>
+          </div>
         </header>
 
         <main className="flex-grow flex flex-col">{children}</main>
