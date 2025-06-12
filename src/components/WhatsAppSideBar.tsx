@@ -3,7 +3,7 @@ import { WhatsappNumber } from "@/types/gobal";
 import { ArrowLeft, Phone, Search, Trash, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import CreditsCard from "./CreditCard";
+import MessagesCard from "./MessageCard";
 
 interface WhatsAppSideBarProps {
   sidebarOpen: boolean;
@@ -149,7 +149,7 @@ export default function WhatsAppSideBar({
         ))}
       </div>
       <div className="p-4 border-t bg-white">
-        <CreditsCard />
+        <MessagesCard />
       </div>
     </div>
   );

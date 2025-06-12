@@ -6,6 +6,7 @@ export interface Contact {
   wa_id?: string;
   lastMessageTimestamp?: number;
   lastMessagePreview?: string;
+  profilePic?: string
 }
 
 export interface Group {

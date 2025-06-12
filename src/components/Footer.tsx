@@ -1,5 +1,4 @@
 import React from "react";
-import CreditsCard from "./CreditCard";
 
 interface FooterProps {
   companyName: string;
@@ -16,9 +15,6 @@ export const Footer: React.FC<FooterProps> = ({ companyName }) => {
             <p className="text-sm text-gray-600">
               &copy; {currentYear} {companyName}. Todos los derechos reservados.
             </p>
-          </div>
-          <div>
-            <CreditsCard />
           </div>
           <div className="flex space-x-4">
             <a

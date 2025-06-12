@@ -1,20 +1,30 @@
-import React, { useState } from 'react';
-import { Trash, Users, UserCheck, UserX, RefreshCcw } from "lucide-react";
-import { Contact, Group } from '@/types/global';
-import { io, Socket } from 'socket.io-client';
+import React, { useState } from "react";
+import {
+  Trash,
+  Users,
+  UserCheck,
+  UserX,
+  RefreshCcw,
+  Search,
+  Filter,
+  MoreVertical,
+} from "lucide-react";
+import { Contact, Group } from "@/types/global";
+import { io, Socket } from "socket.io-client";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
 interface SyncedSidebarProps {
   contacts: Contact[];
   groups: Group[];
   unsyncedContacts?: Contact[];
-  onSelect: (item: Contact | Group, type: 'contact' | 'group') => void;
+  onSelect: (item: Contact | Group, type: "contact" | "group") => void;
   onSyncClick: () => void;
   onRemoveContact: (id: string) => void;
   onRemoveGroup: (id: string) => void;
   selectedId?: string;
-  selectedType?: 'contact' | 'group';
+  selectedType?: "contact" | "group";
   onToggleAgente?: (id: string, newValue: boolean) => void;
   onBulkDelete?: () => void;
   onBulkDisable?: () => void;
@@ -22,26 +32,29 @@ interface SyncedSidebarProps {
   selectedNumberId?: string;
 }
 
-const SyncedSidebar: React.FC<SyncedSidebarProps> = ({ 
-  contacts, 
+const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
+  contacts,
   groups,
   unsyncedContacts = [],
-  onSelect, 
-  onSyncClick, 
-  onRemoveContact, 
-  onRemoveGroup, 
-  selectedId, 
-  selectedType, 
-  onToggleAgente, 
-  onBulkDelete, 
-  onBulkDisable, 
+  onSelect,
+  onSyncClick,
+  onRemoveContact,
+  onRemoveGroup,
+  selectedId,
+  selectedType,
+  onToggleAgente,
+  onBulkDelete,
+  onBulkDisable,
   onBulkEnable,
-  selectedNumberId 
+  selectedNumberId,
 }) => {
   // Filtro de búsqueda y tipo
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'contacts' | 'groups' | 'unsynced'>('all');
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<
+    "all" | "contacts" | "groups" | "unsynced"
+  >("all");
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [showActions, setShowActions] = useState(false);
 
   // Inicializar socket
   React.useEffect(() => {
@@ -49,15 +62,22 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     setSocket(newSocket);
 
     // Escuchar actualizaciones de contactos no sincronizados
-    newSocket.on('unsynced-contacts-updated', (data) => {
-      if (data.numberid && data.numberid.toString() === selectedNumberId?.toString()) {
-        fetch(`${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumberId}`)
-          .then(res => res.json())
-          .then(data => {
+    newSocket.on("unsynced-contacts-updated", (data) => {
+      if (
+        data.numberid &&
+        data.numberid.toString() === selectedNumberId?.toString()
+      ) {
+        fetch(
+          `${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumberId}`
+        )
+          .then((res) => res.json())
+          .then((data) => {
             if (Array.isArray(data)) {
               // Actualiza el estado local de los contactos no sincronizados
-              if (typeof window !== 'undefined' && window.dispatchEvent) {
-                window.dispatchEvent(new CustomEvent('updateUnsyncedContacts', { detail: data }));
+              if (typeof window !== "undefined" && window.dispatchEvent) {
+                window.dispatchEvent(
+                  new CustomEvent("updateUnsyncedContacts", { detail: data })
+                );
               }
             }
           });
@@ -66,374 +86,609 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
 
     return () => {
       newSocket.disconnect();
-      newSocket.off('unsynced-contacts-updated');
+      newSocket.off("unsynced-contacts-updated");
     };
   }, [selectedNumberId]);
 
   // Escuchar evento global para actualizar la prop unsyncedContacts si el padre lo permite
   React.useEffect(() => {
     function handleUpdateUnsyncedContacts(e: CustomEvent) {
-      if (typeof e.detail !== 'undefined' && Array.isArray(e.detail)) {
+      if (typeof e.detail !== "undefined" && Array.isArray(e.detail)) {
         // Si tienes un setter para unsyncedContacts, úsalo aquí
         // Si no, puedes levantar un callback al padre si lo deseas
         // Por defecto, solo fuerza un re-render si la prop cambia en el padre
       }
     }
-    window.addEventListener('updateUnsyncedContacts', handleUpdateUnsyncedContacts as EventListener);
-    return () => window.removeEventListener('updateUnsyncedContacts', handleUpdateUnsyncedContacts as EventListener);
+    window.addEventListener(
+      "updateUnsyncedContacts",
+      handleUpdateUnsyncedContacts as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "updateUnsyncedContacts",
+        handleUpdateUnsyncedContacts as EventListener
+      );
   }, []);
 
   // Ordenar contactos y grupos por último mensaje
-  const orderedContacts = [...contacts].sort((a: Contact, b: Contact) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
-  const orderedGroups = [...groups].sort((a: Group, b: Group) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+  const orderedContacts = [...contacts].sort(
+    (a: Contact, b: Contact) =>
+      (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)
+  );
+  const orderedGroups = [...groups].sort(
+    (a: Group, b: Group) =>
+      (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)
+  );
 
   // Filtrado
-  const filteredContacts = orderedContacts.filter(c => ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
-  const filteredGroups = orderedGroups.filter(g => ((g.name ?? g.number ?? '') + '').toLowerCase().includes(search.toLowerCase()));
+  const filteredContacts = orderedContacts.filter((c) =>
+    ((c.name ?? c.number ?? "") + "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+  const filteredGroups = orderedGroups.filter((g) =>
+    ((g.name ?? g.number ?? "") + "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   // Filter unsynced contacts (excluye grupos y contactos especiales de WhatsApp)
-  const filteredUnsyncedContacts = unsyncedContacts.filter(c => {
-    const name = (c.name ?? '').toLowerCase().trim();
-    if (["status", "estado", "ia status", "ia", "statuses", "estados"].includes(name)) return false;
+  const filteredUnsyncedContacts = unsyncedContacts.filter((c) => {
+    const name = (c.name ?? "").toLowerCase().trim();
+    if (
+      ["status", "estado", "ia status", "ia", "statuses", "estados"].includes(
+        name
+      )
+    )
+      return false;
     // Excluir grupos: si wa_id o id termina en '@g.us' o si el número/id tiene más de 15 dígitos
-    const waId = (c.wa_id ?? c.id ?? '').toLowerCase();
-    if (waId.endsWith('@g.us')) return false;
-    const num = (c.number ?? c.id ?? '').replace(/[^0-9]/g, '');
+    const waId = (c.wa_id ?? c.id ?? "").toLowerCase();
+    if (waId.endsWith("@g.us")) return false;
+    const num = (c.number ?? c.id ?? "").replace(/[^0-9]/g, "");
     if (num.length > 15) return false;
-    return ((c.name ?? c.number ?? '') + '').toLowerCase().includes(search.toLowerCase());
+    return ((c.name ?? c.number ?? "") + "")
+      .toLowerCase()
+      .includes(search.toLowerCase());
   });
 
-  const handleSelect = (item: Contact | Group, type: 'contact' | 'group') => {
+  const handleSelect = (item: Contact | Group, type: "contact" | "group") => {
     onSelect(item, type);
     if (socket && selectedNumberId) {
-      socket.emit('get-chat-history', {
+      socket.emit("get-chat-history", {
         numberId: selectedNumberId,
-        to: item.wa_id || item.id
+        to: item.wa_id || item.id,
+      });
+    }
+  };
+
+  // Función para formatear la hora del último mensaje
+  const formatLastMessageTime = (timestamp?: number) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else {
+      return date.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "2-digit",
       });
     }
   };
 
   return (
-    <div className="h-full p-4 flex flex-col">
-      {/* Input de búsqueda en la parte superior */}
-      <input
-        type="text"
-        placeholder="Buscar..."
-        className="w-full mb-3 px-2 py-1 rounded-full border border-gray-200 text-xs"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
-      {/* Filtro visual */}
-      <div className="flex gap-2 mb-2">
+    <div className="h-full flex flex-col bg-white relative">
+      {/* Cabecera con estilo WhatsApp */}
+      <div className="bg-[#f0f2f5] flex justify-between items-center px-4 py-2 shadow-sm z-10">
+        <h2 className="text-lg font-medium text-[#075e54]">Chats</h2>
+        <div className="flex items-center gap-3">
+          <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">
+            <Filter className="w-5 h-5 text-[#54656f]" />
+          </button>
+          <button
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200"
+            onClick={() => setShowActions(!showActions)}
+          >
+            <MoreVertical className="w-5 h-5 text-[#54656f]" />
+          </button>
+        </div>
+
+        {/* Menú desplegable de acciones */}
+        {showActions && (
+          <div className="absolute right-4 top-12 bg-white shadow-lg rounded-md py-1 z-20 w-48 border border-gray-200">
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              onClick={async () => {
+                setShowActions(false);
+                if (
+                  window.confirm(
+                    "¿Eliminar TODOS los contactos y no sincronizados de este número?"
+                  )
+                ) {
+                  if (selectedNumberId) {
+                    await fetch(
+                      `${BACKEND_URL}/api/unsyncedcontacts/by-number/${selectedNumberId}`,
+                      { method: "DELETE" }
+                    );
+                  }
+                  if (onBulkDelete) onBulkDelete();
+                }
+              }}
+            >
+              <Trash className="w-4 h-4 text-red-500" />
+              <span>Eliminar todos</span>
+            </button>
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              onClick={async () => {
+                setShowActions(false);
+                if (unsyncedContacts.length > 0) {
+                  unsyncedContacts.forEach((c) => {
+                    if (onToggleAgente) onToggleAgente(c.id, false);
+                  });
+                }
+                if (onBulkDisable) await onBulkDisable();
+                if (selectedNumberId && unsyncedContacts.length > 0) {
+                  await Promise.all(
+                    unsyncedContacts.map(async (contact) => {
+                      await fetch(
+                        `${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`,
+                        {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ agentehabilitado: false }),
+                        }
+                      );
+                    })
+                  );
+                }
+              }}
+            >
+              <UserX className="w-4 h-4 text-yellow-500" />
+              <span>Desactivar todos</span>
+            </button>
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              onClick={async () => {
+                setShowActions(false);
+                if (unsyncedContacts.length > 0) {
+                  unsyncedContacts.forEach((c) => {
+                    if (onToggleAgente) onToggleAgente(c.id, true);
+                  });
+                }
+                if (onBulkEnable) await onBulkEnable();
+                if (selectedNumberId && unsyncedContacts.length > 0) {
+                  await Promise.all(
+                    unsyncedContacts.map(async (contact) => {
+                      await fetch(
+                        `${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`,
+                        {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ agentehabilitado: true }),
+                        }
+                      );
+                    })
+                  );
+                }
+              }}
+            >
+              <UserCheck className="w-4 h-4 text-green-500" />
+              <span>Activar todos</span>
+            </button>
+            <div className="border-t border-gray-200 my-1"></div>
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-left"
+              onClick={() => {
+                setShowActions(false);
+                onSyncClick();
+              }}
+            >
+              <RefreshCcw className="w-4 h-4 text-[#075e54]" />
+              <span>Sincronizar ahora</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Input de búsqueda en la parte superior con estilo WhatsApp */}
+      <div className="sticky top-0 z-10 bg-[#f0f2f5] px-3 py-2">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-[#54656f]" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar o iniciar un nuevo chat"
+            className="w-full pl-10 pr-4 py-2 rounded-lg text-sm bg-white border-none focus:ring-0 focus:outline-none shadow-sm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Filtro visual mejorado tipo WhatsApp */}
+      <div className="flex gap-2 px-3 py-2 overflow-x-auto bg-white border-b">
         <button
-          className={`px-0.5 py-1 rounded-full text-xs font-semibold border transition text-center ${filterType === 'all' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setFilterType('all')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+            filterType === "all"
+              ? "bg-[#e9edef] text-[#075e54]"
+              : "text-[#54656f]"
+          }`}
+          onClick={() => setFilterType("all")}
         >
-          <Users className="inline w-4 h-4 mr-1" />Todos
+          Todos
         </button>
         <button
-          className={`px-0.5 py-1 rounded-full text-xs font-semibold border transition text-center ${filterType === 'contacts' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setFilterType('contacts')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+            filterType === "contacts"
+              ? "bg-[#e9edef] text-[#075e54]"
+              : "text-[#54656f]"
+          }`}
+          onClick={() => setFilterType("contacts")}
         >
-          <UserCheck className="inline w-4 h-4 mr-1" />Contactos
+          Contactos
         </button>
         <button
-          className={`px-0.4 py-1 rounded-full text-xs font-semibold border transition text-center ${filterType === 'groups' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setFilterType('groups')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+            filterType === "groups"
+              ? "bg-[#e9edef] text-[#075e54]"
+              : "text-[#54656f]"
+          }`}
+          onClick={() => setFilterType("groups")}
         >
-          <UserX className="inline w-4 h-4 mr-1" />Grupos
+          Grupos
         </button>
         <button
-          className={`px-0.4 py-1 rounded-full text-xs font-semibold border transition text-center ${filterType === 'unsynced' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setFilterType('unsynced')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+            filterType === "unsynced"
+              ? "bg-[#e9edef] text-[#075e54]"
+              : "text-[#54656f]"
+          }`}
+          onClick={() => setFilterType("unsynced")}
         >
-          <UserX className="inline w-4 h-4 mr-1" />No Sincronizados
+          No Sincronizados
         </button>
       </div>
-      {/* Botones de acciones masivas */}
-      <div className="flex gap-2 mb-2 justify-center">
-        <button
-          className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold hover:bg-red-200 border border-red-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
-          style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={async () => {
-            // Elimina todos los sincronizados y no sincronizados
-            if (window.confirm('¿Eliminar TODOS los contactos y no sincronizados de este número?')) {
-              if (selectedNumberId) {
-                await fetch(`${BACKEND_URL}/api/unsyncedcontacts/by-number/${selectedNumberId}`, { method: 'DELETE' });
-              }
-              if (onBulkDelete) onBulkDelete();
-            }
-          }}
-        >
-          <Trash className="w-5 h-5" />
-          <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
-            Eliminar todos
-          </span>
-        </button>
-        <button
-          className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold hover:bg-yellow-200 border border-yellow-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
-          style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={async () => {
-            // Optimismo visual: desactiva todos en el frontend
-            if (unsyncedContacts.length > 0) {
-              unsyncedContacts.forEach(c => {
-                if (onToggleAgente) onToggleAgente(c.id, false);
-              });
-            }
-            // Desactivar IA en todos los sincronizados y no sincronizados
-            if (onBulkDisable) await onBulkDisable();
-            if (selectedNumberId && unsyncedContacts.length > 0) {
-              await Promise.all(unsyncedContacts.map(async (contact) => {
-                await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ agentehabilitado: false })
-                });
-              }));
-            }
-          }}
-        >
-          <UserX className="w-5 h-5" />
-          <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
-            Desactivar todos
-          </span>
-        </button>
-        <button
-          className="group flex items-center justify-center gap-2 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold hover:bg-green-200 border border-green-200 shadow-sm transition-all duration-200 min-w-[32px] overflow-hidden"
-          style={{ minWidth: 32, maxWidth: 120 }}
-          onClick={async () => {
-            // Optimismo visual: activa todos en el frontend
-            if (unsyncedContacts.length > 0) {
-              unsyncedContacts.forEach(c => {
-                if (onToggleAgente) onToggleAgente(c.id, true);
-              });
-            }
-            // Activar IA en todos los sincronizados y no sincronizados
-            if (onBulkEnable) await onBulkEnable();
-            if (selectedNumberId && unsyncedContacts.length > 0) {
-              await Promise.all(unsyncedContacts.map(async (contact) => {
-                await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ agentehabilitado: true })
-                });
-              }));
-            }
-          }}
-        >
-          <UserCheck className="w-5 h-5" />
-          <span className="whitespace-nowrap opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[90px] group-hover:ml-2 transition-all duration-200">
-            Activar todos
-          </span>
-        </button>
-      </div>
-      {/* Lista de contactos y grupos */}
-      <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1">
-        {(filterType === 'all' || filterType === 'contacts') && (
-          <div className="mb-4">
-            <h3 className="font-semibold mb-2">Contactos</h3>
+
+      {/* Lista de contactos y grupos con estilo WhatsApp */}
+      <div className="flex-1 overflow-y-auto bg-white">
+        {(filterType === "all" || filterType === "contacts") && (
+          <div>
             {filteredContacts.length === 0 ? (
-              <div className="text-sm text-gray-500">No hay contactos sincronizados.</div>
+              <div className="text-sm text-gray-500 p-4 text-center">
+                No hay contactos sincronizados
+              </div>
             ) : (
               <ul>
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === contact.id && selectedType === 'contact' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
-                    onClick={() => handleSelect(contact, 'contact')}
+                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                      selectedId === contact.id && selectedType === "contact"
+                        ? "bg-[#f0f2f5]"
+                        : ""
+                    }`}
+                    onClick={() => handleSelect(contact, "contact")}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      {/* Switch para IA */}
-                      {typeof contact.agenteHabilitado === 'boolean' && onToggleAgente && (
-                        <label className="flex items-center cursor-pointer gap-1">
-                          <input
-                            type="checkbox"
-                            checked={contact.agenteHabilitado}
-                            onChange={e => {
-                              e.stopPropagation();
-                              onToggleAgente(contact.id, e.target.checked);
-                            }}
-                            className="accent-primary scale-110"
-                          />
-                          <span className="text-xs font-bold text-primary">IA</span>
-                        </label>
-                      )}
-                      <span
-                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
-                        title={contact.name || contact.number}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleSelect(contact, 'contact');
-                        }}
-                      >
-                        {contact.name || contact.number}
-                      </span>
+                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3">
+                      {contact.name?.charAt(0)?.toUpperCase() || (
+                        <img src={contact.profilePic} />
+                      ) }
                     </div>
-                    <button
-                      className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
-                      title="Eliminar contacto"
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (window.confirm('¿Eliminar este contacto sincronizado?')) {
-                          onRemoveContact(contact.id);
-                        }
-                      }}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                          {contact.name || contact.number || "Sin nombre"}
+                        </h3>
+                        <span className="text-xs text-[#667781] whitespace-nowrap">
+                          {formatLastMessageTime(contact.lastMessageTimestamp)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        {" "}
+                        <p className="text-sm text-[#667781] truncate pr-2">
+                          {contact.lastMessagePreview || "Sin mensajes"}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleAgente) {
+                                onToggleAgente(
+                                  contact.id,
+                                  !contact.agenteHabilitado
+                                );
+                                // Mostrar feedback visual temporal
+                                const target = e.currentTarget;
+                                const originalClass = target.className;
+                                target.className +=
+                                  " ring-2 ring-[#25D366] ring-opacity-50";
+                                setTimeout(() => {
+                                  target.className = originalClass;
+                                }, 300);
+                              }
+                            }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                              contact.agenteHabilitado
+                                ? "bg-[#25D366] text-white"
+                                : "bg-gray-200 text-[#54656f]"
+                            } transition-colors duration-200`}
+                            title={
+                              contact.agenteHabilitado
+                                ? "Desactivar IA"
+                                : "Activar IA"
+                            }
+                          >
+                            <UserCheck className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm("¿Eliminar este contacto?"))
+                                onRemoveContact(contact.id);
+                            }}
+                            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                            title="Eliminar contacto"
+                          >
+                            <Trash className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
         )}
-        {(filterType === 'all' || filterType === 'groups') && (
-          <div>
-            <h3 className="font-semibold mb-2">Grupos</h3>
-            {filteredGroups.length === 0 ? (
-              <div className="text-sm text-gray-500">No hay grupos sincronizados.</div>
-            ) : (
+
+        {(filterType === "all" || filterType === "groups") &&
+          filteredGroups.length > 0 && (
+            <div>
               <ul>
                 {filteredGroups.map((group) => (
                   <li
                     key={group.id}
-                    className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === group.id && selectedType === 'group' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
-                    onClick={() => handleSelect(group, 'group')}
+                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                      selectedId === group.id && selectedType === "group"
+                        ? "bg-[#f0f2f5]"
+                        : ""
+                    }`}
+                    onClick={() => handleSelect(group, "group")}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      {/* Switch para IA */}
-                      {typeof group.agenteHabilitado === 'boolean' && onToggleAgente && (
-                        <label className="flex items-center cursor-pointer gap-1">
-                          <input
-                            type="checkbox"
-                            checked={group.agenteHabilitado}
-                            onChange={e => {
-                              e.stopPropagation();
-                              onToggleAgente(group.id, e.target.checked);
-                            }}
-                            className="accent-primary scale-110"
-                          />
-                          <span className="text-xs font-bold text-primary">IA</span>
-                        </label>
-                      )}
-                      <span
-                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
-                        title={group.name || group.number}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleSelect(group, 'group');
-                        }}
-                      >
-                        {group.name || group.number}
-                      </span>
+                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3">
+                      <Users className="w-6 h-6" />
                     </div>
-                    <button
-                      className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
-                      title="Eliminar grupo"
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (window.confirm('¿Eliminar este grupo sincronizado?')) {
-                          onRemoveGroup(group.id);
-                        }
-                      }}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                          {group.name || "Grupo sin nombre"}
+                        </h3>
+                        <span className="text-xs text-[#667781] whitespace-nowrap">
+                          {formatLastMessageTime(group.lastMessageTimestamp)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        {" "}
+                        <p className="text-sm text-[#667781] truncate pr-2">
+                          {group.lastMessagePreview || "Sin mensajes"}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleAgente) {
+                                onToggleAgente(
+                                  group.id,
+                                  !group.agenteHabilitado
+                                );
+                                // Mostrar feedback visual temporal
+                                const target = e.currentTarget;
+                                const originalClass = target.className;
+                                target.className +=
+                                  " ring-2 ring-[#25D366] ring-opacity-50";
+                                setTimeout(() => {
+                                  target.className = originalClass;
+                                }, 300);
+                              }
+                            }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                              group.agenteHabilitado
+                                ? "bg-[#25D366] text-white"
+                                : "bg-gray-200 text-[#54656f]"
+                            } transition-colors duration-200`}
+                            title={
+                              group.agenteHabilitado
+                                ? "Desactivar IA"
+                                : "Activar IA"
+                            }
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm("¿Eliminar este grupo?"))
+                                onRemoveGroup(group.id);
+                            }}
+                            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                            title="Eliminar grupo"
+                          >
+                            <Trash className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
-            )}
-          </div>
-        )}
-        {(filterType === 'all' || filterType === 'unsynced') && (
-          <div className="mb-4">
-            <h3 className="font-semibold mb-2">No Sincronizados</h3>
-            {/* Solo contactos no sincronizados, sin filtrar por isGroup */}
-            {filteredUnsyncedContacts.length === 0 ? (
-              <div className="text-sm text-gray-500">No hay contactos no sincronizados.</div>
-            ) : (
+            </div>
+          )}
+
+        {(filterType === "all" || filterType === "unsynced") &&
+          filteredUnsyncedContacts.length > 0 && (
+            <div>
+              <div className="py-2 px-4 bg-[#f0f2f5] border-y border-[#e9edef]">
+                <h3 className="text-xs font-medium text-[#54656f] uppercase">
+                  Contactos no sincronizados
+                </h3>
+              </div>
               <ul>
                 {filteredUnsyncedContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-1 border-b last:border-b-0 flex items-center justify-between rounded px-2 group ${selectedId === contact.id && selectedType === 'contact' ? 'bg-primary/10 font-bold text-primary' : 'hover:bg-gray-200'}`}
-                    onClick={() => handleSelect(contact, 'contact')}
+                    className={`py-3 border-b border-[#e9edef] flex items-center px-3 cursor-pointer ${
+                      selectedId === contact.id && selectedType === "contact"
+                        ? "bg-[#f0f2f5]"
+                        : ""
+                    }`}
+                    onClick={() => handleSelect(contact, "contact")}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      {/* Switch para IA independiente */}
-                      <label className="flex items-center cursor-pointer gap-1">
-                        <input
-                          type="checkbox"
-                          checked={contact.agenteHabilitado === true}
-                          onChange={async e => {
+                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3 relative">
+                      {contact.name?.charAt(0)?.toUpperCase() || "C"}
+                      <input
+                        type="checkbox"
+                        checked={contact.agenteHabilitado === true}
+                        onChange={async (e) => {
+                          e.stopPropagation();
+                          if (onToggleAgente)
+                            onToggleAgente(contact.id, e.target.checked);
+                          try {
+                            await fetch(
+                              `${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  agentehabilitado: e.target.checked,
+                                }),
+                              }
+                            );
+                          } catch (error) {
+                            if (onToggleAgente)
+                              onToggleAgente(contact.id, !e.target.checked);
+                            console.error(
+                              "Error al actualizar el estado del agente:",
+                              error
+                            );
+                          }
+                        }}
+                        className="absolute -bottom-1 -right-1 w-5 h-5 accent-[#25D366] border-gray-300 rounded"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                          {contact.name || contact.number || "Sin nombre"}
+                        </h3>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-[#667781] truncate pr-2">
+                          {contact.agenteHabilitado ? (
+                            <span className="text-[#25D366]">IA activada</span>
+                          ) : (
+                            <span className="text-[#667781]">
+                              IA desactivada
+                            </span>
+                          )}
+                        </p>
+                        <button
+                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                          title="Eliminar contacto no sincronizado"
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            // Optimismo visual: actualiza el estado local inmediatamente
-                            if (onToggleAgente) onToggleAgente(contact.id, e.target.checked);
-                            try {
-                              await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ agentehabilitado: e.target.checked })
-                              });
-                              // El padre refrescará la lista cuando llegue el evento socket
-                            } catch (error) {
-                              // Si falla, revierte el cambio local
-                              if (onToggleAgente) onToggleAgente(contact.id, !e.target.checked);
-                              console.error('Error al actualizar el estado del agente:', error);
+                            if (
+                              window.confirm(
+                                "¿Eliminar este contacto no sincronizado?"
+                              )
+                            ) {
+                              try {
+                                await fetch(
+                                  `${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`,
+                                  { method: "DELETE" }
+                                );
+                                if (onRemoveContact)
+                                  onRemoveContact(contact.id);
+                              } catch (error) {
+                                console.error(
+                                  "Error al eliminar el contacto:",
+                                  error
+                                );
+                              }
                             }
                           }}
-                          className="accent-primary scale-110"
-                        />
-                        <span className="text-xs font-bold text-primary">IA</span>
-                      </label>
-                      <span
-                        className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
-                        title={contact.name || contact.number}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleSelect(contact, 'contact');
-                        }}
-                      >
-                        {contact.name || contact.number}
-                      </span>
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 opacity-70 group-hover:opacity-100 transition"
-                      title="Eliminar contacto no sincronizado"
-                      onClick={async e => {
-                        e.stopPropagation();
-                        if (window.confirm('¿Eliminar este contacto no sincronizado?')) {
-                          try {
-                            await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`, { method: 'DELETE' });
-                            if (onRemoveContact) onRemoveContact(contact.id);
-                          } catch (error) {
-                            console.error('Error al eliminar el contacto:', error);
-                          }
-                        }
-                      }}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
                   </li>
                 ))}
               </ul>
-            )}
+            </div>
+          )}
+
+        {/* Mensajes de estado vacío */}
+        {filterType === "contacts" && filteredContacts.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
+              <UserCheck className="w-8 h-8 text-[#54656f]" />
+            </div>
+            <h3 className="text-[#111b21] font-medium mb-1">
+              No hay contactos sincronizados
+            </h3>
+            <p className="text-sm text-[#667781] max-w-xs">
+              Sincroniza tus contactos para ver tu lista aquí
+            </p>
+          </div>
+        )}
+
+        {filterType === "groups" && filteredGroups.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
+              <Users className="w-8 h-8 text-[#54656f]" />
+            </div>
+            <h3 className="text-[#111b21] font-medium mb-1">
+              No hay grupos sincronizados
+            </h3>
+            <p className="text-sm text-[#667781] max-w-xs">
+              Sincroniza tus grupos para ver tu lista aquí
+            </p>
+          </div>
+        )}
+
+        {filterType === "unsynced" && filteredUnsyncedContacts.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
+              <UserX className="w-8 h-8 text-[#54656f]" />
+            </div>
+            <h3 className="text-[#111b21] font-medium mb-1">
+              No hay contactos no sincronizados
+            </h3>
+            <p className="text-sm text-[#667781] max-w-xs">
+              Los contactos que te escriban por primera vez aparecerán aquí
+            </p>
           </div>
         )}
       </div>
-      {/* Botón de sincronizar en la parte inferior, texto pequeño y en una línea */}
-      <div className="mt-auto mb-4 flex justify-center">
-        <button
-          className="px-4 py-2 flex items-center gap-2 text-xs bg-primary text-white rounded-full shadow hover:bg-secondary transition whitespace-nowrap"
-          onClick={onSyncClick}
-          style={{ fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}
-        >
-          <RefreshCcw className="w-4 h-4" />
-          Sincronizar contactos y grupos
-        </button>
-      </div>
+
+      {/* Botón flotante de sincronización */}
+      <button
+        className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] transition-colors z-10"
+        onClick={onSyncClick}
+        title="Sincronizar contactos y grupos"
+      >
+        <RefreshCcw className="w-6 h-6" />
+      </button>
     </div>
   );
 };
 
-export default SyncedSidebar; 
+export default SyncedSidebar;
