@@ -324,7 +324,10 @@ export default function WhatsAppHeader({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (window.confirm('¿Eliminar este contacto?') && onRemoveContact) {
+                              if (
+                                window.confirm("¿Eliminar este contacto?") &&
+                                onRemoveContact
+                              ) {
                                 onRemoveContact(contact.id);
                               }
                             }}
@@ -390,7 +393,10 @@ export default function WhatsAppHeader({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (window.confirm('¿Eliminar este grupo?') && onRemoveGroup) {
+                              if (
+                                window.confirm("¿Eliminar este grupo?") &&
+                                onRemoveGroup
+                              ) {
                                 onRemoveGroup(group.id);
                               }
                             }}
@@ -456,7 +462,12 @@ export default function WhatsAppHeader({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (window.confirm('¿Eliminar este contacto no sincronizado?') && onRemoveContact) {
+                              if (
+                                window.confirm(
+                                  "¿Eliminar este contacto no sincronizado?"
+                                ) &&
+                                onRemoveContact
+                              ) {
                                 onRemoveContact(contact.id);
                               }
                             }}
