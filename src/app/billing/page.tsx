@@ -53,7 +53,7 @@ const PLANS = [
     flows: "1 flujo",
     credits: "Límite de 1000 mensajes al mes",
     creditPrice: "14,00",
-    price: "14.90 USD / MES",
+    price: "14.00 USD / MES",
     amount: 14.00,
     order_id: 1030,
     features: [
