@@ -137,8 +137,33 @@ const serviceData: ServiceProps[] = [
     actionLabel: "Probar",
     actionUrl: "/services/calls",
     bgColor: "bg-white",
-    iconBg: "bg-orange-100",
-    iconColor: "text-[#f37021]",
+    iconBg: "bg-orange-100",    iconColor: "text-[#f37021]",
+    isComingSoon: true,
+  },
+  {
+    title: "CRM",
+    description:
+      "Gestiona las relaciones con tus clientes de forma eficiente. Centraliza datos, historial de interacciones y oportunidades de venta para mejorar la experiencia del cliente y aumentar las conversiones.",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="2em"
+        height="2em"
+        viewBox="0 0 24 24"
+        className="text-blue-600"
+      >
+        <path
+          fill="currentColor"
+          d="M12 4a4 4 0 0 1 4 4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4M6 10V7H4v3H1v2h3v3h2v-3h3v-2m10 2h2v3h3v-3h2v-2h-2V7h-3v3h-2z"
+        />
+      </svg>
+    ),
+    iconAlt: "CRM Icon",
+    actionLabel: "Explorar",
+    actionUrl: "/services/crm",
+    bgColor: "bg-white",
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
     isComingSoon: true,
   },
 ];
