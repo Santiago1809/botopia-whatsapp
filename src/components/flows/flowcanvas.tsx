@@ -5,10 +5,9 @@ import ReactFlow, {
   Controls, 
   MiniMap,
   useReactFlow,
-  Panel
 } from 'reactflow'
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Trash2, Save } from "lucide-react"
+import { Trash2, Save } from "lucide-react"
 
 
 interface FlowCanvasProps {
@@ -56,7 +55,7 @@ export function FlowCanvas({
 
       setNodes((nds) => nds.concat(newNode))
     },
-    [project]
+    [project, setNodes]
   )
 
   const handleSave = useCallback(async () => {
