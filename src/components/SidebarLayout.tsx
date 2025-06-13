@@ -136,7 +136,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 <Webhook className="h-5 w-5 mr-2 flex-shrink-0" />
                 <span className="line-clamp-1">Productos</span>
               </Link>
-            </li>{" "}
+            </li>
             <li>
               <Link
                 href="/crm"
@@ -158,6 +158,29 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   />
                 </svg>
                 <span className="line-clamp-1">CRM</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/members"
+                className={menuItemStyle("/members")}
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+                <span className="line-clamp-1">Miembros y Roles</span>
               </Link>
             </li>
             <li className="mt-8 mb-6">
