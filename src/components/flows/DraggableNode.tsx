@@ -18,12 +18,17 @@ export function DraggableNode({ type, label, icon }: DraggableNodeProps) {
       draggable
       onDragStart={onDragStart}
       className={cn(
-        "cursor-grab active:cursor-grabbing hover:bg-accent transition-colors",
-        "border-2 border-dashed hover:border-solid"
+        "cursor-grab active:cursor-grabbing transition-colors",
+        "border-2 border-dashed hover:border-solid",
+        "hover:bg-primary hover:text-white",
+        "active:bg-primary active:text-white",
+        "group" // Agregamos la clase group para poder usar group-hover
       )}
     >
       <CardContent className="flex items-center gap-3 p-4">
-        {icon}
+        <div className="text-primary group-hover:text-white group-active:text-white transition-colors">
+          {icon}
+        </div>
         <span className="font-medium">{label}</span>
       </CardContent>
     </Card>

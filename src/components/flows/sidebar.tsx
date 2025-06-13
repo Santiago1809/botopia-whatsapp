@@ -32,9 +32,13 @@ export function Sidebar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-[320px] p-4">
             <div className="flex items-center gap-4 mb-4">
-              <Link href="/services">
-                <Button variant="outline" size="icon">
-                  <ArrowLeft className="h-4 w-4" />
+              <Link href="/services/flows/principal">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="hover:text-white group"
+                >
+                  <ArrowLeft className="h-4 w-4 group-hover:text-white transition-colors" />
                   <span className="sr-only">Volver a productos</span>
                 </Button>
               </Link>
@@ -48,9 +52,13 @@ export function Sidebar() {
       {/* Desktop Sidebar */}
       <div className="hidden md:block fixed left-0 top-0 h-screen w-[320px] border-r bg-background p-4">
         <div className="flex items-center gap-4 mb-4">
-          <Link href="/services">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
+          <Link href="/services/flows/principal">
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="hover:text-white group"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:text-white transition-colors" />
               <span className="sr-only">Volver a productos</span>
             </Button>
           </Link>
@@ -69,18 +77,18 @@ function SidebarContent() {
       <div className="grid gap-3">
         <DraggableNode
           type="input"
-          label="Nodo de entrada"
-          icon={<CircleDot className="h-4 w-4 text-primary" />}
+          label="Entrada"
+          icon={<CircleDot className="h-4 w-4" />}
         />
         <DraggableNode
           type="default"
-          label="Nodo de proceso"
-          icon={<MessageSquare className="h-4 w-4 text-primary" />}
+          label="Proceso"
+          icon={<MessageSquare className="h-4 w-4" />}
         />
         <DraggableNode
           type="output"
-          label="Nodo de salida"
-          icon={<CircleOff className="h-4 w-4 text-primary" />}
+          label="Salida"
+          icon={<CircleOff className="h-4 w-4" />}
         />
       </div>
     </div>

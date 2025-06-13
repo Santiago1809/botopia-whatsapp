@@ -5,10 +5,9 @@ import ReactFlow, {
   Controls, 
   MiniMap,
   useReactFlow,
-  Panel
 } from 'reactflow'
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { Trash2, Save } from "lucide-react"
 
 
 interface FlowCanvasProps {
@@ -56,12 +55,58 @@ export function FlowCanvas({
 
       setNodes((nds) => nds.concat(newNode))
     },
-    [project]
+    [project, setNodes]
   )
+
+  const handleSave = useCallback(async () => {
+    const flow = {
+      nodes,
+      edges,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const file = new Blob([JSON.stringify(flow, null, 2)], { 
+        type: 'application/json' 
+      });
+      
+      // Crear un elemento <a> para descargar el archivo
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = `flow-${flow.timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+
+      console.log('Flujo guardado exitosamente');
+    } catch (error) {
+      console.error('Error al guardar el flujo:', error);
+    }
+  }, [nodes, edges]);
 
   return (
     <div className="h-screen w-screen md:ml-[320px] bg-background relative">
-      
+      {/* Panel fijo de botones */}
+      <div className="fixed right-4 top-4 z-[1000] flex gap-2 bg-background/80 p-2 rounded-lg backdrop-blur shadow-md">
+        <Button 
+          variant="destructive" 
+          size="sm"
+          onClick={() => setNodes([])}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Clear Canvas
+        </Button>
+        <Button 
+          onClick={handleSave}
+          size="sm"
+          className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90"
+        >
+          <Save className="h-4 w-4" />
+          Guardar flujo
+        </Button>
+      </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -71,21 +116,11 @@ export function FlowCanvas({
         onDragOver={onDragOver}
         onDrop={onDrop}
         fitView
-        className="border rounded-lg"
+        className="h-full w-full border rounded-lg"
       >
-        <Panel position="top-right" className="flex gap-2">
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={() => setNodes([])}
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear Canvas
-          </Button>
-        </Panel>
+        <Controls className="!bg-background" />
         <Background />
-        <Controls />
-        <MiniMap className="border rounded-lg" />
+        <MiniMap className="!bg-background border rounded-lg" />
       </ReactFlow>
     </div>
   )
