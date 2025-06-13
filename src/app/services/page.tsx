@@ -75,7 +75,7 @@ const serviceData: ServiceProps[] = [
     ),
     iconAlt: "IA Flows Icon",
     actionLabel: "Crear",
-    actionUrl: "/services/flows",
+    actionUrl: "/services/flows/principal",
     bgColor: "bg-white",
     iconBg: "bg-secondary/10",
     iconColor: "text-secondary",
