@@ -113,7 +113,7 @@ const serviceData: ServiceProps[] = [
     bgColor: "bg-white",
     iconBg: "bg-blue-50",
     iconColor: "text-blue-600",
-    isComingSoon: false,
+    isComingSoon: true,
   },
   {
     title: "Llamadas con IA",
