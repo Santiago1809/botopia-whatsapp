@@ -18,6 +18,7 @@ import { useState } from "react";
 
 interface WhatsAppHeaderProps {
   setSidebarOpen: (open: boolean) => void;
+  sidebarOpen: boolean;
   selectedNumber: WhatsappNumber | null;
   toggleAi: (numberId: string | number, newVal: boolean) => void;
   toggleGroups: (numberId: string | number, newVal: boolean) => void;
@@ -37,6 +38,7 @@ interface WhatsAppHeaderProps {
 
 export default function WhatsAppHeader({
   setSidebarOpen,
+  sidebarOpen,
   selectedNumber,
   toggleAi,
   toggleGroups,
@@ -94,9 +96,13 @@ export default function WhatsAppHeader({
           variant="ghost"
           size="icon"
           className="md:hidden rounded-full text-white hover:bg-primary"
-          onClick={() => setSidebarOpen(true)}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          <MenuIcon className="h-5 w-5" />
+          {sidebarOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <MenuIcon className="h-5 w-5" />
+          )}
         </Button>{" "}
         {selectedNumber && (
           <div className="flex items-center justify-between w-full">
@@ -243,9 +249,7 @@ export default function WhatsAppHeader({
           <div className="flex">
             <button
               className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "contacts"
-                  ? "text-primary"
-                  : "text-gray-500"
+                activeTab === "contacts" ? "text-primary" : "text-gray-500"
               }`}
               onClick={() => setActiveTab("contacts")}
             >
@@ -253,9 +257,7 @@ export default function WhatsAppHeader({
             </button>
             <button
               className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "groups"
-                  ? "text-primary"
-                  : "text-gray-500"
+                activeTab === "groups" ? "text-primary" : "text-gray-500"
               }`}
               onClick={() => setActiveTab("groups")}
             >
@@ -263,9 +265,7 @@ export default function WhatsAppHeader({
             </button>
             <button
               className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "unsynced"
-                  ? "text-primary"
-                  : "text-gray-500"
+                activeTab === "unsynced" ? "text-primary" : "text-gray-500"
               }`}
               onClick={() => setActiveTab("unsynced")}
             >

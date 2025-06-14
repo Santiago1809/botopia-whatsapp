@@ -230,7 +230,7 @@ export default function Page() {
         (a: SyncedItem, b: SyncedItem) =>
           (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)
       );
-      console.log(contacts)
+    console.log(contacts);
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
     // NO limpiar el chat seleccionado aquí
@@ -830,7 +830,7 @@ export default function Page() {
     );
     if (!res.ok) {
       alert("Error al actualizar el prompt");
-      setCurrentAgent(null)
+      setCurrentAgent(null);
       return;
     }
   }, [currentAgent, getToken, selectedNumber]);
@@ -1272,6 +1272,7 @@ export default function Page() {
       {/* Contenido central */}{" "}
       <div className="flex-1 flex flex-col overflow-hidden bg-white w-full">
         <WhatsAppHeader
+          sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           selectedNumber={selectedNumber}
           toggleAi={toggleAi}
@@ -1326,7 +1327,8 @@ export default function Page() {
             return chat;
           })()}
         />
-      </div>      {/* Sidebar derecho */}
+      </div>{" "}
+      {/* Sidebar derecho */}
       {selectedNumber && (
         <div className="hidden md:block  bg-gray-50 border-l shadow-lg flex-col">
           <SyncedSidebar
