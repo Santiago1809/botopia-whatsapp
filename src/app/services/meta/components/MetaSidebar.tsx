@@ -116,21 +116,12 @@ export default function MetaSidebar({
       "text-transparent bg-clip-text bg-gradient-to-r from-[#F58529] via-[#E4405F] to-[#405DE6]",
     threads: "text-gray-800",
   }[appType];
-
   // Determinar el color del botón de regresar al hover
   const backButtonHoverClass = {
     whatsapp: "hover:text-green-600",
     facebook: "hover:text-blue-600",
     instagram: "hover:text-[#E4405F]",
     threads: "hover:text-gray-800",
-  }[appType];
-
-  // Determinar el color del badge
-  const badgeClass = {
-    whatsapp: "bg-green-500",
-    facebook: "bg-blue-500",
-    instagram: "bg-gradient-to-r from-[#F58529] via-[#E4405F] to-[#405DE6]",
-    threads: "bg-gray-700",
   }[appType];
 
   return (
@@ -240,7 +231,7 @@ export default function MetaSidebar({
             isActive={activeSection === "outbound"}
             onClick={() => setActiveSection("outbound")}
             appType={appType}
-          />
+          />{" "}
           <div className="relative">
             {" "}
             <SidebarItem
@@ -250,11 +241,6 @@ export default function MetaSidebar({
               onClick={() => setActiveSection("wa-flows")}
               appType={appType}
             />
-            <span
-              className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${badgeClass} text-white text-xs px-1 py-0.5 rounded text-[8px] font-medium`}
-            >
-              BETA
-            </span>
           </div>{" "}
           <SidebarItem
             icon={<BarChart3 className="h-4.5 w-4.5" />}
@@ -344,44 +330,8 @@ export default function MetaSidebar({
               isActive={false}
               onClick={() => window.open("/services/whatsapp", "_blank")}
               appType={appType}
-            />
+            />{" "}
             <ExternalLink className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />{" "}
-          </div>
-          <div className="relative">
-            <SidebarItem
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="1.2em"
-                  height="1.2em"
-                  viewBox="0 0 24 24"
-                  className="overflow-visible"
-                >
-                  <defs>
-                    <linearGradient
-                      id="instagramSidebarGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#F58529" />
-                      <stop offset="35%" stopColor="#E4405F" />
-                      <stop offset="100%" stopColor="#405DE6" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    fill="url(#instagramSidebarGradient)"
-                    d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8A1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5a5 5 0 0 1-5 5a5 5 0 0 1-5-5a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3Z"
-                  />
-                </svg>
-              }
-              title="Instagram"
-              isActive={false}
-              onClick={() => window.open("/services/instagram", "_blank")}
-              appType={appType}
-            />
-            <ExternalLink className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
           </div>
           <div className="relative">
             <SidebarItem
@@ -404,11 +354,6 @@ export default function MetaSidebar({
               onClick={() => window.open("/services/ai-calls", "_blank")}
               appType={appType}
             />
-            <span
-              className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${badgeClass} text-white text-xs px-1 py-0.5 rounded text-[8px] font-medium`}
-            >
-              BETA
-            </span>
           </div>
         </div>{" "}
         {/* Sección de usuario */}
