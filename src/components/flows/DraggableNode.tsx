@@ -2,16 +2,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface DraggableNodeProps {
-  type: string
-  label: string
-  icon?: React.ReactNode
+  type: string;
+  label: string;
+  icon?: React.ReactNode;
 }
 
 export function DraggableNode({ type, label, icon }: DraggableNodeProps) {
-  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify({ type, label }))
-    event.dataTransfer.effectAllowed = 'move'
-  }
+  const onDragStart = (event: React.DragEvent) => {
+    event.dataTransfer.setData('application/reactflow', JSON.stringify({ type, label }));
+    event.dataTransfer.effectAllowed = 'move';
+  };
 
   return (
     <Card

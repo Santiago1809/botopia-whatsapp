@@ -1,22 +1,26 @@
-import { useCallback } from 'react'
-import { type Node, type Edge, type Connection, type NodeChange, type EdgeChange } from 'reactflow'
-import ReactFlow, { 
-  Background, 
-  Controls, 
-  MiniMap,
-  useReactFlow,
-} from 'reactflow'
+import { Node, Edge, Connection, NodeChange, EdgeChange, ReactFlowInstance, NodeProps as ReactFlowNodeProps } from 'reactflow'
+import ReactFlow, { Background, Controls, MiniMap } from 'reactflow'
+import { useCallback, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Trash2, Save } from "lucide-react"
 
+// Use ReactFlow's NodeProps type instead of creating our own
+/*interface NodeData {
+  label: string;
+  [key: string]: unknown;
+}*/
 
+// Remove our custom NodeProps interface and use ReactFlow's
 interface FlowCanvasProps {
   nodes: Node[]
   edges: Edge[]
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
-  setNodes: React.Dispatch<React.SetStateAction<Node[]>> // Añadimos esta línea
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>
+  nodeTypes: {
+    [key: string]: React.ComponentType<ReactFlowNodeProps>
+  }
 }
 
 export function FlowCanvas({
@@ -25,38 +29,59 @@ export function FlowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
-  setNodes, // Añadimos este prop
+  setNodes,
+  nodeTypes,
 }: FlowCanvasProps) {
-  const { project } = useReactFlow()
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
-  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-  }, [])
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
 
   const onDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault()
+    (event: React.DragEvent) => {
+      event.preventDefault();
 
-      const reactFlowBounds = event.currentTarget.getBoundingClientRect()
-      const data = JSON.parse(event.dataTransfer.getData('application/reactflow'))
-
-      const position = project({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
-      })
-
-      const newNode = {
-        id: `${data.type}-${Date.now()}`,
-        type: data.type,
-        position,
-        data: { label: data.label },
+      if (!reactFlowWrapper.current || !reactFlowInstance) {
+        return;
       }
 
-      setNodes((nds) => nds.concat(newNode))
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const dragData = event.dataTransfer.getData('application/reactflow');
+
+      if (!dragData) {
+        console.error('No data received in drag and drop');
+        return;
+      }
+
+      try {
+        const { type, label } = JSON.parse(dragData);
+
+        // Get the position where the node was dropped
+        const position = reactFlowInstance.project({
+          x: event.clientX - reactFlowBounds.left,
+          y: event.clientY - reactFlowBounds.top,
+        });
+
+        const newNode = {
+          id: `${type}-${Date.now()}`,
+          type,
+          position,
+          data: { label },
+        };
+
+        onNodesChange([{
+          type: 'add',
+          item: newNode,
+        }]);
+      } catch (error) {
+        console.error('Error processing drag and drop data:', error);
+      }
     },
-    [project, setNodes]
-  )
+    [reactFlowInstance, onNodesChange]
+  );
 
   const handleSave = useCallback(async () => {
     const flow = {
@@ -107,21 +132,25 @@ export function FlowCanvas({
         </Button>
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        fitView
-        className="h-full w-full border rounded-lg"
-      >
-        <Controls className="!bg-background" />
-        <Background />
-        <MiniMap className="!bg-background border rounded-lg" />
-      </ReactFlow>
+      <div ref={reactFlowWrapper} className="w-full h-full">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onInit={setReactFlowInstance}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          nodeTypes={nodeTypes}
+          fitView
+          className="h-full w-full border rounded-lg"
+        >
+          <Controls className="!bg-background" />
+          <Background />
+          <MiniMap className="!bg-background border rounded-lg" />
+        </ReactFlow>
+      </div>
     </div>
   )
 }
