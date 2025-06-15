@@ -51,7 +51,7 @@ export default function MaintenancePage() {
 
         <div className="mt-6 pt-4 border-t border-gray-200">
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => (window.location.href = "/")}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <span className="mr-2">🔄</span>
