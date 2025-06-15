@@ -180,7 +180,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         month: "2-digit",
       });
     }
-  };  return (
+  };
+  return (
     <div className="h-full w-[320px] flex flex-col relative">
       {/* Cabecera con estilo Botopia */}
       <div className="bg-gradient-to-l h-8 from-[#411E8A] to-[#050044] text-white flex justify-between items-center px-4 py-8 shadow-md z-10">
@@ -195,7 +196,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           >
             <MoreVertical className="w-5 h-5 text-white" />
           </button>
-        </div>        {/* Menú desplegable de acciones */}
+        </div>{" "}
+        {/* Menú desplegable de acciones */}
         {showActions && (
           <div className="absolute right-4 top-12 bg-white rounded-xl py-2 z-50 w-52 border border-gray-100">
             <button
@@ -291,7 +293,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             </button>
           </div>
         )}
-      </div>      {/* Input de búsqueda en la parte superior con estilo Botopia */}
+      </div>{" "}
+      {/* Input de búsqueda en la parte superior con estilo Botopia */}
       <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 to-white px-4 py-3">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -305,7 +308,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-      </div>      {/* Filtro visual mejorado tipo Botopia */}
+      </div>{" "}
+      {/* Filtro visual mejorado tipo Botopia */}
       <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-[#FAECD4]">
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
@@ -347,7 +351,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         >
           No Sincronizados
         </button>
-      </div>      {/* Lista de contactos y grupos con estilo Botopia */}
+      </div>{" "}
+      {/* Lista de contactos y grupos con estilo Botopia */}
       <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-[#FAECD4]/20">
         {(filterType === "all" || filterType === "contacts") && (
           <div>
@@ -435,7 +440,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               </ul>
             )}
           </div>
-        )}        {(filterType === "all" || filterType === "groups") &&
+        )}{" "}
+        {(filterType === "all" || filterType === "groups") &&
           filteredGroups.length > 0 && (
             <div>
               <ul>
@@ -517,7 +523,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               </ul>
             </div>
           )}
-
         {(filterType === "all" || filterType === "unsynced") &&
           filteredUnsyncedContacts.length > 0 && (
             <div>
@@ -620,7 +625,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               </ul>
             </div>
           )}
-
         {/* Mensajes de estado vacío */}
         {filterType === "contacts" && filteredContacts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -635,7 +639,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             </p>
           </div>
         )}
-
         {filterType === "groups" && filteredGroups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
@@ -649,7 +652,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             </p>
           </div>
         )}
-
         {filterType === "unsynced" && filteredUnsyncedContacts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
@@ -664,7 +666,6 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           </div>
         )}
       </div>
-
       {/* Botón flotante de sincronización */}
       <button
         className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] transition-colors z-10"

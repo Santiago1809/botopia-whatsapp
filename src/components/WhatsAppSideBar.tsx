@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 import { WhatsappNumber } from "@/types/gobal";
 import { ArrowLeft, Phone, Search, Trash, User } from "lucide-react";
+import MessagesCard from "./MessageCard";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import MessagesCard from "./MessageCard";
 
 interface WhatsAppSideBarProps {
   sidebarOpen: boolean;
@@ -24,7 +24,6 @@ interface WhatsAppSideBarProps {
 
 export default function WhatsAppSideBar({
   sidebarOpen,
-  setSidebarOpen,
   whatsappNumbers,
   selectedNumber,
   setSelectedNumber,
@@ -39,26 +38,15 @@ export default function WhatsAppSideBar({
 }: WhatsAppSideBarProps) {
   return (
     <div
-      className={`w-full md:w-[280px] border-r flex flex-col bg-white fixed md:relative z-20 
+      className={`w-full md:w-[280px] flex flex-col bg-white fixed md:relative z-20 
             transition-all duration-300 ease-in-out 
             h-full
             ${sidebarOpen ? "left-0" : "-left-full md:left-0"}`}
     >
-      <div className="flex items-center justify-between p-4 md:hidden border-b">
-        <h2 className="font-bold text-lg">Clic sociable</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="p-4 border-b">
+      <div className="p-3.5 border-b mt-14 md:mt-0 bg-gradient-to-r from-[#411E8A] to-[#050044]">
         <Button
           variant="outline"
-          className="w-full flex cursor-pointer items-center justify-center gap-2 text-secondary hover:text-white hover:bg-secondary border-primary rounded-full"
+          className="w-full flex cursor-pointer items-center justify-center gap-2 text-[#411E8A] hover:text-white hover:bg-tertiary/10 border-[#411E8A] rounded-full transition-all duration-200"
           onClick={handleLogout}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -103,7 +91,7 @@ export default function WhatsAppSideBar({
           <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
         </div>
         <Button
-          className="w-full my-6 bg-secondary hover:bg-primary text-white rounded-full"
+          className="w-full my-6 bg-gradient-to-r from-[#411E8A] to-[#050044] hover:from-[#050044] hover:to-[#411E8A] text-white rounded-full transition-all duration-200"
           onClick={addNumber}
         >
           +Conectar Nuevo Número
