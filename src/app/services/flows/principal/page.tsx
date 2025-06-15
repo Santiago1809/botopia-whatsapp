@@ -59,68 +59,171 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gray-50">
       <FlowSidebar />
-      <div className="flex-1 ml-64">
-        <div className="container py-6 px-4"> {/* Cambiado de py-8 a py-6 */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-            <div className="space-y-1.5"> {/* Añadido space-y-1.5 */}
-              <h1 className="text-2xl font-bold tracking-tight"> {/* Cambiado de text-3xl a text-2xl */}
-                Mis Proyectos de Flujo
+      <div className="
+        flex-1 w-full
+        lg:ml-80                /* Aumentado de lg:ml-72 a lg:ml-80 */
+      ">
+        {/* Container */}
+        <div className="
+          px-7 py-12                         /* Móvil vertical */
+          landscape:max-lg:px-7 
+          landscape:max-lg:py-12             /* Solo móvil horizontal */
+          lg:px-7 lg:py-7                /* Solo desktop */
+        ">
+          {/* Header section */}
+          <div className="
+            flex flex-col mb-6              /* Móvil vertical */
+            landscape:max-lg:flex-row 
+            landscape:max-lg:items-center 
+            landscape:max-lg:mb-4           /* Solo móvil horizontal */
+            lg:flex-row lg:items-start 
+            lg:mb-12                        /* Solo desktop */
+          ">
+            {/* Title and description */}
+            <div className="
+              space-y-3                     /* Móvil vertical */
+              landscape:max-lg:space-y-2    /* Solo móvil horizontal */
+              lg:space-y-1.5                 /* Solo desktop */
+            ">
+              <h1 className="
+                text-2xl font-bold          /* Móvil vertical */
+                landscape:max-lg:text-xl    /* Solo móvil horizontal */
+                lg:text-2xl                /* Solo desktop */
+              ">
+                Mis Flujos
               </h1>
-              <p className="text-muted-foreground text-sm"> {/* Añadido text-sm */}
+              <p className="
+                text-sm text-muted-foreground     /* Móvil vertical */
+                landscape:max-lg:text-xs          /* Solo móvil horizontal */
+                lg:text-ms                      /* Solo desktop */
+              ">
                 Gestiona y crea nuevos flujos de trabajo para WhatsApp.
               </p>
             </div>
-            <Link href="/services/flows">
-              <Button className="text-white bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Proyecto
-              </Button>
-            </Link>
-          </div>
 
-          <div className="mb-6">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <Input
-                placeholder="Buscar proyectos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            {/* Button container */}
+            <div className="
+              mt-6                          /* Móvil vertical */
+              landscape:max-lg:mt-0  landscape:max-lg:ml-108         /* Solo móvil horizontal */
+              lg:mt-0 lg:ml-auto           /* Solo desktop */
+            ">
+              <Link href="/services/flows">
+                <Button className="
+                  w-full h-12 px-4 text-base         /* Móvil vertical */
+                  landscape:max-lg:w-auto 
+                  landscape:max-lg:h-8             /* Solo móvil horizontal */
+                  lg:h-12 lg:px-12 lg:text-xl       /* Solo desktop */
+                  text-white bg-primary hover:bg-primary/90
+                ">
+                  <Plus className="
+                    w-6 h-6 mr-2                     /* Móvil vertical */
+                    landscape:max-lg:w-5 
+                    landscape:max-lg:h-5             /* Solo móvil horizontal */
+                    lg:w-8 lg:h-8 lg:mr-4           /* Solo desktop */
+                  "/>
+                  Nuevo Flujo
+                </Button>
+              </Link>
             </div>
           </div>
 
-          <div className="border rounded-lg bg-card">
+          {/* Search section */}
+          <div className="relative w-full lg:max-w-2xl">
+            <Search className="
+              absolute left-3 top-1/2 -translate-y-1/2 
+              w-5 h-5                               /* Móvil vertical */
+              landscape:max-lg:w-4 
+              landscape:max-lg:h-4                  /* Solo móvil horizontal */
+              lg:w-7 lg:h-7 lg:left-6              /* Solo desktop */
+              text-gray-500
+            " />
+            <Input
+              placeholder="Buscar proyectos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="
+                pl-12 h-12 text-base                /* Móvil vertical */
+                landscape:max-lg:h-10 
+                landscape:max-lg:text-sm           /* Solo móvil horizontal */
+                lg:h-16 lg:text-xl lg:pl-16       /* Solo desktop */
+                bg-white w-full
+              "
+            />
+          </div>
+
+          {/* Table section */}
+          <div className="border rounded-lg shadow-md bg-card overflow-x-auto mt-6">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[300px]">Nombre del Proyecto</TableHead>
-                  <TableHead>Fecha de Creación</TableHead>
-                  <TableHead>Última Modificación</TableHead>
-                  <TableHead className="text-center">Nodos</TableHead>
-                  <TableHead className="w-[100px]"></TableHead>
+                  <TableHead className="
+                    w-[200px] p-4 text-base            /* Móvil vertical */
+                    landscape:max-lg:w-[180px] 
+                    landscape:max-lg:p-3 
+                    landscape:max-lg:text-sm          /* Solo móvil horizontal */
+                    lg:w-[400px] lg:p-6 lg:text-xl    /* Solo desktop */
+                    font-semibold text-gray-900
+                  ">
+                    Nombre del Proyecto
+                  </TableHead>
+                  <TableHead className="
+                    hidden                         /* Mobile vertical */
+                    landscape:table-cell landscape:p-3 landscape:text-sm /* Mobile horizontal */
+                    lg:table-cell lg:p-8 lg:text-2xl /* Desktop */
+                    font-semibold text-gray-900
+                  ">
+                    Fecha de Creación
+                  </TableHead>
+                  <TableHead className="
+                    hidden                         /* Mobile vertical */
+                    landscape:table-cell landscape:p-3 landscape:text-sm /* Mobile horizontal */
+                    lg:table-cell lg:p-8 lg:text-2xl /* Desktop */
+                    font-semibold text-gray-900
+                  ">
+                    Última Modificación
+                  </TableHead>
+                  <TableHead className="
+                    text-center p-4 text-base      /* Mobile vertical */
+                    landscape:p-3 landscape:text-sm /* Mobile horizontal */
+                    lg:p-8 lg:text-2xl            /* Desktop */
+                    font-semibold text-gray-900
+                  ">
+                    Nodos
+                  </TableHead>
+                  <TableHead className="
+                    w-[60px] p-4                  /* Mobile vertical */
+                    landscape:w-[50px] landscape:p-3 /* Mobile horizontal */
+                    lg:w-[120px] lg:p-8           /* Desktop */
+                  "></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProjects.map((project) => (
                   <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="
+                      p-4 text-base                    /* Móvil vertical */
+                      landscape:max-lg:p-3 
+                      landscape:max-lg:text-sm        /* Solo móvil horizontal */
+                      lg:p-6 lg:text-xl              /* Solo desktop */
+                    ">
+                      {project.name}
+                    </TableCell>
+                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
                       {format(new Date(project.createdAt), "PPP", { locale: es })}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
                       {format(new Date(project.updatedAt), "PPP", { locale: es })}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
                       {project.nodesCount}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="p-3 landscape:p-2 lg:p-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-4 h-4" />
+                          <Button variant="ghost" size="sm" className="h-8 landscape:h-6 w-8 landscape:w-6 p-0">
+                            <MoreVertical className="h-4 landscape:h-3 w-4 landscape:w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -144,7 +247,7 @@ export default function ProjectsPage() {
                 ))}
                 {filteredProjects.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={5} className="text-center py-6 md:py-8">
                       No se encontraron proyectos
                     </TableCell>
                   </TableRow>
