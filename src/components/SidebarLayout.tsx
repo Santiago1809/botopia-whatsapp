@@ -72,7 +72,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         } lg:translate-x-0 transition-transform duration-300 ease-in-out w-60 bg-white border-r border-gray-200 z-30 flex flex-col h-full`}
       >
         {/* Logo y nombre */}
-        <div className="flex items-center justify-between px-4 py-3 text-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 text-gray-700 lg:mt-6">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/Logo.png" alt="Botopia Logo" width={32} height={32} />
             <span className="font-bold text-lg">Botopia</span>
