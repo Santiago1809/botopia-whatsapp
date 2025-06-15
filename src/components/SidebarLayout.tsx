@@ -71,7 +71,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         } lg:translate-x-0 transition-transform duration-300 ease-in-out w-60 bg-white border-r border-gray-200 z-30 flex flex-col h-full`}
       >
         {/* Logo y nombre */}
-        <div className="flex items-center justify-between px-4 py-3 text-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 text-gray-700 lg:mt-6">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/Logo.png" alt="Botopia Logo" width={32} height={32} />
             <span className="font-bold text-lg">Botopia</span>
@@ -293,8 +293,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       </aside>
 
       {/* Main content */}
-      <div className="lg:ml-60 w-full flex flex-col min-h-screen">        {/* Mobile header */}
-        <header className="lg:hidden bg-gradient-to-r from-[#411E8A] to-[#050044] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
+      <div className="lg:ml-60 w-full flex flex-col min-h-screen">
+        {/* Mobile header */}
+        <header className="lg:hidden bg-gradient-to-l from-[#411E8A] to-[#050044] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
           <button
             onClick={toggleSidebar}
             className="text-white focus:outline-none"

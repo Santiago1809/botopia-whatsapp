@@ -5,15 +5,15 @@ import {
   SheetTitle 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft } from "lucide-react"
+import { Menu, ArrowLeft } from "lucide-react" // Remove Phone
 import Link from "next/link"
 import { 
-  CircleDot, // Reemplazamos Input
+  CircleDot,
   MessageSquare,
-  CircleOff // Reemplazamos Output
+  CircleOff,
 } from "lucide-react"
-import { DraggableNode } from "./DraggableNode"
-import React from "react"
+import { BsWhatsapp } from 'react-icons/bs'
+import React from "react" // Remove useState
 
 export function Sidebar() {
   return (
@@ -73,24 +73,69 @@ export function Sidebar() {
 // Componente auxiliar para el contenido del sidebar
 function SidebarContent() {
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3">
-        <DraggableNode
-          type="input"
-          label="Entrada"
-          icon={<CircleDot className="h-4 w-4" />}
-        />
-        <DraggableNode
-          type="default"
-          label="Proceso"
-          icon={<MessageSquare className="h-4 w-4" />}
-        />
-        <DraggableNode
-          type="output"
-          label="Salida"
-          icon={<CircleOff className="h-4 w-4" />}
-        />
+    <div className="space-y-6">
+      <div>
+        <h3 className="mb-3 text-sm font-medium">Elementos de flujo</h3>
+        <div className="grid gap-3">
+          <DraggableNode
+            type="input"
+            label="Entrada"
+            icon={<CircleDot className="h-4 w-4" />}
+          />
+          <DraggableNode
+            type="default"
+            label="Proceso"
+            icon={<MessageSquare className="h-4 w-4" />}
+          />
+          <DraggableNode
+            type="output"
+            label="Salida"
+            icon={<CircleOff className="h-4 w-4" />}
+          />
+          <DraggableNode
+            type="whatsappNode"
+            label="WhatsApp baruc"
+            icon={<BsWhatsapp className="h-4 w-4 text-green-500" />}
+          />
+          <DraggableNode
+            type="whatsappBusinessApi"
+            label="WhatsApp Business API"
+            icon={<BsWhatsapp className="h-4 w-4 text-green-500" />}
+          />
+        </div>
       </div>
     </div>
   )
+}
+
+// Modifica o agrega el componente DraggableNode
+interface DraggableNodeProps {
+  type: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+export function DraggableNode({ type, label, icon }: DraggableNodeProps) {
+  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    // Asegúrate de que el formato de los datos sea consistente
+    const nodeData = {
+      type,
+      label,
+    };
+    
+    // Establece el tipo MIME correcto
+    event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData));
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  return (
+    <div
+      className="flex items-center gap-2 p-3 border rounded-lg cursor-move hover:border-primary transition-colors"
+      draggable
+      onDragStart={onDragStart}
+    >
+      {icon}
+      <span className="text-sm">{label}</span>
+    </div>
+  );
 }
