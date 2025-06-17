@@ -24,8 +24,8 @@ export function FlowSidebar() {
 
   const menuItemStyle = (path: string) => {
     return isActive(path)
-      ? "w-full flex items-center px-2 py-2 rounded-md hover:bg-primary/10 hover:text-primary bg-secondary text-white"
-      : "w-full flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-primary/10 hover:text-primary";
+      ? "w-full flex items-center px-2 py-2 rounded-md bg-primary/90 text-white hover:bg-primary"  // Cambiado de bg-secondary a bg-primary
+      : "w-full flex items-center px-2 py-2 rounded-md hover:bg-primary/10 hover:text-primary dark:text-white";
   };
 
   return (
@@ -58,55 +58,60 @@ export function FlowSidebar() {
         )}
       </Button>
 
-      {/* Sidebar Container */}
+      {/* Mobile Sidebar Container */}
       <div 
         className={`
-          fixed left-0 top-0 h-screen bg-background 
-          w-80                              /* Aumentado de w-72 a w-80 */
+          fixed left-0 top-0 h-screen 
+          bg-background dark:bg-[hsl(240,10%,14%)]
+          w-80 
           transform transition-transform duration-200 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          landscape:max-lg:overflow-y-auto    /* Solo móvil horizontal - scroll */
-          lg:translate-x-0 lg:overflow-y-visible /* Solo desktop - sin scroll */
-          z-40 border-r
+          landscape:max-lg:overflow-y-auto
+          lg:translate-x-0 lg:overflow-y-visible
+          z-40 border-r dark:border-border
         `}
       >
         {/* Header */}
         <div className="
-          h-[60px] flex items-center px-7 gap-2  /* Móvil vertical */
+          h-[60px] flex items-center px-7 gap-2
           pt-3
           landscape:max-lg:mt-0 
           landscape:max-lg:h-[50px]
           landscape:max-lg:pr-16
-          landscape:max-lg:pt-4              /* Solo móvil horizontal */
+          landscape:max-lg:pt-4
           lg:h-[80px] lg:px-6 lg:gap-4 
-          lg:pt-4                           /* Solo desktop */
-          sticky top-0 bg-background z-10    /* Mantener header visible */
+          lg:pt-4
+          sticky top-0 z-10
+          bg-background dark:bg-[hsl(240,10%,14%)]
         ">
           <Button 
             variant="outline"
             className="
-              h-8 w-8 p-0                    /* Móvil vertical */
+              h-8 w-8 p-0
               landscape:max-lg:ml-2 
-              landscape:max-lg:h-7           /* Solo móvil horizontal */
-              lg:h-10 lg:w-10               /* Solo desktop */
+              landscape:max-lg:h-7
+              lg:h-10 lg:w-10
               hover:bg-primary hover:text-white 
               active:bg-primary active:text-white
+              dark:text-foreground
             "
             asChild
           >
             <Link href="/services/">
               <ArrowLeft className="
-                h-6 w-6                      /* Móvil vertical */
+                h-6 w-6
                 landscape:max-lg:h-5 
-                landscape:max-lg:w-5         /* Solo móvil horizontal */
-                lg:h-8 lg:w-8               /* Solo desktop */
+                landscape:max-lg:w-5
+                lg:h-8 lg:w-8
+                dark:text-foreground
               " />
             </Link>
           </Button>
           <span className="
-            font-semibold text-lg           /* Móvil vertical */
-            landscape:max-lg: text-base      /* Solo móvil horizontal */
-            lg:text-xl                     /* Solo desktop */
+            font-semibold text-lg
+            landscape:max-lg:text-base
+            lg:text-2xl
+            text-foreground dark:text-foreground
           ">
             Regresar
           </span>
@@ -191,6 +196,59 @@ export function FlowSidebar() {
               <span className="text-xs ">Para desarrolladores</span>
             </div>
           </Link>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:inset-y-0 
+        bg-background dark:bg-[hsl(240,10%,10%)] border-r dark:border-border"
+      >
+        {/* Desktop header con el mismo color de fondo */}
+        <div className="h-[80px] flex items-center px-6 gap-4 
+          bg-background dark:bg-[hsl(240,10%,10%)] border-b dark:border-border"
+        >
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">
+              PRINCIPAL
+            </h2>
+          </div>
+        </div>
+        <div className="flex-1 space-y-2 p-4">
+          <nav className="flex-1 space-y-2">
+            <Link 
+              href="/services/flows/principal/plantillas"
+              className="flex items-center gap-3 px-3 py-2 text-sm dark:text-white 
+                hover:bg-accent/50 rounded-lg transition-colors"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Plantillas</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400 ml-auto">
+                Flujos predefinidos
+              </span>
+            </Link>
+            <Link 
+              href="/services/flows/principal/mis-flujos"
+              className="flex items-center gap-3 px-3 py-2 text-sm dark:text-white 
+                hover:bg-accent/50 rounded-lg transition-colors"
+            >
+              <Layout className="h-4 w-4" />
+              <span>Mis Flujos</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400 ml-auto">
+                Flujos personalizados
+              </span>
+            </Link>
+            <Link 
+              href="/services/flows/comunidadDD"
+              className="flex items-center gap-3 px-3 py-2 text-sm dark:text-white 
+                hover:bg-accent/50 rounded-lg transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              <span>Comunidad</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400 ml-auto">
+                Flujos compartidos
+              </span>
+            </Link>
+          </nav>
         </div>
       </div>
     </>
