@@ -30,7 +30,10 @@ export function Sidebar() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[320px] p-4">
+          <SheetContent 
+            side="left" 
+            className="w-[320px] p-4 bg-[hsl(var(--sidebar))]"
+          >
             <div className="flex items-center gap-4 mb-4">
               <Link href="/services/flows/principal">
                 <Button 
@@ -42,7 +45,7 @@ export function Sidebar() {
                   <span className="sr-only">Volver a productos</span>
                 </Button>
               </Link>
-              <SheetTitle>herramientas de flujo</SheetTitle>
+              <SheetTitle>Herramientas de flujo</SheetTitle>
             </div>
             <SidebarContent />
           </SheetContent>
@@ -50,7 +53,7 @@ export function Sidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-[320px] border-r bg-background p-4">
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-[320px] border-r bg-[hsl(var(--sidebar))] p-4">
         <div className="flex items-center gap-4 mb-4">
           <Link href="/services/flows/principal">
             <Button 
@@ -62,7 +65,7 @@ export function Sidebar() {
               <span className="sr-only">Volver a productos</span>
             </Button>
           </Link>
-          <h2 className="text-lg font-semibold">herramientas de flujo</h2>
+          <h2 className="text-lg font-semibold">Herramientas de flujo</h2>
         </div>
         <SidebarContent />
       </div>
@@ -130,7 +133,10 @@ export function DraggableNode({ type, label, icon }: DraggableNodeProps) {
 
   return (
     <div
-      className="flex items-center gap-2 p-3 border rounded-lg cursor-move hover:border-primary transition-colors"
+      className="flex items-center gap-2 p-3 border rounded-lg cursor-move 
+      hover:border-primary transition-colors
+      bg-[hsl(var(--background))] dark:bg-[hsl(240,3.7%,30%)]
+      hover:bg-accent/50"
       draggable
       onDragStart={onDragStart}
     >

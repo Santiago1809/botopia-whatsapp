@@ -3,6 +3,7 @@ import ReactFlow, { Background, Controls, MiniMap } from 'reactflow'
 import { useCallback, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Trash2, Save } from "lucide-react"
+import { ThemeSwitcher } from '@/components/flows/ThemeSwitcher'
 
 // Use ReactFlow's NodeProps type instead of creating our own
 /*interface NodeData {
@@ -111,21 +112,22 @@ export function FlowCanvas({
   }, [nodes, edges]);
 
   return (
-    <div className="h-screen w-screen md:ml-[320px] bg-background relative">
+    <div className="h-screen w-screen md:ml-[320px] bg-[hsl(var(--canvas))] relative">
       {/* Panel fijo de botones */}
-      <div className="fixed right-4 top-4 z-[1000] flex gap-2 bg-background/80 p-2 rounded-lg backdrop-blur shadow-md">
+      <div className="fixed right-4 top-4 z-[1000] flex gap-2 bg-[hsl(var(--sidebar))] p-2 rounded-lg backdrop-blur shadow-md border">
+        <ThemeSwitcher />
         <Button 
           variant="destructive" 
           size="sm"
           onClick={() => setNodes([])}
         >
           <Trash2 className="h-4 w-4 mr-2" />
-          Clear Canvas
+          Limpiar Canvas
         </Button>
         <Button 
           onClick={handleSave}
           size="sm"
-          className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90"
+          className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90 dark:text-white dark:hover:bg-primary/70"
         >
           <Save className="h-4 w-4" />
           Guardar flujo
@@ -144,11 +146,11 @@ export function FlowCanvas({
           onDrop={onDrop}
           nodeTypes={nodeTypes}
           fitView
-          className="h-full w-full border rounded-lg"
+          className="h-full w-full border rounded-lg bg-[hsl(var(--canvas))]"
         >
-          <Controls className="!bg-background" />
+          <Controls className="!bg-[hsl(var(--sidebar))] border" />
           <Background />
-          <MiniMap className="!bg-background border rounded-lg" />
+          <MiniMap className="!bg-[hsl(var(--sidebar))] border rounded-lg" />
         </ReactFlow>
       </div>
     </div>
