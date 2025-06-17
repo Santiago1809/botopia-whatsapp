@@ -59,46 +59,19 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
       <FlowSidebar />
-      <div className="
-        flex-1 w-full
-        lg:ml-80                /* Aumentado de lg:ml-72 a lg:ml-80 */
-      ">
+      <div className="flex-1 w-full lg:ml-80">
         {/* Container */}
-        <div className="
-          px-7 py-12                         /* Móvil vertical */
-          landscape:max-lg:px-7 
-          landscape:max-lg:py-12             /* Solo móvil horizontal */
-          lg:px-7 lg:py-7                /* Solo desktop */
-        ">
+        <div className="px-7 py-12 landscape:max-lg:px-7 landscape:max-lg:py-12 lg:px-7 lg:py-7">
           {/* Header section */}
-          <div className="
-            flex flex-col mb-6              /* Móvil vertical */
-            landscape:max-lg:flex-row 
-            landscape:max-lg:items-center 
-            landscape:max-lg:mb-4           /* Solo móvil horizontal */
-            lg:flex-row lg:items-start 
-            lg:mb-12                        /* Solo desktop */
-          ">
+          <div className="flex flex-col mb-6 landscape:max-lg:flex-row landscape:max-lg:items-center landscape:max-lg:mb-4 lg:flex-row lg:items-start lg:mb-12">
             {/* Title and description */}
-            <div className="
-              space-y-3                     /* Móvil vertical */
-              landscape:max-lg:space-y-2    /* Solo móvil horizontal */
-              lg:space-y-1.5                 /* Solo desktop */
-            ">
-              <h1 className="
-                text-2xl font-bold          /* Móvil vertical */
-                landscape:max-lg:text-xl    /* Solo móvil horizontal */
-                lg:text-2xl                /* Solo desktop */
-              ">
+            <div className="space-y-3 landscape:max-lg:space-y-2 lg:space-y-1.5">
+              <h1 className="text-2xl font-bold text-foreground landscape:max-lg:text-xl lg:text-2xl">
                 Mis Flujos
               </h1>
-              <p className="
-                text-sm text-muted-foreground     /* Móvil vertical */
-                landscape:max-lg:text-xs          /* Solo móvil horizontal */
-                lg:text-ms                      /* Solo desktop */
-              ">
+              <p className="text-sm text-muted-foreground landscape:max-lg:text-xs lg:text-ms">
                 Gestiona y crea nuevos flujos de trabajo para WhatsApp.
               </p>
             </div>
@@ -131,65 +104,45 @@ export default function ProjectsPage() {
 
           {/* Search section */}
           <div className="relative w-full lg:max-w-2xl">
-            <Search className="
-              absolute left-3 top-1/2 -translate-y-1/2 
-              w-5 h-5                               /* Móvil vertical */
-              landscape:max-lg:w-4 
-              landscape:max-lg:h-4                  /* Solo móvil horizontal */
-              lg:w-7 lg:h-7 lg:left-6              /* Solo desktop */
-              text-gray-500
-            " />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 landscape:max-lg:w-4 landscape:max-lg:h-4 lg:w-7 lg:h-7 lg:left-6 text-muted-foreground" />
             <Input
               placeholder="Buscar proyectos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="
-                pl-12 h-12 text-base                /* Móvil vertical */
-                landscape:max-lg:h-10 
-                landscape:max-lg:text-sm           /* Solo móvil horizontal */
-                lg:h-16 lg:text-xl lg:pl-16       /* Solo desktop */
-                bg-white w-full
-              "
+              className="pl-12 h-12 text-base landscape:max-lg:h-10 landscape:max-lg:text-sm lg:h-16 lg:text-xl lg:pl-16 bg-background dark:bg-[hsl(240,10%,20%)] dark:text-foreground"
             />
           </div>
 
           {/* Table section */}
-          <div className="border rounded-lg shadow-md bg-card overflow-x-auto mt-6">
+          <div className="border rounded-lg shadow-md bg-card dark:bg-[hsl(240,10%,14%)] overflow-x-auto mt-6">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="
-                    w-[200px] p-4 text-base            /* Móvil vertical */
-                    landscape:max-lg:w-[180px] 
-                    landscape:max-lg:p-3 
-                    landscape:max-lg:text-sm          /* Solo móvil horizontal */
-                    lg:w-[400px] lg:p-6 lg:text-xl    /* Solo desktop */
-                    font-semibold text-gray-900
-                  ">
+                <TableRow className="dark:border-border">
+                  <TableHead className="w-[200px] p-4 text-base landscape:max-lg:w-[180px] landscape:max-lg:p-3 landscape:max-lg:text-sm lg:w-[400px] lg:p-6 lg:text-xl font-semibold text-foreground">
                     Nombre del Proyecto
                   </TableHead>
                   <TableHead className="
                     hidden                         /* Mobile vertical */
                     landscape:table-cell landscape:p-3 landscape:text-sm /* Mobile horizontal */
                     lg:table-cell lg:p-8 lg:text-2xl /* Desktop */
-                    font-semibold text-gray-900
-                  ">
+                    font-semibold text-foreground dark:text-foreground"
+                  >
                     Fecha de Creación
                   </TableHead>
                   <TableHead className="
                     hidden                         /* Mobile vertical */
                     landscape:table-cell landscape:p-3 landscape:text-sm /* Mobile horizontal */
                     lg:table-cell lg:p-8 lg:text-2xl /* Desktop */
-                    font-semibold text-gray-900
-                  ">
+                    font-semibold text-foreground dark:text-foreground"
+                  >
                     Última Modificación
                   </TableHead>
                   <TableHead className="
                     text-center p-4 text-base      /* Mobile vertical */
                     landscape:p-3 landscape:text-sm /* Mobile horizontal */
                     lg:p-8 lg:text-2xl            /* Desktop */
-                    font-semibold text-gray-900
-                  ">
+                    font-semibold text-foreground dark:text-foreground"
+                  >
                     Nodos
                   </TableHead>
                   <TableHead className="
@@ -201,19 +154,20 @@ export default function ProjectsPage() {
               </TableHeader>
               <TableBody>
                 {filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
+                  <TableRow key={project.id} className="dark:border-border">
                     <TableCell className="
                       p-4 text-base                    /* Móvil vertical */
                       landscape:max-lg:p-3 
                       landscape:max-lg:text-sm        /* Solo móvil horizontal */
                       lg:p-6 lg:text-xl              /* Solo desktop */
+                      text-foreground
                     ">
                       {project.name}
                     </TableCell>
-                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
+                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg text-foreground">
                       {format(new Date(project.createdAt), "PPP", { locale: es })}
                     </TableCell>
-                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
+                    <TableCell className="hidden landscape:table-cell lg:table-cell p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg text-foreground">
                       {format(new Date(project.updatedAt), "PPP", { locale: es })}
                     </TableCell>
                     <TableCell className="text-center p-3 landscape:p-2 lg:p-6 text-sm landscape:text-xs lg:text-lg">
@@ -247,7 +201,7 @@ export default function ProjectsPage() {
                 ))}
                 {filteredProjects.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 md:py-8">
+                    <TableCell colSpan={5} className="text-center py-6 md:py-8 text-muted-foreground">
                       No se encontraron proyectos
                     </TableCell>
                   </TableRow>
