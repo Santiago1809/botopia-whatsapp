@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWhatsApp } from '@/context/WhatsAppContext';
 import { BsWhatsapp } from 'react-icons/bs';
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ interface WhatsAppContact {
   agenteHabilitado?: boolean;
 }
 
-export function WhatsAppNode({ }: WhatsAppNodeProps) {
+export function WhatsAppNode({}: WhatsAppNodeProps) {
   const { 
     accounts, 
     socket, 
@@ -73,13 +73,12 @@ export function WhatsAppNode({ }: WhatsAppNodeProps) {
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
-  const [filterType, setFilterType] = useState<"all" | "contacts" | "groups">("all");
+  const [filterType,] = useState<"all" | "contacts" | "groups">("all");
   const [contactSearch, setContactSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
   const [loadingContacts] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [localQrCode, setLocalQrCode] = useState<string | null>(null);
   const [showQrDialog, setShowQrDialog] = useState(false);
@@ -92,7 +91,7 @@ export function WhatsAppNode({ }: WhatsAppNodeProps) {
         prev ? { ...prev, status: connectionStatus[selectedAccount.id] } : null
       );
     }
-  }, [connectionStatus, selectedAccount?.id]);
+  }, [connectionStatus, selectedAccount]); // Añadir selectedAccount completo como dependencia
 
   // Manejar eventos del socket
   useEffect(() => {
@@ -354,20 +353,20 @@ export function WhatsAppNode({ }: WhatsAppNodeProps) {
   );
 
   // Handlers para selección de contactos
-  const handleContactToggle = (id: string) => {
+  const handleContactToggle = useCallback((id: string) => {
     setSelectedContacts(prev =>
       prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
     );
-  };
+  }, []);
 
-  const handleGroupToggle = (id: string) => {
+  const handleGroupToggle = useCallback((id: string) => {
     setSelectedGroups(prev =>
       prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
     );
-  };
+  }, []);
 
-  // Renderizar diálogo de QR
-  const renderQrDialog = () => (
+  // Usar useCallback para mejorar los renderizados de diálogos
+  const renderQrDialog = useCallback(() => (
     <Dialog 
       open={showQrDialog && !!localQrCode}
       onOpenChange={(open) => {
@@ -400,7 +399,7 @@ export function WhatsAppNode({ }: WhatsAppNodeProps) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  ), [showQrDialog, localQrCode]);
 
   // Renderizar diálogo de contactos
   const renderContactsDialog = () => (
@@ -584,124 +583,9 @@ export function WhatsAppNode({ }: WhatsAppNodeProps) {
       </div>
 
       <Dialog 
-        open={showSyncDialog} 
-        onOpenChange={setShowSyncDialog}
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog}
       >
-        <DialogContent className="max-w-xl w-[500px] h-[600px] min-h-[600px] max-h-[600px] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold mb-2 text-primary">
-              Sincronizar contactos y grupos
-            </DialogTitle>
-            <DialogDescription className="mb-4 text-gray-600">
-              Selecciona los contactos y grupos de WhatsApp que deseas sincronizar con el agente.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex justify-between gap-2 mb-4 items-center">
-            <div className="flex gap-2">
-              <button
-                className={`px-4 py-1 rounded-full font-semibold border transition ${
-                  filterType === "all" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"
-                }`}
-                onClick={() => setFilterType("all")}
-              >
-                Todos
-              </button>
-              <button
-                className={`px-4 py-1 rounded-full font-semibold border transition ${
-                  filterType === "contacts" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"
-                }`}
-                onClick={() => setFilterType("contacts")}
-              >
-                Contactos
-              </button>
-              <button
-                className={`px-4 py-1 rounded-full font-semibold border transition ${
-                  filterType === "groups" ? "bg-primary text-white" : "bg-gray-200 text-gray-700"
-                }`}
-                onClick={() => setFilterType("groups")}
-              >
-                Grupos
-              </button>
-            </div>
-          </div>
-
-          {(filterType === "all" || filterType === "contacts") && (
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Buscar contactos..."
-                className="w-full px-3 py-2 border rounded"
-                value={contactSearch}
-                onChange={(e) => setContactSearch(e.target.value)}
-              />
-              <div className="mt-2 max-h-[200px] overflow-y-auto">
-                {filteredPersonalContacts.map((contact) => (
-                  <div key={contact.id} className="flex items-center p-2 hover:bg-gray-100">
-                    <input
-                      type="checkbox"
-                      checked={selectedContacts.includes(contact.id)}
-                      onChange={() => handleContactToggle(contact.id)}
-                      className="mr-2"
-                    />
-                    <span>{contact.name || contact.number}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {(filterType === "all" || filterType === "groups") && (
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Buscar grupos..."
-                className="w-full px-3 py-2 border rounded"
-                value={groupSearch}
-                onChange={(e) => setGroupSearch(e.target.value)}
-              />
-              <div className="mt-2 max-h-[200px] overflow-y-auto">
-                {filteredGroupContacts.map((group) => (
-                  <div key={group.id} className="flex items-center p-2 hover:bg-gray-100">
-                    <input
-                      type="checkbox"
-                      checked={selectedGroups.includes(group.id)}
-                      onChange={() => handleGroupToggle(group.id)}
-                      className="mr-2"
-                    />
-                    <span>{group.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 mt-auto">
-            <button
-              onClick={() => setShowSyncDialog(false)}
-              className="px-4 py-2 border rounded"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSyncContacts}
-              disabled={isSyncing || (selectedContacts.length === 0 && selectedGroups.length === 0)}
-              className="px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
-            >
-              {isSyncing ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sincronizando...
-                </div>
-              ) : (
-                'Sincronizar seleccionados'
-              )}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Agregar nueva cuenta de WhatsApp</DialogTitle>

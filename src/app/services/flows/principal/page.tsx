@@ -118,7 +118,7 @@ export default function ProjectsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="dark:border-border">
-                  <TableHead className="w-[200px] p-4 text-base landscape:max-lg:w-[180px] landscape:max-lg:p-3 landscape:max-lg:text-sm lg:w-[400px] lg:p-6 lg:text-xl font-semibold text-foreground">
+                  <TableHead className="w-[200px] p-4 text-base landscape:max-lg:w-[180px] landscape:max-lg:p-3 landscape:max-lg:text-sm lg:w-[400px] lg:p-6 lg:text-sm font-semibold text-foreground">
                     Nombre del Proyecto
                   </TableHead>
                   <TableHead className="
@@ -156,10 +156,10 @@ export default function ProjectsPage() {
                 {filteredProjects.map((project) => (
                   <TableRow key={project.id} className="dark:border-border">
                     <TableCell className="
-                      p-4 text-base                    /* Móvil vertical */
+                      p-4 text-sm                    /* Móvil vertical - Reducido de text-base a text-sm */
                       landscape:max-lg:p-3 
-                      landscape:max-lg:text-sm        /* Solo móvil horizontal */
-                      lg:p-6 lg:text-xl              /* Solo desktop */
+                      landscape:max-lg:text-xs        /* Solo móvil horizontal - Reducido de text-sm a text-xs */
+                      lg:p-6 lg:text-sm              /* Solo desktop - Reducido de text-xl a text-base */
                       text-foreground
                     ">
                       {project.name}

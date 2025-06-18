@@ -1,0 +1,32 @@
+/* Estilos específicos para los controles de ReactFlow */
+
+/* Estilo para modo oscuro */
+.dark-flow-controls .react-flow__controls-button {
+  background-color: hsl(var(--canvas)) !important;
+  color: white !important;
+  border-color: rgba(107, 114, 128, 0.5) !important;
+}
+
+.dark-flow-controls .react-flow__controls-button:hover {
+  background-color: hsl(var(--sidebar)) !important;
+}
+
+.dark-flow-controls .react-flow__controls-button svg {
+  fill: white !important;
+}
+
+/* Estilos generales para anular configuraciones predeterminadas */
+.flow-controls.react-flow__controls {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+/* Asegura que los bordes internos sean consistentes */
+.flow-controls .react-flow__controls-button {
+  border-bottom: 1px solid rgba(107, 114, 128, 0.3) !important;
+}
+
+.flow-controls .react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
