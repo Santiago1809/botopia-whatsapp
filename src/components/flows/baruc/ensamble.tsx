@@ -1,5 +1,5 @@
 import React from "react";
-import { CircleOff, Phone, CreditCard } from "lucide-react";
+import { Brain, Phone, CreditCard } from "lucide-react";
 import { BsWhatsapp } from 'react-icons/bs';
 import { DraggableNode } from "../DraggableNode";
 
@@ -24,9 +24,9 @@ export function BarucSection() {
     {
       type: "IA",
       label: "Inteligencia Artificial",
-      icon: <CircleOff className="h-4 w-4 text-red-500" />,
-      borderColor: "rgba(239, 68, 68, 0.3)", // Color rojo
-      bgColor: "rgba(239, 68, 68, 0.05)" // Fondo rojo con baja opacidad
+      icon: <Brain className="h-4 w-4 text-amber-500" />, // Cambiado a color amarillo ámbar
+      borderColor: "rgba(245, 158, 11, 0.3)", // Borde amarillo ámbar
+      bgColor: "rgba(245, 158, 11, 0.05)" // Fondo amarillo ámbar con baja opacidad
     }
   ];
 
