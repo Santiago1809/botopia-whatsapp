@@ -5,17 +5,42 @@ import {
   SheetTitle 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft } from "lucide-react" // Remove Phone
+import { Menu, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { 
-  CircleDot,
-  MessageSquare,
-  CircleOff,
-} from "lucide-react"
-import { BsWhatsapp } from 'react-icons/bs'
-import React from "react" // Remove useState
+import React, { useState, useEffect } from "react"
+
+// Importar las secciones separadas
+import { BarucSection } from "./baruc/ensamble"
+import { AccionesSection } from "./acciones/ensamble"
+import { ElementosSection } from "./elementos/ensamble"
+import { DraggableNode } from "./DraggableNode"
 
 export function Sidebar() {
+  // Estado para detectar orientación horizontal en móvil
+  const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
+
+  // Detectar orientación de pantalla
+  useEffect(() => {
+    const checkOrientation = () => {
+      if (typeof window !== 'undefined') {
+        // Es móvil horizontal si ancho > alto y ancho < 768px (breakpoint md)
+        setIsLandscapeMobile(
+          window.innerWidth > window.innerHeight && 
+          window.innerWidth < 768
+        );
+      }
+    };
+
+    // Verificar orientación inicial
+    checkOrientation();
+    
+    // Actualizar cuando cambie el tamaño de la ventana
+    window.addEventListener('resize', checkOrientation);
+    
+    // Limpiar event listener
+    return () => window.removeEventListener('resize', checkOrientation);
+  }, []);
+
   return (
     <>
       {/* Mobile Sidebar */}
@@ -32,9 +57,17 @@ export function Sidebar() {
           </SheetTrigger>
           <SheetContent 
             side="left" 
-            className="w-[320px] p-4 bg-[hsl(var(--sidebar))]"
+            className={`
+              w-[320px] 
+              p-4 pt-3
+              bg-background dark:bg-[hsl(var(--sidebar))] 
+              overflow-hidden
+            `}
           >
-            <div className="flex items-center gap-4 mb-4">
+            <div className={`
+              flex items-center gap-4 
+              ${isLandscapeMobile ? 'mb-1' : 'mb-3'}
+            `}>
               <Link href="/services/flows/principal">
                 <Button 
                   variant="outline" 
@@ -47,14 +80,24 @@ export function Sidebar() {
               </Link>
               <SheetTitle>Herramientas de flujo</SheetTitle>
             </div>
-            <SidebarContent />
+            
+            {/* Contenedor con scroll - ajustado para modo horizontal */}
+            <div className={`
+              overflow-y-auto overflow-x-auto
+              ${isLandscapeMobile 
+                ? 'max-h-[calc(100vh-60px)] pr-1.5 pb-0.5' 
+                : 'max-h-[calc(100vh-80px)] pr-2 pb-1'
+              }
+            `}>
+              <SidebarContent isLandscapeMobile={isLandscapeMobile} />
+            </div>
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-[320px] border-r bg-[hsl(var(--sidebar))] p-4">
-        <div className="flex items-center gap-4 mb-4">
+      {/* Desktop Sidebar - este permanece sin cambios */}
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-[320px] border-r bg-background dark:bg-[hsl(var(--sidebar))] p-4 pt-3 overflow-hidden">
+        <div className="flex items-center gap-4 mb-3">
           <Link href="/services/flows/principal">
             <Button 
               variant="outline" 
@@ -67,81 +110,26 @@ export function Sidebar() {
           </Link>
           <h2 className="text-lg font-semibold">Herramientas de flujo</h2>
         </div>
-        <SidebarContent />
+        
+        {/* Contenedor con scroll para escritorio - sin cambios */}
+        <div className="overflow-y-auto overflow-x-auto max-h-[calc(100vh-70px)] pr-2 pb-1">
+          <SidebarContent isLandscapeMobile={false} />
+        </div>
       </div>
     </>
   )
 }
 
 // Componente auxiliar para el contenido del sidebar
-function SidebarContent() {
+function SidebarContent({ isLandscapeMobile }: { isLandscapeMobile: boolean }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-3 text-sm font-medium">Elementos de flujo</h3>
-        <div className="grid gap-3">
-          <DraggableNode
-            type="input"
-            label="Entrada"
-            icon={<CircleDot className="h-4 w-4" />}
-          />
-          <DraggableNode
-            type="default"
-            label="Proceso"
-            icon={<MessageSquare className="h-4 w-4" />}
-          />
-          <DraggableNode
-            type="output"
-            label="Salida"
-            icon={<CircleOff className="h-4 w-4" />}
-          />
-          <DraggableNode
-            type="whatsappNode"
-            label="WhatsApp baruc"
-            icon={<BsWhatsapp className="h-4 w-4 text-green-500" />}
-          />
-          <DraggableNode
-            type="whatsappBusinessApi"
-            label="WhatsApp Business API"
-            icon={<BsWhatsapp className="h-4 w-4 text-green-500" />}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Modifica o agrega el componente DraggableNode
-interface DraggableNodeProps {
-  type: string;
-  label: string;
-  icon: React.ReactNode;
-}
-
-export function DraggableNode({ type, label, icon }: DraggableNodeProps) {
-  const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    // Asegúrate de que el formato de los datos sea consistente
-    const nodeData = {
-      type,
-      label,
-    };
-    
-    // Establece el tipo MIME correcto
-    event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData));
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
-  return (
-    <div
-      className="flex items-center gap-2 p-3 border rounded-lg cursor-move 
-      hover:border-primary transition-colors
-      bg-[hsl(var(--background))] dark:bg-[hsl(240,3.7%,30%)]
-      hover:bg-accent/50"
-      draggable
-      onDragStart={onDragStart}
-    >
-      {icon}
-      <span className="text-sm">{label}</span>
+    <div className={isLandscapeMobile ? "space-y-2" : "space-y-4"}>
+      <BarucSection />
+      <AccionesSection />
+      <ElementosSection />
     </div>
   );
 }
+
+// Exportamos DraggableNode para mantener compatibilidad hacia atrás
+export { DraggableNode };
