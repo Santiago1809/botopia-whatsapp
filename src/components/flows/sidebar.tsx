@@ -5,11 +5,15 @@ import {
   SheetTitle 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft } from "lucide-react"
+import { Menu, ArrowLeft, Brain, CreditCard, Phone } from "lucide-react"
 import Link from "next/link"
 import React, { useState, useEffect } from "react"
+import { BsWhatsapp } from "react-icons/bs"
+import { SiGmail, SiNotion, SiGooglecalendar, SiSupabase, SiGooglesheets } from "react-icons/si"
+import { FaHashtag, FaClock, FaBolt } from "react-icons/fa"
+import { TbRepeat, TbArrowFork } from "react-icons/tb"
 
-// Importar las secciones separadas
+// Importar las secciones para la funcionalidad de arrastrar y soltar
 import { BarucSection } from "./baruc/ensamble"
 import { AccionesSection } from "./acciones/ensamble"
 import { ElementosSection } from "./elementos/ensamble"
@@ -89,7 +93,7 @@ export function Sidebar() {
                 : 'max-h-[calc(100vh-80px)] pr-2 pb-1'
               }
             `}>
-              <SidebarContent isLandscapeMobile={isLandscapeMobile} />
+              <SidebarVisualContent isLandscapeMobile={isLandscapeMobile} />
             </div>
           </SheetContent>
         </Sheet>
@@ -113,20 +117,204 @@ export function Sidebar() {
         
         {/* Contenedor con scroll para escritorio - sin cambios */}
         <div className="overflow-y-auto overflow-x-auto max-h-[calc(100vh-70px)] pr-2 pb-1">
-          <SidebarContent isLandscapeMobile={false} />
+          <SidebarVisualContent isLandscapeMobile={false} />
         </div>
       </div>
     </>
   )
 }
 
-// Componente auxiliar para el contenido del sidebar
-function SidebarContent({ isLandscapeMobile }: { isLandscapeMobile: boolean }) {
+// Componente auxiliar para el contenido visual del sidebar (tarjetas/bloques)
+function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolean }) {
   return (
-    <div className={isLandscapeMobile ? "space-y-2" : "space-y-4"}>
-      <BarucSection />
-      <AccionesSection />
-      <ElementosSection />
+    <div className={isLandscapeMobile ? "space-y-2" : "space-y-6"}>
+      {/* Sección Baruc */}
+      <div>
+        <h3 className="font-medium text-base mb-3">Baruc</h3>
+        {/* Reorganizado en grid de 2 filas x 3 columnas */}
+        <div className="grid grid-cols-3 grid-rows-2 gap-2">
+          {/* Fila 1, Columna 1: Llamadas con IA */}
+          <DraggableNode 
+            type="phoneWithIA" 
+            label="Llamadas con IA" 
+            icon={<Phone className="h-5 w-5 text-orange-500" />}
+            section="baruc"
+            bgColor="rgba(249, 168, 212, 0.1)"
+            borderColor="rgba(249, 168, 212, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 2: Pagos */}
+          <DraggableNode 
+            type="payment" 
+            label="Pagos" 
+            icon={<CreditCard className="h-5 w-5 text-purple-500" />}
+            section="baruc"
+            bgColor="rgba(216, 180, 254, 0.1)"
+            borderColor="rgba(216, 180, 254, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 3: Inteligencia Artificial */}
+          <DraggableNode 
+            type="IA" 
+            label="Inteligencia Artificial" 
+            icon={<Brain className="h-5 w-5 text-amber-500" />}
+            section="baruc"
+            bgColor="rgba(251, 191, 36, 0.1)"
+            borderColor="rgba(251, 191, 36, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 1: WhatsApp baruc */}
+          <DraggableNode 
+            type="whatsappNode" 
+            label="WhatsApp baruc" 
+            icon={<BsWhatsapp className="h-5 w-5 text-green-600" />}
+            section="baruc"
+            bgColor="rgba(52, 211, 153, 0.1)"
+            borderColor="rgba(52, 211, 153, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 2: WhatsApp API */}
+          <DraggableNode 
+            type="whatsappApi" 
+            label="WhatsApp API" 
+            icon={<BsWhatsapp className="h-5 w-5 text-blue-600" />}
+            section="baruc"
+            bgColor="rgba(147, 197, 253, 0.1)"
+            borderColor="rgba(147, 197, 253, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 3: Vacío (para mantener el grid 2x3) */}
+          <div className="invisible"></div>
+        </div>
+      </div>
+      
+      {/* Sección Acciones */}
+      <div>
+        <h3 className="font-medium text-base mb-3">Acciones</h3>
+        {/* Reorganizado en grid de 2 filas x 3 columnas */}
+        <div className="grid grid-cols-3 grid-rows-2 gap-2">
+          {/* Fila 1, Columna 1: Gmail */}
+          <DraggableNode 
+            type="gmail" 
+            label="Gmail" 
+            icon={<SiGmail className="h-5 w-5 text-red-500" />}
+            section="acciones"
+            bgColor="rgba(252, 165, 165, 0.1)"
+            borderColor="rgba(252, 165, 165, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 2: Notion */}
+          <DraggableNode 
+            type="notion" 
+            label="Notion" 
+            icon={<SiNotion className="h-5 w-5 text-gray-800 dark:text-gray-400" />}
+            section="acciones"
+            bgColor="rgba(8, 8, 8, 0.1)"      // Este color se usa en modo claro
+            darkBgColor="rgba(150, 150, 150, 0.2)"  // Este color se usará en modo oscuro
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 3: Calendar */}
+          <DraggableNode 
+            type="googleCalendar" 
+            label="Calendar" 
+            icon={<SiGooglecalendar className="h-5 w-5 text-blue-500" />}
+            section="acciones"
+            bgColor="rgba(147, 197, 253, 0.1)"
+            borderColor="rgba(147, 197, 253, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 1: Supabase */}
+          <DraggableNode 
+            type="supabase" 
+            label="Supabase" 
+            icon={<SiSupabase className="h-5 w-5 text-green-600" />}
+            section="acciones"
+            bgColor="rgba(52, 211, 153, 0.1)"
+            borderColor="rgba(52, 211, 153, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 2: Google Sheets */}
+          <DraggableNode 
+            type="sheetsNode" 
+            label="Sheets" 
+            icon={<SiGooglesheets className="h-5 w-5 text-green-600" />}
+            section="acciones"
+            bgColor="rgba(52, 211, 153, 0.1)"
+            borderColor="rgba(52, 211, 153, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 3: Vacío (para mantener el grid 2x3) */}
+          <div className="invisible"></div>
+        </div>
+      </div>
+      
+      {/* Sección Elementos */}
+      <div>
+        <h3 className="font-medium text-base mb-3">Elementos</h3>
+        {/* Reorganizado en grid de 2 filas x 3 columnas */}
+        <div className="grid grid-cols-3 grid-rows-2 gap-2">
+          {/* Fila 1, Columna 1: Disparador */}
+          <DraggableNode 
+            type="trigger" 
+            label="Disparador" 
+            icon={<FaBolt className="h-5 w-5 text-yellow-500" />}
+            section="elementos"
+            bgColor="rgba(255, 255, 255, 0.1)"
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 2: Retraso */}
+          <DraggableNode 
+            type="delay" 
+            label="Retraso" 
+            icon={<FaClock className="h-5 w-5 text-blue-400" />}
+            section="elementos"
+            bgColor="rgba(255, 255, 255, 0.1)"
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 1, Columna 3: Contador */}
+          <DraggableNode 
+            type="counter" 
+            label="Contador" 
+            icon={<FaHashtag className="h-5 w-5 text-purple-500" />}
+            section="elementos"
+            bgColor="rgba(255, 255, 255, 0.1)"
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 1: Bucle */}
+          <DraggableNode 
+            type="loop" 
+            label="Bucle" 
+            icon={<TbRepeat className="h-5 w-5 text-orange-400" />}
+            section="elementos"
+            bgColor="rgba(255, 255, 255, 0.1)"
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 2: Condición */}
+          <DraggableNode 
+            type="condition" 
+            label="Condición" 
+            icon={<TbArrowFork className="h-5 w-5 text-cyan-500" />}
+            section="elementos"
+            bgColor="rgba(255, 255, 255, 0.1)"
+            borderColor="rgba(0, 0, 0, 0.3)"
+          />
+          
+          {/* Fila 2, Columna 3: Vacío (para mantener el grid 2x3) */}
+          <div className="invisible"></div>
+        </div>
+      </div>
+      
+      {/* Componentes originales para drag and drop - ocultos pero funcionales */}
+      <div className="hidden">
+        <BarucSection />
+        <AccionesSection />
+        <ElementosSection />
+      </div>
     </div>
   );
 }
