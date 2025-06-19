@@ -7,11 +7,12 @@ export function DraggableNode({
   type, 
   label, 
   icon, 
-  borderColor, 
-  bgColor,
+  borderColor = "rgba(156, 163, 175, 0.3)", // Valor por defecto
+  bgColor = "rgba(255, 255, 255, 0.1)",     // Valor por defecto
   darkBorderColor,
   darkBgColor,
-  section
+  section,
+  className = ""
 }: DraggableNodeProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -68,13 +69,8 @@ export function DraggableNode({
   }
 
   const onDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    const nodeData = {
-      type,
-      label,
-    };
-
-    event.dataTransfer.setData("application/reactflow", JSON.stringify(nodeData));
-    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData('application/reactflow', type);
+    // Asegurarse de que se pasa el tipo exacto, sin cambios de mayúsculas/minúsculas
   };
 
   return (
@@ -89,7 +85,8 @@ export function DraggableNode({
         "cursor-grab active:cursor-grabbing transition-colors",
         "border-2 border-dashed hover:border-solid",
         "active:bg-primary active:text-white",
-        "group"
+        "group",
+        className // Aplica la className aquí
       )}
     >
       <CardContent className="flex flex-col items-center justify-center p-2 text-center">

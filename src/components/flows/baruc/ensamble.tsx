@@ -1,82 +1,167 @@
 import React from "react";
-import { Brain, Phone, CreditCard } from "lucide-react";
+import { Brain, CreditCard, Phone } from "lucide-react";
 import { BsWhatsapp } from 'react-icons/bs';
+import { SiGooglesheets } from "react-icons/si";
 import { DraggableNode } from "../DraggableNode";
 
-
 export function BarucSection() {
-  // Separar nodos en dos grupos
-  const basicNodes = [
+  // Grupo de nodos para comunicación con sus colores
+  const communicationNodes = [
     {
-      type: "call",
-      label: "Llamadas con IA",
-      icon: <Phone className="h-4 w-4 text-orange-500" />,
-      borderColor: "rgba(249, 115, 22, 0.3)", // Color naranja
-      bgColor: "rgba(249, 115, 22, 0.05)" // Fondo naranja con baja opacidad
+      type: "whatsappNode",
+      label: "WhatsApp",
+      icon: <BsWhatsapp className="h-5 w-5 text-green-600" />,
+      bgColor: "rgba(16, 185, 129, 0.05)",
+      borderColor: "rgba(16, 185, 129, 0.3)",
+      darkBgColor: "rgba(16, 185, 129, 0.1)",
+      darkBorderColor: "rgba(16, 185, 129, 0.4)",
+      section: "baruc" // Asegúrate de que section esté definido
     },
     {
-      type: "payments",
-      label: "Pagos",
-      icon: <CreditCard className="h-4 w-4 text-purple-500" />,
-      borderColor: "rgba(168, 85, 247, 0.3)", // Color púrpura
-      bgColor: "rgba(168, 85, 247, 0.05)" // Fondo púrpura con baja opacidad
+      type: "whatsappApi", // No "whatsappAPI" con mayúsculas
+      label: "WhatsApp API",
+      icon: <BsWhatsapp className="h-5 w-5 text-green-600" />,
+      bgColor: "rgba(16, 185, 129, 0.05)",
+      borderColor: "rgba(16, 185, 129, 0.3)",
+      darkBgColor: "rgba(16, 185, 129, 0.1)",
+      darkBorderColor: "rgba(16, 185, 129, 0.4)",
+      section: "baruc" // Asegúrate de que section esté definido
     },
     {
-      type: "IA",
-      label: "Inteligencia Artificial",
-      icon: <Brain className="h-4 w-4 text-amber-500" />, // Cambiado a color amarillo ámbar
-      borderColor: "rgba(245, 158, 11, 0.3)", // Borde amarillo ámbar
-      bgColor: "rgba(245, 158, 11, 0.05)" // Fondo amarillo ámbar con baja opacidad
+      // Cambia esto a "llamadasIA" para que coincida con nodeTypes
+      // O déjalo como "phoneWithIA" ahora que lo hemos registrado en nodeTypes
+      type: "phoneWithIA", 
+      label: "Llamadas IA",
+      icon: <Phone className="h-5 w-5 text-blue-500" />,
+      bgColor: "rgba(59, 130, 246, 0.05)",
+      borderColor: "rgba(59, 130, 246, 0.3)",
+      darkBgColor: "rgba(59, 130, 246, 0.1)",
+      darkBorderColor: "rgba(59, 130, 246, 0.4)",
+      section: "baruc" // Asegúrate de que section esté definido
     }
   ];
 
-  const whatsappNodes = [
+  // Grupo de nodos para inteligencia artificial con sus colores
+  const intelligenceNodes = [
     {
-      type: "whatsappNode",
-      label: "WhatsApp baruc",
-      icon: <BsWhatsapp className="h-4 w-4 text-green-500" />,
-      borderColor: "rgba(34, 197, 94, 0.3)", // Color verde de WhatsApp
-      bgColor: "rgba(34, 197, 94, 0.05)" // Fondo verde con baja opacidad
-    },
+      type: "IA",
+      label: "Inteligencia Artificial",
+      icon: <Brain className="h-5 w-5 text-amber-500" />,
+      bgColor: "rgba(245, 158, 11, 0.05)",
+      borderColor: "rgba(245, 158, 11, 0.3)",
+      darkBgColor: "rgba(245, 158, 11, 0.1)",
+      darkBorderColor: "rgba(245, 158, 11, 0.4)"
+    }
+  ];
+
+  // Grupo de nodos para herramientas con sus colores
+  const toolNodes = [
     {
-      type: "whatsappBusinessApi",
-      label: "WhatsApp API",
-      icon: <BsWhatsapp className="h-4 w-4 text-blue-500" />,
-      borderColor: "rgba(59, 130, 246, 0.3)", // Color azul
-      bgColor: "rgba(59, 130, 246, 0.05)" // Fondo azul con baja opacidad
+      type: "sheetsNode",
+      label: "Google Sheets",
+      icon: <SiGooglesheets className="h-5 w-5 text-green-600" />,
+      bgColor: "rgba(16, 185, 129, 0.05)",
+      borderColor: "rgba(16, 185, 129, 0.3)",
+      darkBgColor: "rgba(16, 185, 129, 0.1)",
+      darkBorderColor: "rgba(16, 185, 129, 0.4)"
+    }
+  ];
+
+  // Grupo de nodos para pagos con sus colores
+  const paymentNodes = [
+    {
+      type: "payment",
+      label: "Pasarela de Pago",
+      icon: <CreditCard className="h-5 w-5 text-blue-500" />,
+      bgColor: "rgba(124, 58, 237, 0.05)",
+      borderColor: "rgba(124, 58, 237, 0.3)",
+      darkBgColor: "rgba(124, 58, 237, 0.1)",
+      darkBorderColor: "rgba(124, 58, 237, 0.4)"
     }
   ];
 
   return (
     <div>
-      <h3 className="mb-3  font-medium">Baruc</h3>
+      <h3 className="mb-3 font-medium">Módulos</h3>
       
-      {/* Primera fila: 3 columnas */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
-        {basicNodes.map((node, index) => (
-          <DraggableNode
-            key={`basic-${node.type}-${index}`}
-            type={node.type}
-            label={node.label}
-            icon={node.icon}
-            borderColor={node.borderColor}
-            bgColor={node.bgColor}
-          />
-        ))}
+      {/* Sección de Comunicación */}
+      <div className="space-y-2 mb-4">
+        <h4 className="text-xs text-gray-500 font-medium pl-2">Comunicación</h4>
+        <div className="space-y-2">
+          {communicationNodes.map((node, index) => (
+            <DraggableNode 
+              key={`comm-${index}`} 
+              type={node.type} 
+              label={node.label} 
+              icon={node.icon}
+              section="baruc"
+              bgColor={node.bgColor}
+              borderColor={node.borderColor}
+              darkBgColor={node.darkBgColor}
+              darkBorderColor={node.darkBorderColor}
+            />
+          ))}
+        </div>
       </div>
       
-      {/* Segunda fila: 2 columnas */}
-      <div className="grid grid-cols-2 gap-2">
-        {whatsappNodes.map((node, index) => (
-          <DraggableNode
-            key={`whatsapp-${node.type}-${index}`}
-            type={node.type}
-            label={node.label}
-            icon={node.icon}
-            borderColor={node.borderColor}
-            bgColor={node.bgColor}
-          />
-        ))}
+      {/* Sección de Inteligencia Artificial */}
+      <div className="space-y-2 mb-4">
+        <h4 className="text-xs text-gray-500 font-medium pl-2">Inteligencia Artificial</h4>
+        <div className="space-y-2">
+          {intelligenceNodes.map((node, index) => (
+            <DraggableNode 
+              key={`ai-${index}`} 
+              type={node.type} 
+              label={node.label} 
+              icon={node.icon}
+              section="baruc"
+              bgColor={node.bgColor}
+              borderColor={node.borderColor}
+              darkBgColor={node.darkBgColor}
+              darkBorderColor={node.darkBorderColor}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Sección de Herramientas */}
+      <div className="space-y-2 mb-4">
+        <h4 className="text-xs text-gray-500 font-medium pl-2">Herramientas</h4>
+        <div className="space-y-2">
+          {toolNodes.map((node, index) => (
+            <DraggableNode 
+              key={`tool-${index}`} 
+              type={node.type} 
+              label={node.label} 
+              icon={node.icon}
+              section="baruc"
+              bgColor={node.bgColor}
+              borderColor={node.borderColor}
+              darkBgColor={node.darkBgColor}
+              darkBorderColor={node.darkBorderColor}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Sección de Pagos */}
+      <div className="space-y-2">
+        <h4 className="text-xs text-gray-500 font-medium pl-2">Pagos</h4>
+        <div className="space-y-2">
+          {paymentNodes.map((node, index) => (
+            <DraggableNode 
+              key={`pay-${index}`} 
+              type={node.type} 
+              label={node.label} 
+              icon={node.icon}
+              section="baruc"
+              bgColor={node.bgColor}
+              borderColor={node.borderColor}
+              darkBgColor={node.darkBgColor}
+              darkBorderColor={node.darkBorderColor}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
