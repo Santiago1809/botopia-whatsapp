@@ -1,14 +1,16 @@
-import React from "react";
+import { ReactNode } from "react";
 
 export interface DraggableNodeProps {
   type: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  section: string;
+  // Hacer estos campos opcionales con valores por defecto
   borderColor?: string;
   bgColor?: string;
   darkBorderColor?: string;
   darkBgColor?: string;
-  section?: string;
+  className?: string;
 }
 
 export interface SidebarSectionProps {

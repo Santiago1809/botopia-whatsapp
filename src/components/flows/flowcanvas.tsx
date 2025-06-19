@@ -2,9 +2,11 @@ import { Node, Edge, Connection, NodeChange, EdgeChange, ReactFlowInstance } fro
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow'
 import { useCallback, useRef, useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Trash2, Save } from "lucide-react"
+import { Trash2, Save } from "lucide-react" // Eliminado icono Bot
 import { ThemeSwitcher } from '@/components/flows/ThemeSwitcher'
-import './flow-controls.css' // Importamos un nuevo archivo CSS
+import './flow-controls.css'
+import { nodeTypes } from './nodeTypes';
+import { Copilot } from './copilot'; // Importar el componente Copilot
 
 type FlowCanvasProps = {
   nodes: Node[];
@@ -13,7 +15,6 @@ type FlowCanvasProps = {
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
-  // Usa NodeProps para nodeTypes
   nodeTypes?: Record<string, React.ComponentType<NodeProps>>;
 };
 
@@ -26,13 +27,12 @@ export function FlowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
-  setNodes,
-  nodeTypes,
+  setNodes
 }: FlowCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
-
+  
   // Detecta orientación de pantalla
   useEffect(() => {
     const checkOrientation = () => {
@@ -56,48 +56,41 @@ export function FlowCanvas({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
+  const onDrop = (event: React.DragEvent) => {
+    event.preventDefault();
 
-      if (!reactFlowWrapper.current || !reactFlowInstance) {
-        return;
-      }
+    if (!reactFlowWrapper.current || !reactFlowInstance) {
+      return;
+    }
 
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const dragData = event.dataTransfer.getData('application/reactflow');
+    const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+    const type = event.dataTransfer.getData('application/reactflow');
+    
+    console.log('Intentando crear nodo de tipo:', type);
+    console.log('Tipos disponibles:', Object.keys(nodeTypes));
+    
+    // Comprobar si el tipo existe antes de crear el nodo
+    if (!(type in nodeTypes)) {
+      console.error(`Error: El tipo de nodo "${type}" no está registrado en nodeTypes`);
+      alert(`Error: El tipo de nodo "${type}" no está registrado. 
+           Tipos disponibles: ${Object.keys(nodeTypes).join(', ')}`);
+      return;
+    }
+    
+    const position = reactFlowInstance.project({
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    });
 
-      if (!dragData) {
-        console.error('No data received in drag and drop');
-        return;
-      }
+    const newNode = {
+      id: `${type}-${Date.now()}`,
+      type: type,
+      position: position,
+      data: {},
+    };
 
-      try {
-        const { type, label } = JSON.parse(dragData);
-
-        // Get the position where the node was dropped
-        const position = reactFlowInstance.project({
-          x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top,
-        });
-
-        const newNode = {
-          id: `${type}-${Date.now()}`,
-          type,
-          position,
-          data: { label },
-        };
-
-        onNodesChange([{
-          type: 'add',
-          item: newNode,
-        }]);
-      } catch (error) {
-        console.error('Error processing drag and drop data:', error);
-      }
-    },
-    [reactFlowInstance, onNodesChange]
-  );
+    setNodes((nds) => nds.concat(newNode));
+  };
 
   const handleSave = useCallback(async () => {
     const flow = {
@@ -156,11 +149,11 @@ export function FlowCanvas({
     
     // Limpiar observer
     return () => observer.disconnect();
-  }, [isDarkMode]); // Añadimos isDarkMode como dependencia
+  }, [isDarkMode]);
 
   return (
     <div className={`h-screen bg-[hsl(var(--canvas))] relative ${isLandscape ? 'w-auto' : 'w-screen'} md:ml-[320px] md:w-[calc(100vw-320px)]`}>
-      {/* Botones para móvil - solo iconos en columna o fila según orientación */}
+      {/* Botones para móvil */}
       <div className="fixed right-4 top-4 z-[1000] flex flex-col gap-3 sm:flex-row sm:gap-3 md:hidden bg-[hsl(var(--sidebar))] p-3 rounded-lg backdrop-blur shadow-md border">
         <ThemeSwitcher />
         
@@ -181,9 +174,12 @@ export function FlowCanvas({
         >
           <Save className="h-4 w-4" />
         </Button>
+
+        {/* Componente Copilot para móvil */}
+        <Copilot isMobile={true} />
       </div>
 
-      {/* Botones para escritorio - con texto e iconos en fila */}
+      {/* Botones para escritorio */}
       <div className="fixed right-4 top-4 z-[1000] hidden md:flex flex-row gap-3 bg-[hsl(var(--sidebar))] p-2.5 rounded-lg backdrop-blur shadow-md border">
         <ThemeSwitcher />
         
@@ -203,6 +199,9 @@ export function FlowCanvas({
           <Save className="h-4 w-4 mr-2" />
           Guardar flujo
         </Button>
+
+        {/* Componente Copilot para escritorio */}
+        <Copilot isMobile={false} />
       </div>
 
       <div ref={reactFlowWrapper} className="w-full h-full">
@@ -215,7 +214,7 @@ export function FlowCanvas({
           onInit={setReactFlowInstance}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          nodeTypes={nodeTypes}
+          nodeTypes={nodeTypes} // Asegurarse de que este nodeTypes contenga la referencia correcta
           fitView
           className={`h-full w-full border rounded-lg bg-[hsl(var(--canvas))] ${isDarkMode ? 'dark-flow-controls' : ''}`}
           proOptions={{ hideAttribution: true }}

@@ -1,5 +1,6 @@
-import { Handle, Position } from 'reactflow';
-import { PlusCircle, Loader2, Check, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import { useWhatsApp } from '@/context/WhatsAppContext';
+import {  Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,19 +8,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect, useCallback } from 'react';
-import { useWhatsApp } from '@/context/WhatsAppContext';
-import { BsWhatsapp } from 'react-icons/bs';
-import { cn } from "@/lib/utils";
 import Image from 'next/image';
+import { WhatsAppNodeUI } from './diseño';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
@@ -40,10 +30,10 @@ interface WhatsAppNodeProps {
   };
 }
 
-interface QrCodeEvent {
+/*interface QrCodeEvent {
   numberId: number;
   qr: string;
-}
+}*/
 
 interface WhatsAppContact {
   id: string;
@@ -57,7 +47,7 @@ interface WhatsAppContact {
   agenteHabilitado?: boolean;
 }
 
-export function WhatsAppNode({}: WhatsAppNodeProps) {
+export function WhatsAppNode({ /*id, data*/ }: WhatsAppNodeProps) {
   const { 
     accounts, 
     socket, 
@@ -76,7 +66,7 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
   const [filterType,] = useState<"all" | "contacts" | "groups">("all");
   const [contactSearch, setContactSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
-  const [loadingContacts] = useState(false);
+  const [loadingContacts, setLoadingContacts] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -91,28 +81,24 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
         prev ? { ...prev, status: connectionStatus[selectedAccount.id] } : null
       );
     }
-  }, [connectionStatus, selectedAccount]); // Añadir selectedAccount completo como dependencia
+  }, [connectionStatus, selectedAccount]);
 
   // Manejar eventos del socket
   useEffect(() => {
     if (!socket || !selectedAccount) return;
 
-    const handleQrCode = (data: QrCodeEvent) => {
-      if (data.numberId === Number(selectedAccount.id)) {
-        setLocalQrCode(data.qr);
-        setShowQrDialog(true);
-        updateConnectionStatus(String(data.numberId), 'connecting');
-      }
+    const handleQrCode = (/* id: string, data: any */) => {
+      // Código existente
     };
 
     const handleWhatsappReady = async (data: { numberId: string | number }) => {
       if (String(data.numberId) === selectedAccount.id) {
-        // Limpiar QR y cerrar diálogo inmediatamente
         setLocalQrCode(null);
         setShowQrDialog(false);
         updateConnectionStatus(String(data.numberId), 'connected');
 
         try {
+          setLoadingContacts(true);
           const token = localStorage.getItem('token');
           if (!token) throw new Error('No token found');
 
@@ -130,6 +116,8 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
           setShowContactsDialog(true);
         } catch (error) {
           console.error('Error fetching contacts:', error);
+        } finally {
+          setLoadingContacts(false);
         }
       }
     };
@@ -153,7 +141,7 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
       socket.off("whatsapp-ready", handleWhatsappReady);
       socket.off("connection-failure", handleConnectionFailure);
     };
-  }, [socket, selectedAccount, updateConnectionStatus]); // Added selectedAccount to dependencies
+  }, [socket, selectedAccount, updateConnectionStatus]);
 
   const handleSelectAccount = async (account: WhatsAppAccount) => {
     if (isLoading) return;
@@ -180,7 +168,6 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
     }
   };
 
-  // Modificar la función handleAddAccount
   const handleAddAccount = async () => {
     if (isLoading || !newName || !newNumber) return;
 
@@ -208,7 +195,6 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
       try {
         addData = JSON.parse(text);
       } catch {
-        // Removed unused 'e' parameter
         console.error('Invalid JSON response:', text);
         throw new Error('Respuesta inválida del servidor');
       }
@@ -247,27 +233,6 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
       setIsLoading(false);
     }
   };
-
-  // Modificar la función fetchContacts
-  /*const fetchContacts = async (numberId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found');
-
-      // Cambiar la ruta para que coincida con el backend
-      const response = await fetch(`${BACKEND_URL}/api/whatsapp/${numberId}/contacts`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Error fetching contacts');
-      const data = await response.json();
-      setContacts(data);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    }
-  };*/
 
   // Manejar sincronización de contactos
   const handleSyncContacts = async () => {
@@ -313,13 +278,12 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
         })
       });
 
-      // Verificar que la respuesta sea válida antes de parsear
+      // Verificar la respuesta
       const text = await response.text();
       let data;
       try {
         data = JSON.parse(text);
       } catch {
-        // Removed unused 'e' parameter
         console.error('Invalid JSON response:', text);
         throw new Error('Respuesta inválida del servidor');
       }
@@ -339,19 +303,6 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
     }
   };
 
-  // Separar contactos y grupos
-  const personalContacts = contacts.filter(c => !c.isGroup && c.isMyContact);
-  const groupContacts = contacts.filter(c => c.isGroup);
-
-  const filteredPersonalContacts = personalContacts.filter(c => 
-    c.name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
-    c.number?.toLowerCase().includes(contactSearch.toLowerCase())
-  );
-
-  const filteredGroupContacts = groupContacts.filter(g => 
-    g.name?.toLowerCase().includes(groupSearch.toLowerCase())
-  );
-
   // Handlers para selección de contactos
   const handleContactToggle = useCallback((id: string) => {
     setSelectedContacts(prev =>
@@ -365,7 +316,20 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
     );
   }, []);
 
-  // Usar useCallback para mejorar los renderizados de diálogos
+  // Separar contactos y grupos
+  const personalContacts = contacts.filter(c => !c.isGroup && c.isMyContact);
+  const groupContacts = contacts.filter(c => c.isGroup);
+
+  const filteredPersonalContacts = personalContacts.filter(c => 
+    c.name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+    c.number?.toLowerCase().includes(contactSearch.toLowerCase())
+  );
+
+  const filteredGroupContacts = groupContacts.filter(g => 
+    g.name?.toLowerCase().includes(groupSearch.toLowerCase())
+  );
+
+  // Diálogo de código QR
   const renderQrDialog = useCallback(() => (
     <Dialog 
       open={showQrDialog && !!localQrCode}
@@ -401,7 +365,74 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
     </Dialog>
   ), [showQrDialog, localQrCode]);
 
-  // Renderizar diálogo de contactos
+  // Diálogo para agregar nueva cuenta
+  const renderAddAccountDialog = () => (
+    <Dialog 
+      open={showAddDialog} 
+      onOpenChange={setShowAddDialog}
+    >
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Agregar nueva cuenta de WhatsApp</DialogTitle>
+          <DialogDescription>
+            Ingresa los datos de la nueva cuenta que deseas vincular
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <label htmlFor="name" className="text-sm font-medium">
+              Nombre de la cuenta
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: Soporte Principal"
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="number" className="text-sm font-medium">
+              Número de WhatsApp
+            </label>
+            <input
+              id="number"
+              type="text"
+              value={newNumber}
+              onChange={(e) => setNewNumber(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="Ej: +34600000000"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => setShowAddDialog(false)}
+            className="px-4 py-2 rounded-md border text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleAddAccount}
+            disabled={isLoading || !newName || !newNumber}
+            className="px-4 py-2 rounded-md bg-primary text-white text-sm disabled:opacity-50"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Agregando...
+              </div>
+            ) : (
+              'Agregar cuenta'
+            )}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Diálogo de contactos
   const renderContactsDialog = () => (
     <Dialog 
       open={showContactsDialog} 
@@ -495,158 +526,17 @@ export function WhatsAppNode({}: WhatsAppNodeProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-lg border-2 px-4 py-2 min-w-[200px]">
-        <Handle type="target" position={Position.Top} className="w-3 h-3" />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger className="w-full">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <BsWhatsapp className="h-4 w-4 text-green-600" />
-                <div className="text-left">
-                  <p className="font-medium text-sm">
-                    {selectedAccount ? selectedAccount.name : 'Seleccionar cuenta'}
-                  </p>
-                  {selectedAccount && (
-                    <p className="text-xs text-muted-foreground">{selectedAccount.number}</p>
-                  )}
-                </div>
-              </div>
-              {selectedAccount && (
-                <Badge 
-                  variant={connectionStatus[selectedAccount.id] === 'connected' ? "success" : "destructive"}
-                >
-                  {connectionStatus[selectedAccount.id] === 'connected' ? "Conectado" : "Desconectado"}
-                </Badge>
-              )}
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </div>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" className="w-[240px]">
-            {accounts.length > 0 ? (
-              <>
-                <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
-                  Cuentas disponibles
-                </div>
-                <DropdownMenuSeparator />
-                {accounts.map((account) => (
-                  <DropdownMenuItem
-                    key={account.id}
-                    onClick={() => handleSelectAccount(account)}
-                    disabled={isLoading}
-                    className={cn(
-                      "flex items-center justify-between gap-2 group cursor-pointer",
-                      "transition-colors duration-200",
-                      "hover:bg-primary hover:text-white focus:bg-primary focus:text-white",
-                      "[&_span]:transition-colors [&_span]:duration-200",
-                      "[&_span]:group-hover:text-white [&_span]:group-focus:text-white",
-                      "[&_svg]:transition-colors [&_svg]:duration-200",
-                      "[&_svg]:text-green-600 [&_svg]:group-hover:text-white [&_svg]:group-focus:text-white"
-                    )}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{account.name}</span>
-                      <span className="text-xs text-muted-foreground group-hover:text-white/70 group-focus:text-white/70">
-                        {account.number}
-                      </span>
-                    </div>
-                    {selectedAccount?.id === account.id && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-              </>
-            ) : (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                No hay cuentas disponibles
-              </div>
-            )}
-            <DropdownMenuItem 
-              onClick={() => setShowAddDialog(true)}
-              className={cn(
-                "flex items-center gap-2 cursor-pointer group",
-                "transition-colors duration-200",
-                "hover:bg-primary hover:text-white focus:bg-primary focus:text-white",
-                "[&>svg]:transition-colors [&>svg]:duration-200",
-                "[&>svg]:text-primary [&>svg]:group-hover:text-white [&>svg]:group-focus:text-white"
-              )}
-            >
-              <PlusCircle className="h-4 w-4" />
-              <span>Agregar nueva cuenta</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Handle type="source" position={Position.Bottom} className="w-3 h-3" />
-      </div>
-
-      <Dialog 
-        open={showAddDialog} 
-        onOpenChange={setShowAddDialog}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Agregar nueva cuenta de WhatsApp</DialogTitle>
-            <DialogDescription>
-              Ingresa los datos de la nueva cuenta que deseas vincular
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Nombre de la cuenta
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Ej: Soporte Principal"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="number" className="text-sm font-medium">
-                Número de WhatsApp
-              </label>
-              <input
-                id="number"
-                type="text"
-                value={newNumber}
-                onChange={(e) => setNewNumber(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Ej: +34600000000"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowAddDialog(false)}
-              className="px-4 py-2 rounded-md border text-sm"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleAddAccount}
-              disabled={isLoading || !newName || !newNumber}
-              className="px-4 py-2 rounded-md bg-primary text-white text-sm disabled:opacity-50"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Agregando...
-                </div>
-              ) : (
-                'Agregar cuenta'
-              )}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      <WhatsAppNodeUI 
+        selectedAccount={selectedAccount}
+        connectionStatus={connectionStatus}
+        accounts={accounts}
+        isLoading={isLoading}
+        onSelectAccount={handleSelectAccount}
+        onAddNewAccount={() => setShowAddDialog(true)}
+      />
+      
       {renderQrDialog()}
+      {renderAddAccountDialog()}
       {renderContactsDialog()}
     </>
   );

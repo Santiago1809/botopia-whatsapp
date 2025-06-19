@@ -6,7 +6,7 @@ import { type Node, type Edge, type Connection, type NodeChange, type EdgeChange
 import 'reactflow/dist/style.css';
 import { Sidebar } from "@/components/flows/sidebar";
 import { FlowCanvas } from "@/components/flows/flowcanvas";
-import { WhatsAppNode } from '@/components/flows/cuentas/bloquewhatsapp';
+import { WhatsAppNode } from '@/components/flows/baruc/whatsappbaruc/bloquewhatsapp';
 import { useWhatsApp } from '@/context/WhatsAppContext';
 
 const nodeTypes = {
