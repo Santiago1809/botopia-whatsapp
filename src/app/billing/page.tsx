@@ -51,9 +51,9 @@ const PLANS = [
     title: "PLAN BÁSICO",
     phones: "2 números de teléfono",
     flows: "1 flujo",
-    credits: "Límite de 1000 mensajes al mes",
+    credits: "Límite de 2000 mensajes al mes",
     creditPrice: "14,00",
-    price: "14.00 USD / MES",
+    price: "24.90 USD / MES",
     amount: 14.00,
     order_id: 1030,
     features: [
@@ -78,7 +78,7 @@ const PLANS = [
     flows: "20 flujos",
     credits: "Límite de 5000 mensajes al mes",
     creditPrice: "79,00",
-    price: "79 USD / MES",
+    price: "119.80 USD / MES",
     amount: 79.00,
     order_id: 1031,
     features: [
@@ -106,7 +106,7 @@ const PLANS = [
     flows: "20 flujos",
     credits: "Límite de 10.000 mensajes al mes",
     creditPrice: "549,00",
-    price: "549 USD / MES",
+    price: "748 USD / MES",
     amount: 549,
     order_id: 1032,
     features: [
