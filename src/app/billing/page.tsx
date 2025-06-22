@@ -77,8 +77,8 @@ const PLANS = [
     phones: "5 números de teléfono",
     flows: "20 flujos",
     credits: "Límite de 5000 mensajes al mes",
-    creditPrice: "119,80",
-    price: "119.80 USD / MES",
+    creditPrice: "79,80",
+    price: "79.80 USD / MES",
     amount: 79.00,
     order_id: 1031,
     features: [
