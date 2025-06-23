@@ -48,7 +48,7 @@ export function CallServiceUI({
   const [callDuration, setCallDuration] = useState<number>(30);
   
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border-2 border-blue-500/30 px-4 py-3 min-w-[280px]">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border-2 border-red-500/30 px-4 py-3 min-w-[280px]">
       <ConnectionHandles />
       
       <div className="flex flex-col gap-3">
@@ -57,7 +57,7 @@ export function CallServiceUI({
           <DropdownMenuTrigger className="w-full">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Phone className="h-5 w-5 text-blue-500" />
+                <Phone className="h-5 w-5 text-orange-500" />
                 <div className="text-left">
                   <p className="font-medium text-sm dark:text-white">
                     {selectedVoice ? selectedVoice.name : 'Seleccionar voz'}
@@ -100,8 +100,8 @@ export function CallServiceUI({
         </DropdownMenu>
         
         {selectedVoice && (
-          <Card className="p-3 border border-blue-200 dark:border-blue-800">
-            <h3 className="text-sm font-medium mb-2 text-blue-800 dark:text-blue-300">
+          <Card className="p-3 border border-pink-200 dark:border-pink-800">
+            <h3 className="text-sm font-medium mb-2 text-orange-500 dark:text-pink-300">
               Configuración de llamada
             </h3>
             
@@ -109,7 +109,7 @@ export function CallServiceUI({
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span>Duración: {callDuration} segundos</span>
-                  <span className="text-blue-600">
+                  <span className="text-orange-500">
                     {callDuration <= 30 ? 'Corta' : callDuration >= 60 ? 'Larga' : 'Media'}
                   </span>
                 </div>
@@ -120,7 +120,7 @@ export function CallServiceUI({
                   step="5"
                   value={callDuration}
                   onChange={(e) => setCallDuration(parseInt(e.target.value, 10))}
-                  className="w-full h-2 rounded-full accent-blue-500"
+                  className="w-full h-2 rounded-full accent-orange-500"
                 />
               </div>
             </div>

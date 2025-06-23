@@ -1,0 +1,343 @@
+/* Animaciones para el icono 3D de J.A.R.V.I.S. */
+
+/* Rotación 3D con perspectiva para orbes y capas */
+.jarvis-icon {
+  transform-style: preserve-3d;
+}
+
+/* Núcleo central pulsante */
+.jarvis-core {
+  fill: currentColor;
+  fill-opacity: 0.5;
+  animation: core-pulse 3s ease-in-out infinite;
+  transform-origin: center;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
+@keyframes core-pulse {
+  0%, 100% { fill-opacity: 0.2; r: 2.5; }
+  50% { fill-opacity: 0.7; r: 3.2; }
+}
+
+/* Orbe interior giratorio */
+.jarvis-inner-orb {
+  stroke: currentColor;
+  fill: none;
+  animation: spin-clockwise 8s linear infinite;
+  transform-origin: center;
+  stroke-opacity: 0.7;
+}
+
+/* Capas de datos y memoria con rotaciones alternadas */
+.jarvis-memory-layer {
+  stroke: currentColor;
+  fill: none;
+  animation: spin-counter 15s linear infinite;
+  transform-origin: center;
+  stroke-opacity: 0.5;
+}
+
+.jarvis-data-layer {
+  stroke: currentColor;
+  fill: none;
+  animation: spin-clockwise 20s linear infinite;
+  transform-origin: center;
+  stroke-opacity: 0.6;
+}
+
+/* Anillos orbitales con rotación perpendicular */
+.jarvis-orbit-x {
+  stroke: currentColor;
+  fill: none;
+  animation: orbit-x 12s linear infinite;
+  transform-origin: center;
+  stroke-opacity: 0.4;
+}
+
+.jarvis-orbit-y {
+  stroke: currentColor;
+  fill: none;
+  animation: orbit-y 10s linear infinite;
+  transform-origin: center;
+  stroke-opacity: 0.4;
+}
+
+@keyframes orbit-x {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(360deg); }
+}
+
+@keyframes orbit-y {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Estructura neuronal con efecto vibración */
+.jarvis-neural-structure {
+  stroke: currentColor;
+  fill: none;
+  stroke-opacity: 0.3;
+  animation: neural-vibration 5s ease-in-out infinite;
+}
+
+@keyframes neural-vibration {
+  0%, 100% { transform: scale(0.95); stroke-dashoffset: 0; }
+  50% { transform: scale(1.05); stroke-dashoffset: 5; }
+}
+
+/* Conexiones con desplazamiento de dash */
+.jarvis-connections {
+  stroke: currentColor;
+  fill: none;
+  stroke-opacity: 0.4;
+  animation: connection-flow 8s linear infinite;
+}
+
+@keyframes connection-flow {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 20; }
+}
+
+/* Nodos con brillo pulsante */
+.jarvis-node {
+  fill: currentColor;
+  stroke: none;
+  animation: node-glow 4s infinite;
+}
+
+.node-1 { animation-delay: 0s; }
+.node-2 { animation-delay: 1s; }
+.node-3 { animation-delay: 2s; }
+.node-4 { animation-delay: 3s; }
+
+@keyframes node-glow {
+  0%, 100% { fill-opacity: 0.3; r: 0.5; }
+  50% { fill-opacity: 0.9; r: 0.9; filter: drop-shadow(0 0 2px currentColor); }
+}
+
+/* Pulso expansivo */
+.jarvis-pulse {
+  stroke: currentColor;
+  fill: none;
+  stroke-opacity: 0;
+  animation: pulse-wave 4s ease-out infinite;
+}
+
+@keyframes pulse-wave {
+  0% { stroke-opacity: 0.5; r: 5; }
+  100% { stroke-opacity: 0; r: 15; stroke-width: 0.2; }
+}
+
+/* Fragmentos dispersos (efecto de ataque) */
+.jarvis-fragment {
+  stroke: currentColor;
+  stroke-opacity: 0.7;
+  animation: fragment-scatter 6s ease-in-out infinite;
+}
+
+.frag-1 { animation-delay: 0s; }
+.frag-2 { animation-delay: 1.5s; }
+.frag-3 { animation-delay: 3s; }
+.frag-4 { animation-delay: 4.5s; }
+
+@keyframes fragment-scatter {
+  0%, 100% { transform: translateX(0) translateY(0); stroke-opacity: 0.2; }
+  50% { transform: translateX(calc(var(--direction, 1) * 2px)) translateY(calc(var(--direction, 1) * -2px)); stroke-opacity: 0.7; }
+}
+
+/* Animaciones base de rotación */
+@keyframes spin-clockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-counter {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+/* Animaciones para las partículas celulares */
+@keyframes particle-in {
+  0% { transform: translate(-50%, 0) scale(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translate(-50%, -100px) scale(1.5); opacity: 0; }
+}
+
+@keyframes particle-out {
+  0% { transform: translate(-50%, 0) scale(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translate(-50%, 100px) scale(1.5); opacity: 0; }
+}
+
+.cellular-particle-in {
+  animation: particle-in 2s ease-out forwards;
+}
+
+.cellular-particle-out {
+  animation: particle-out 2s ease-out forwards;
+}
+
+/* Animación del panel emergente */
+@keyframes panel-emerge {
+  0% {
+    transform: translateX(-50px) scale(0.5);
+    opacity: 0;
+    clip-path: circle(10% at 0% 10%);
+  }
+  30% {
+    opacity: 0.5;
+    transform: translateX(-20px) scale(0.8);
+  }
+  60% {
+    clip-path: circle(70% at 20% 20%);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    clip-path: circle(150% at 0% 0%);
+  }
+}
+
+/* Partícula de conexión que conecta el botón con el chat */
+.connection-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: linear-gradient(to right, currentColor, rgba(59, 130, 246, 0.7));
+  border-radius: 50%;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  animation: connect-dots 0.6s ease-out forwards;
+}
+
+@keyframes connect-dots {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* Partículas de estela para el icono */
+@keyframes trail-fade {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+.icon-trail-particle {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: rgba(245, 158, 11, 0.7);
+  pointer-events: none;
+  z-index: 1099;
+  animation: trail-fade 0.8s ease-out forwards;
+}
+
+/* Partículas de estela para el icono con movimiento direccional */
+@keyframes trail-fade-left {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.3) translate(-20px, 5px);
+  }
+}
+
+@keyframes trail-fade-right {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.3) translate(20px, -5px);
+  }
+}
+
+/* Partículas de camino entre origen y destino */
+.path-particle {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background-color: rgba(245, 158, 11, 0.9);
+  pointer-events: none;
+  z-index: 1099;
+  animation: path-fade 0.4s ease-out forwards;
+}
+
+@keyframes path-fade {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+    filter: blur(1px);
+  }
+}
+
+/* Partículas de anticipación */
+.anticipation-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: rgba(245, 158, 11, 0.9);
+  pointer-events: none;
+  z-index: 1099;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
+}
+
+/* Animación de desvanecimiento */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(180deg);
+    filter: blur(3px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2) rotate(90deg);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s cubic-bezier(0.34, 1.82, 0.64, 1) forwards;
+}
+
+/* Animación fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
