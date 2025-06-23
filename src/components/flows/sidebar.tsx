@@ -5,7 +5,7 @@ import {
   SheetTitle 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft, Brain, CreditCard, Phone } from "lucide-react"
+import { Menu, ArrowLeft, Brain, CreditCard, Phone, Lock } from "lucide-react"
 import Link from "next/link"
 import React, { useState, useEffect } from "react"
 import { BsWhatsapp } from "react-icons/bs"
@@ -194,7 +194,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
         {/* Reorganizado en grid de 2 filas x 3 columnas */}
         <div className="grid grid-cols-3 grid-rows-2 gap-2">
           {/* Fila 1, Columna 1: Gmail */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="gmail" 
             label="Gmail" 
             icon={<SiGmail className="h-5 w-5 text-red-500" />}
@@ -204,7 +204,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 1, Columna 2: Notion */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="notion" 
             label="Notion" 
             icon={<SiNotion className="h-5 w-5 text-gray-800 dark:text-gray-400" />}
@@ -215,7 +215,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 1, Columna 3: Calendar */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="googleCalendar" 
             label="Calendar" 
             icon={<SiGooglecalendar className="h-5 w-5 text-blue-500" />}
@@ -225,7 +225,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 2, Columna 1: Supabase */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="supabase" 
             label="Supabase" 
             icon={<SiSupabase className="h-5 w-5 text-green-600" />}
@@ -235,7 +235,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 2, Columna 2: Google Sheets */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="sheetsNode" 
             label="Sheets" 
             icon={<SiGooglesheets className="h-5 w-5 text-green-600" />}
@@ -255,7 +255,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
         {/* Reorganizado en grid de 2 filas x 3 columnas */}
         <div className="grid grid-cols-3 grid-rows-2 gap-2">
           {/* Fila 1, Columna 1: Disparador */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="trigger" 
             label="Disparador" 
             icon={<FaBolt className="h-5 w-5 text-yellow-500" />}
@@ -265,7 +265,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 1, Columna 2: Retraso */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="delay" 
             label="Retraso" 
             icon={<FaClock className="h-5 w-5 text-blue-400" />}
@@ -275,7 +275,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 1, Columna 3: Contador */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="counter" 
             label="Contador" 
             icon={<FaHashtag className="h-5 w-5 text-purple-500" />}
@@ -285,7 +285,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 2, Columna 1: Bucle */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="loop" 
             label="Bucle" 
             icon={<TbRepeat className="h-5 w-5 text-orange-400" />}
@@ -295,7 +295,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 2, Columna 2: Condición */}
-          <DraggableNode 
+          <LockedDraggableNode 
             type="condition" 
             label="Condición" 
             icon={<TbArrowFork className="h-5 w-5 text-cyan-500" />}
@@ -321,3 +321,17 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
 
 // Exportamos DraggableNode para mantener compatibilidad hacia atrás
 export { DraggableNode };
+
+// Crear un componente wrapper para el overlay
+function LockedDraggableNode(props: React.ComponentProps<typeof DraggableNode>) {
+  return (
+    <div className="relative group">
+      <DraggableNode {...props} />
+      {/* Overlay con efecto de desenfoque y semi-transparencia */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+        <Lock className="h-5 w-5 text-white mb-1" />
+        <span className="text-white text-xs font-medium">Próximamente</span>
+      </div>
+    </div>
+  );
+}
