@@ -191,8 +191,8 @@ export function FlowCanvas({
       </div>
 
       {/* Contenedor para escritorio que agrupa Copilot y los botones principales */}
-      <div className={`fixed z-[900] hidden md:flex flex-row gap-10 top-4 transition-all duration-300 ${
-        isCopilotOpen ? 'right-[350px]' : 'right-8'
+      <div className={`fixed z-[900] hidden md:flex flex-row top-4 transition-all duration-300 ${
+        isCopilotOpen ? 'gap-1 right-[350px]' : 'gap-10 right-8'
       }`}>
         {/* Botones principales para escritorio */}
         <div className="flex flex-row gap-3 bg-[hsl(var(--sidebar))] p-2.5 rounded-lg backdrop-blur shadow-md border w-[400px] h-[55px]">
