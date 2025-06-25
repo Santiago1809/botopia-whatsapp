@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { JarvisIcon } from "@/components/icons/jarvis-icon";
+import { cn } from "@/lib/utils";
 
 // Tipos reutilizables
 export type AIModel = 'standard' | 'creative' | 'precise';
@@ -94,20 +95,35 @@ export const ChatToolbar: React.FC<ToolbarProps> = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem 
-            className={aiModel === 'standard' ? 'bg-muted/50' : ''} 
+          <DropdownMenuItem
+            className={cn(
+              "transition-colors",
+              aiModel === 'standard'
+                ? "bg-primary !text-white"  
+                : "hover:bg-primary hover:!text-white"
+            )}
             onClick={() => setAiModel('standard')}
           >
             Estándar
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            className={aiModel === 'creative' ? 'bg-muted/50' : ''} 
+          <DropdownMenuItem
+            className={cn(
+              "transition-colors",
+              aiModel === 'creative'
+                ? "bg-primary !text-white"
+                : "hover:bg-primary hover:!text-white"
+            )}
             onClick={() => setAiModel('creative')}
           >
             Creativo
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            className={aiModel === 'precise' ? 'bg-muted/50' : ''} 
+          <DropdownMenuItem
+            className={cn(
+              "transition-colors",
+              aiModel === 'precise'
+                ? "bg-primary !text-white"
+                : "hover:bg-primary hover:!text-white"
+            )}
             onClick={() => setAiModel('precise')}
           >
             Preciso

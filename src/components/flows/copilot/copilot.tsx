@@ -407,7 +407,7 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
             setAiModel={setAiModel}
           />
           
-          <div className="flex flex-col h-[calc(100%-160px)] p-3 overflow-hidden">
+          <div className="flex flex-col h-[calc(100%-100px)] p-3 overflow-hidden">
             <ChatMessages 
               messages={copilotMessages}
               isProcessing={isProcessing}
@@ -431,6 +431,9 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
               isRecording={isRecording}
               clearAudio={() => setAudioBlob(null)}
             />
+            
+            {/* Espaciador que empuja los controles de entrada hacia el borde inferior */}
+            <div className="mt-auto" style={{ height: '2px' }}></div>
             
             <MessageInput 
               message={copilotMessage}

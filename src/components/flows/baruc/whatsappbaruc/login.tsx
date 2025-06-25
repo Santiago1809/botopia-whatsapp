@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import Image from 'next/image';
-import { WhatsAppNodeUI } from './diseño';
+import { WhatsAppBarucWrapper } from "./WhatsAppBarucWrapper";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
@@ -526,15 +526,15 @@ export function WhatsAppNode({ /*id, data*/ }: WhatsAppNodeProps) {
 
   return (
     <>
-      <WhatsAppNodeUI 
+      
+      <WhatsAppBarucWrapper
         selectedAccount={selectedAccount}
         connectionStatus={connectionStatus}
         accounts={accounts}
         isLoading={isLoading}
         onSelectAccount={handleSelectAccount}
-        onAddNewAccount={() => setShowAddDialog(true)}
+        onAddNewAccount={handleAddAccount}
       />
-      
       {renderQrDialog()}
       {renderAddAccountDialog()}
       {renderContactsDialog()}
