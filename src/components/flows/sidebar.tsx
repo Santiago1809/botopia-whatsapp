@@ -235,7 +235,7 @@ function SidebarVisualContent({ isLandscapeMobile }: { isLandscapeMobile: boolea
           />
           
           {/* Fila 2, Columna 2: Google Sheets */}
-          <LockedDraggableNode 
+          <DraggableNode
             type="sheetsNode" 
             label="Sheets" 
             icon={<SiGooglesheets className="h-5 w-5 text-green-600" />}
