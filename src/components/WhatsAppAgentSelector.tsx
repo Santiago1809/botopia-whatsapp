@@ -1,6 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { Agent, WhatsappNumber } from "@/types/gobal";
-import { Check, Edit, Trash, UserRound } from "lucide-react";
+import { Check, Edit, Trash, UserRound, Info } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -57,6 +57,7 @@ export default function WhatsAppAgentSelector({
   const { token } = useAuth();
   const [editingAllowAdvisor, setEditingAllowAdvisor] = useState(false);
   const [editingAdvisorEmail, setEditingAdvisorEmail] = useState("");
+  const [showPromptHelp, setShowPromptHelp] = useState(false);
 
   const handleClick = (agent: Agent) => {
     if (currentAgent?.id !== agent.id) {
@@ -275,12 +276,22 @@ export default function WhatsAppAgentSelector({
                 />
               </div>
               <div className="space-y-2">
-                <label
-                  htmlFor="prompt"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Prompt
-                </label>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="prompt"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Prompt
+                  </label>
+                  <button
+                    type="button"
+                    className="p-1 rounded-full hover:bg-blue-100 focus:outline-none"
+                    onClick={() => setShowPromptHelp(true)}
+                    aria-label="Ayuda para escribir un buen prompt"
+                  >
+                    <Info className="w-4 h-4 text-blue-500" />
+                  </button>
+                </div>
                 <textarea
                   id="prompt"
                   placeholder="Instrucciones para tu agente..."
@@ -540,6 +551,32 @@ export default function WhatsAppAgentSelector({
               onClick={() => setViewingAgent(null)}
             >
               Cerrar
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal bonito para tips de prompt */}
+      {showPromptHelp && (
+        <Dialog open={showPromptHelp} onOpenChange={setShowPromptHelp}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-blue-700 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-500" />
+                Tips para un buen prompt
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2 text-gray-700">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Sé claro y específico sobre el <b>rol</b> del agente.</li>
+                <li>Indica el <b>tono</b> y el tipo de respuestas que esperas.</li>
+                <li>Da <b>ejemplos</b> de preguntas y respuestas ideales.</li>
+                <li>Limita el alcance: ¿qué debe y qué <b>NO</b> debe responder?</li>
+                <li>Si quieres que derive a un humano, indícalo claramente.</li>
+              </ul>
+            </div>
+            <Button className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowPromptHelp(false)}>
+              ¡Entendido!
             </Button>
           </DialogContent>
         </Dialog>
