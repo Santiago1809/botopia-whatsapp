@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Trash,
   Users,
@@ -32,6 +32,9 @@ interface SyncedSidebarProps {
   selectedNumberId?: string;
 }
 
+// Estado local optimista para agenteHabilitado
+interface LocalAgenteState { [id: string]: boolean | undefined }
+
 const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   contacts,
   groups,
@@ -55,6 +58,18 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   >("all");
   const [socket, setSocket] = useState<Socket | null>(null);
   const [showActions, setShowActions] = useState(false);
+
+  // Estado local optimista para agenteHabilitado
+  const [localAgente, setLocalAgente] = useState<LocalAgenteState>({});
+
+  // Sincroniza el estado local con los props cuando cambian
+  useEffect(() => {
+    const estado: LocalAgenteState = {};
+    contacts.forEach((c) => (estado[c.id.toString()] = c.agenteHabilitado));
+    groups.forEach((g) => (estado[g.id.toString()] = g.agenteHabilitado));
+    unsyncedContacts.forEach((c) => (estado[c.id.toString()] = c.agenteHabilitado));
+    setLocalAgente(estado);
+  }, [contacts, groups, unsyncedContacts]);
 
   // Inicializar socket
   React.useEffect(() => {
@@ -394,29 +409,20 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onToggleAgente) {
-                                onToggleAgente(
-                                  contact.id,
-                                  !contact.agenteHabilitado
-                                );
-                                // Mostrar feedback visual temporal
-                                const target = e.currentTarget;
-                                const originalClass = target.className;
-                                target.className +=
-                                  " ring-2 ring-[#411E8A] ring-opacity-50";
-                                setTimeout(() => {
-                                  target.className = originalClass;
-                                }, 300);
+                                setLocalAgente((prev) => ({
+                                  ...prev,
+                                  [contact.id.toString()]: !localAgente[contact.id.toString()],
+                                }));
+                                onToggleAgente(contact.id, !localAgente[contact.id.toString()]);
                               }
                             }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-                              contact.agenteHabilitado
+                              localAgente[contact.id.toString()]
                                 ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
                                 : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
                             }`}
                             title={
-                              contact.agenteHabilitado
-                                ? "Desactivar IA"
-                                : "Activar IA"
+                              localAgente[contact.id.toString()] ? "Desactivar IA" : "Activar IA"
                             }
                           >
                             <UserCheck className="size-4" />
@@ -477,29 +483,20 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onToggleAgente) {
-                                onToggleAgente(
-                                  group.id,
-                                  !group.agenteHabilitado
-                                );
-                                // Mostrar feedback visual temporal
-                                const target = e.currentTarget;
-                                const originalClass = target.className;
-                                target.className +=
-                                  " ring-2 ring-[#411E8A] ring-opacity-50";
-                                setTimeout(() => {
-                                  target.className = originalClass;
-                                }, 300);
+                                setLocalAgente((prev) => ({
+                                  ...prev,
+                                  [group.id.toString()]: !localAgente[group.id.toString()],
+                                }));
+                                onToggleAgente(group.id, !localAgente[group.id.toString()]);
                               }
                             }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-                              group.agenteHabilitado
+                              localAgente[group.id.toString()]
                                 ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
                                 : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
                             }`}
                             title={
-                              group.agenteHabilitado
-                                ? "Desactivar IA"
-                                : "Activar IA"
+                              localAgente[group.id.toString()] ? "Desactivar IA" : "Activar IA"
                             }
                           >
                             <UserCheck className="w-4 h-4" />
@@ -546,11 +543,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                       {contact.name?.charAt(0)?.toUpperCase() || "C"}
                       <input
                         type="checkbox"
-                        checked={contact.agenteHabilitado === true}
+                        checked={localAgente[contact.id.toString()] === true}
                         onChange={async (e) => {
                           e.stopPropagation();
-                          if (onToggleAgente)
+                          if (onToggleAgente) {
+                            setLocalAgente((prev) => ({
+                              ...prev,
+                              [contact.id.toString()]: e.target.checked,
+                            }));
                             onToggleAgente(contact.id, e.target.checked);
+                          }
                           try {
                             await fetch(
                               `${BACKEND_URL}/api/unsyncedcontacts/${contact.id}`,
@@ -582,7 +584,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-[#667781] truncate pr-2">
-                          {contact.agenteHabilitado ? (
+                          {localAgente[contact.id.toString()] ? (
                             <span className="text-[#25D366]">IA activada</span>
                           ) : (
                             <span className="text-[#667781]">
