@@ -1204,7 +1204,7 @@ export default function Page() {
   }, [selectedNumber]);
 
   // Normaliza y compara usando wa_id para filtrar los no sincronizados
-  const normalizeId = (id) => String(id).trim().toLowerCase();
+  const normalizeId = (id: string | number | undefined) => String(id ?? '').trim().toLowerCase();
   const syncedContactWaIds = new Set(syncedContacts.map((c) => normalizeId(c.wa_id)));
   const syncedGroupWaIds = new Set(syncedGroups.map((g) => normalizeId(g.wa_id)));
   const filteredPersonalContactsToShow = filteredPersonalContacts.filter(
