@@ -18,18 +18,18 @@ export default function RequestOTPCode({
   isSubmitting,
 }: RequestOTPCodeProps) {
   return (
-    <div className="md:3/5 p-6 sm:p-8 bg-white">
+    <div className="md:3/5 p-6 sm:p-8 bg-background">
       <div className="mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
           Recuperar contraseña
         </h2>
-        <p>
+        <p className="text-muted-foreground">
           Ingresa tu correo electrónico y te enviaremos instrucciones para
           restablecer tu contraseña
         </p>
       </div>
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
           {error}
         </div>
       )}
@@ -37,7 +37,7 @@ export default function RequestOTPCode({
         <div>
           <Label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Correo electrónico
           </Label>
@@ -47,7 +47,7 @@ export default function RequestOTPCode({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Ingresa tu correo electrónico"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            className="w-full"
             required
           />
         </div>
@@ -60,7 +60,7 @@ export default function RequestOTPCode({
             {isSubmitting ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
             ) : null}
-            {isSubmitting ? "Iniciando sesión..." : "Iniciar sesión"}
+            {isSubmitting ? "Solicitando código..." : "Solicitar código"}
           </button>
         </div>
       </form>

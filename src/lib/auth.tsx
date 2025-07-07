@@ -54,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Función para iniciar sesión con la API real
   const login = async (identifier: string, password: string) => {
     try {
+      console.log("Enviando solicitud de login...", {
+        identifier,
+        backend: BACKEND_URL,
+      });
+
       const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -62,11 +67,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ identifier, password }),
       });
 
+      console.log("Respuesta recibida:", {
+        status: response.status,
+        ok: response.ok,
+      });
+
       if (!response.ok) {
-        throw new Error("Credenciales inválidas");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Credenciales inválidas";
+        console.error("Error en login:", errorMessage);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log("Datos de login exitoso:", data);
 
       // Guardamos el token en localStorage si tu API lo devuelve
       if (data.token) {
@@ -82,8 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("isAuthenticated", "true");
       setIsAuthenticated(true);
+
+      return data; // Retornamos los datos para que el componente sepa que fue exitoso
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
+      // IMPORTANTE: Relanzar el error para que el componente pueda manejarlo
+      throw error;
     }
   };
 
@@ -117,20 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
 
-      // Guardamos el token si la API lo devuelve
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-      }
-
-      // Guardamos los datos del usuario
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
-      }
-
-      localStorage.setItem("isAuthenticated", "true");
-      setIsAuthenticated(true);
+      // NO guardamos el token ni autenticamos automáticamente
+      // El usuario debe activar su cuenta por email y verificar WhatsApp primero
+      return data; // Retornamos los datos por si son necesarios
     } catch (error) {
       throw new Error((error as Error).message);
     }
@@ -168,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedUser && storedIsAuthenticated === "true" && storedToken) {
         try {
           // Verificar si el token es válido haciendo una petición al servidor
-          const response = await fetch(`${BACKEND_URL}/api/auth/user-info`, {
+          const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${storedToken}`,

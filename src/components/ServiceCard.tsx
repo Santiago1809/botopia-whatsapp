@@ -24,8 +24,8 @@ export const ServiceCard: React.FC<ServiceProps> = ({
   actionLabel,
   actionUrl,
   className = "",
-  bgColor = "bg-white",
-  iconBg = "bg-gray-100",
+  bgColor = "bg-card",
+  iconBg = "bg-muted",
   iconColor = "text-primary",
   isComingSoon = false, // Valor por defecto
 }) => {
@@ -40,7 +40,7 @@ export const ServiceCard: React.FC<ServiceProps> = ({
     <div
       className={`${bgColor} ${
         isComingSoon ? "cursor-not-allowed opacity-75" : ""
-      } rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md ${className}`}
+      } rounded-xl shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md ${className}`}
       aria-disabled={isComingSoon}
     >
       <div className="p-6 flex flex-col h-full">
@@ -63,15 +63,17 @@ export const ServiceCard: React.FC<ServiceProps> = ({
             )}
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-gray-600 text-sm mb-6 flex-grow">{description}</p>
+        <h3 className="text-xl font-semibold mb-2 text-foreground">{title}</h3>
+        <p className="text-muted-foreground text-sm mb-6 flex-grow">
+          {description}
+        </p>
         <a
           href={isComingSoon ? "#" : actionUrl}
           onClick={handleDisabledClick}
-          className={`block w-full py-2 text-white text-center rounded-md transition ${
+          className={`block w-full py-2 text-center rounded-md transition ${
             isComingSoon
-              ? "bg-gray-500 cursor-not-allowed pointer-events-none"
-              : "bg-primary hover:bg-primary/90"
+              ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
           tabIndex={isComingSoon ? -1 : 0}
           aria-disabled={isComingSoon}

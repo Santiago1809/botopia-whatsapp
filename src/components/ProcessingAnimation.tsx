@@ -3,7 +3,7 @@ import { Shield } from "lucide-react";
 
 export function ProcessingAnimation() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -18,7 +18,7 @@ export function ProcessingAnimation() {
           }}
           className="relative mx-auto w-24 h-24 mb-6"
         >
-          <Shield className="w-24 h-24 text-blue-500" strokeWidth={1} />
+          <Shield className="w-24 h-24 text-primary" strokeWidth={1} />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{
@@ -31,14 +31,14 @@ export function ProcessingAnimation() {
             }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </motion.div>
         </motion.div>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="text-2xl font-semibold text-gray-800 mb-2"
+          className="text-2xl font-semibold text-foreground mb-2"
         >
           Procesando tu Suscripción
         </motion.h2>
@@ -46,7 +46,7 @@ export function ProcessingAnimation() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="text-gray-600"
+          className="text-muted-foreground"
         >
           Estamos verificando tu pago de manera segura...
         </motion.p>

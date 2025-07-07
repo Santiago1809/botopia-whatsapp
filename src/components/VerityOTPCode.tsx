@@ -26,19 +26,19 @@ export default function VerityOTPCode({
     }
   };
   return (
-    <div className="md:3/5 p-6 sm:p-8 bg-white">
+    <div className="md:3/5 p-6 sm:p-8 bg-background">
       <div className="mb-6 sm:mb-8">
         {" "}
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
           Verificar código
         </h2>
-        <p>
-          Ingresa el código de 6 dígitos que llegó a tu correo electrónico para
-          continuar con el proceso de recuperación
+        <p className="text-muted-foreground">
+          Ingresa el código de 6 dígitos que llegó a tu WhatsApp para continuar
+          con el proceso de verificación
         </p>
       </div>
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
           {error}
         </div>
       )}
@@ -47,7 +47,7 @@ export default function VerityOTPCode({
           {" "}
           <Label
             htmlFor="code"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Código de verificación
           </Label>{" "}
@@ -84,7 +84,7 @@ export default function VerityOTPCode({
                     if (prevInput) prevInput.focus();
                   }
                 }}
-                className="w-12 h-12 text-center text-lg font-medium border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                className="w-12 h-12 text-center text-lg font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 inputMode="numeric"
                 pattern="[0-9]"
                 required

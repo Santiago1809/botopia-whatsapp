@@ -249,24 +249,24 @@ export default function WhatsAppMessageSection({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#e5ded8]">
+    <div className="flex flex-col h-full w-full bg-[#e5ded8] dark:bg-[#111b21]">
       {/* Área principal */}
       <div className="flex-1 p-2 sm:p-6 overflow-y-auto flex items-center justify-center">
         {selectedNumber && numbers[selectedNumber.id] !== "connected" ? (
-          <div className="bg-white rounded-xl p-4 sm:p-8 w-full max-w-3xl shadow-sm border">
+          <div className="bg-card rounded-xl p-4 sm:p-8 w-full max-w-3xl shadow-sm border border-border">
             <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
               <div className="flex-1 space-y-4 sm:space-y-6">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-medium mb-2">
+                  <h1 className="text-xl sm:text-2xl font-medium mb-2 text-foreground">
                     Conecta tu número
                   </h1>
-                  <p className="text-sm sm:text-base text-gray-600">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Escanea el código QR con tu teléfono para conectar tu número
                     y empezar a usar el servicio.
                   </p>
                 </div>
 
-                <ol className="space-y-3 sm:space-y-4 list-decimal list-inside text-sm sm:text-base text-gray-700">
+                <ol className="space-y-3 sm:space-y-4 list-decimal list-inside text-sm sm:text-base text-muted-foreground">
                   <li>Abre la aplicación de WhatsApp en tu teléfono</li>
                   <li>Ve a la sección de configuración</li>
                   <li>Selecciona la opción &quot;Escanear código QR&quot;</li>
@@ -277,15 +277,15 @@ export default function WhatsAppMessageSection({
               </div>
 
               <div className="relative flex items-center justify-center">
-                <div className="bg-white p-2 border rounded-lg shadow-sm">
+                <div className="bg-background dark:bg-card p-2 border border-border rounded-lg shadow-sm">
                   {selectedNumber && qrCodes && qrCodes[selectedNumber.id] ? (
                     <QRDisplay
                       qrCode={qrCodes[selectedNumber.id]}
                       number={selectedNumber.number}
                     />
                   ) : (
-                    <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] flex items-center justify-center bg-gray-100">
-                      <p className="text-sm text-gray-500">
+                    <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] flex items-center justify-center bg-muted dark:bg-muted">
+                      <p className="text-sm text-muted-foreground">
                         Generando código...
                       </p>
                     </div>

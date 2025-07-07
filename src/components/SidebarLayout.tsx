@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { Footer } from "./Footer";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface SidebarLayoutProps {
   children: ReactNode;
@@ -50,12 +51,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   // Estilo común para los elementos del menú
   const menuItemStyle = (path: string) => {
     return isActive(path)
-      ? "flex items-center px-2 py-2 rounded-md hover:bg-[#411E8A]/10 hover:text-[#411E8A] bg-gradient-to-r from-[#411E8A] to-[#050044] text-white"
-      : "flex items-center px-2 py-2 text-gray-700 rounded-md hover:bg-[#411E8A]/10 hover:text-[#411E8A]";
+      ? "flex items-center px-2 py-2 rounded-md hover:bg-primary/10 hover:text-primary bg-gradient-to-r from-primary to-secondary text-white"
+      : "flex items-center px-2 py-2 text-foreground rounded-md hover:bg-primary/10 hover:text-primary";
   };
 
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex h-full bg-background dark:bg-background">
       {/* Overlay para móvil */}
       {isSidebarOpen && (
         <div
@@ -68,16 +69,17 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       <aside
         className={`fixed lg:fixed inset-y-0 left-0 transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 transition-transform duration-300 ease-in-out w-60 bg-white border-r border-gray-200 z-30 flex flex-col h-full`}
+        } lg:translate-x-0 transition-transform duration-300 ease-in-out w-60 bg-card dark:bg-sidebar border-r border-border z-30 flex flex-col h-full`}
       >
         {/* Logo y nombre */}
-        <div className="flex items-center justify-between px-4 py-3 text-gray-700 lg:mt-6">
+        <div className="flex items-center justify-between px-4 py-3 text-foreground lg:mt-6">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/Logo.png" alt="Botopia Logo" width={32} height={32} />
             <span className="font-bold text-lg">Botopia</span>
-          </Link>          <button
+          </Link>
+          <button
             onClick={toggleSidebar}
-            className="lg:hidden text-gray-700 hover:text-[#411E8A] transition-colors duration-200"
+            className="lg:hidden text-foreground hover:text-primary transition-colors duration-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -98,7 +100,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         <nav className="flex-grow p-5 overflow-y-auto">
           <ul className="space-y-2">
             <li className="mb-6">
-              <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                 Principal
               </span>
             </li>
@@ -124,7 +126,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 </svg>
                 <span>Inicio</span>
               </Link>
-            </li>{" "}
+            </li>
             <li>
               <Link
                 href="/services"
@@ -182,7 +184,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </Link>
             </li>
             <li className="mt-8 mb-6">
-              <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                 Configuración
               </span>
             </li>
@@ -255,22 +257,30 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 <span>Facturación</span>
               </Link>
             </li>
+            <li>
+              <div className="px-2 py-2">
+                <ThemeToggle />
+              </div>
+            </li>
           </ul>
-        </nav>        {/* User section */}
-        <div className="border-t border-gray-200 p-4">
+        </nav>
+
+        {/* User section */}
+        <div className="border-t border-border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-r from-[#411E8A] to-[#050044] rounded-full text-white flex items-center justify-center font-semibold">
+              <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full text-white flex items-center justify-center font-semibold">
                 {user?.username?.charAt(0) || "U"}
               </div>
               <div className="ml-3 overflow-hidden">
-                <p className="text-sm font-medium text-gray-700 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {user?.username || "Usuario"}
                 </p>
               </div>
-            </div>            <button
+            </div>
+            <button
               onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-[#411E8A] flex-shrink-0 transition-colors duration-200"
+              className="text-sm text-muted-foreground hover:text-primary flex-shrink-0 transition-colors duration-200"
               title="Cerrar sesión"
             >
               <svg
@@ -295,7 +305,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:ml-60 w-full flex flex-col min-h-screen">
         {/* Mobile header */}
-        <header className="lg:hidden bg-gradient-to-l from-[#411E8A] to-[#050044] text-white border-b border-gray-200 p-4 sticky top-0 z-10 flex items-center justify-between">
+        <header className="lg:hidden bg-gradient-to-l from-primary to-secondary text-white border-b border-border p-4 sticky top-0 z-10 flex items-center justify-between">
           <button
             onClick={toggleSidebar}
             className="text-white focus:outline-none"
@@ -325,12 +335,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               />
               <span className="font-bold text-lg text-white">Botopia</span>
             </Link>
-          </div>          <div className="relative">
+          </div>
+          <div className="relative flex items-center">
+            <ThemeToggle />
             <button
-              className="text-white hover:text-[#FAECD4]/80"
+              className="text-white hover:text-tertiary/80 ml-2"
               onClick={() => router.push("/profile")}
             >
-              <div className="w-8 h-8 bg-white rounded-full text-[#411E8A] flex items-center justify-center font-semibold">
+              <div className="w-8 h-8 bg-white rounded-full text-primary flex items-center justify-center font-semibold">
                 {user?.username?.charAt(0) || "U"}
               </div>
             </button>
