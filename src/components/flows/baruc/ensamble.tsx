@@ -1,5 +1,5 @@
 import React from "react";
-import { Brain, CreditCard, Phone } from "lucide-react";
+import { Brain, CreditCard, Phone, Link2 } from "lucide-react";
 import { BsWhatsapp } from 'react-icons/bs';
 import { SiGooglesheets } from "react-icons/si";
 import { DraggableNode } from "../DraggableNode";
@@ -38,6 +38,16 @@ export function BarucSection() {
       darkBgColor: "rgba(59, 130, 246, 0.1)",
       darkBorderColor: "rgba(59, 130, 246, 0.4)",
       section: "baruc" // Asegúrate de que section esté definido
+    },
+    {
+      type: "webhookNode",
+      label: "Webhook",
+      icon: <Link2 className="h-5 w-5 text-green-600" />,
+      bgColor: "rgba(16, 185, 129, 0.05)",
+      borderColor: "rgba(16, 185, 129, 0.3)",
+      darkBgColor: "rgba(16, 185, 129, 0.1)",
+      darkBorderColor: "rgba(16, 185, 129, 0.4)",
+      section: "baruc"
     }
   ];
 
