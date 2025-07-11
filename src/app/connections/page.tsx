@@ -1,5 +1,4 @@
 import SidebarLayout from "@/components/SidebarLayout";
-import { Footer } from "@/components/Footer";
 
 export default function ConnectionsPage() {
   return (
@@ -44,7 +43,6 @@ export default function ConnectionsPage() {
             </div>
           </div>
         </div>
-        <Footer companyName="Botopia" />
       </div>
     </SidebarLayout>
   );

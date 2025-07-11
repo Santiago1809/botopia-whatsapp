@@ -5,7 +5,7 @@ import {
   SheetTitle 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, ArrowLeft, Brain, CreditCard, Phone, Lock, Link2, Webhook } from "lucide-react"
+import { Menu, ArrowLeft, Brain, CreditCard, Phone, Lock, Webhook } from "lucide-react"
 import Link from "next/link"
 import React, { useState, useEffect } from "react"
 import { BsWhatsapp } from "react-icons/bs"

@@ -388,7 +388,8 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
   // --- Dynamic Island tipo gota/burbuja ---
   const [isIslandActive, setIsIslandActive] = useState(false);
   const [isIslandExpanding, setIsIslandExpanding] = useState(false);
-  const [showCopilotBtn, setShowCopilotBtn] = useState(true);
+  // Removed unused state variables showCopilotBtn and setShowCopilotBtn
+  // Using copilotBtnFade instead to determine visibility
   const [showChatPanel, setShowChatPanel] = useState(showPanel);
 
   // Sincroniza la animación visual con la apertura/cierre del chat
@@ -517,6 +518,18 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
             <div className={`relative w-9 h-9 bg-transparent copilot-icon-fade-${copilotBtnFade}`}
               style={{ opacity: copilotBtnFade === 'hidden' ? 0 : 1, transition: 'opacity 0.3s', filter: copilotBtnFade === 'hidden' ? 'none' : undefined }}>
               <JarvisIcon className={`w-9 h-9 transition-transform duration-300 ${(!isMobile && isHovering) ? 'scale-150' : ''} ${isAnimating ? 'animate-pulse' : ''}`} />
+              {/* Render hover particles when hovering */}
+              {isHovering && hoverParticles.map(particle => (
+                <div
+                  key={particle.id}
+                  className="absolute w-1 h-1 bg-amber-200/60 rounded-full pointer-events-none animate-ping"
+                  style={{
+                    top: `${particle.top}%`,
+                    left: `${particle.left}%`,
+                    animationDuration: `${0.8 + Math.random() * 1}s`
+                  }}
+                />
+              ))}
               {isAnimating && cellParticles.map(particle => (
                 <div
                   key={particle.id}

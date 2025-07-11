@@ -1,5 +1,4 @@
 import SidebarLayout from "@/components/SidebarLayout";
-import { Footer } from "@/components/Footer";
 
 export default function ProfilePage() {
   return (
@@ -43,7 +42,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <Footer companyName="Botopia" />
       </div>
     </SidebarLayout>
   );

@@ -5,7 +5,6 @@ import SidebarLayout from "@/components/SidebarLayout";
 import { PlanCard } from "@/components/plans/PlanCard";
 import { SubscriptionDashboard } from "../../components/subscription/SubscriptionDashboard";
 import { useCreateSubscription } from "../hooks/useCreateSubscription";
-import { Footer } from "@/components/Footer";
 
 const dlo_BASIC_token = process.env.NODE_ENV === 'production'
   ? "IjISC1nT2PL9t7KnGDA9WNUI2KzLO2yF"
