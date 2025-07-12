@@ -24,8 +24,8 @@ export const ServiceCard: React.FC<ServiceProps> = ({
   actionLabel,
   actionUrl,
   className = "",
-  bgColor = "bg-white dark:bg-[#18181b]",
-  iconBg = "bg-gray-100 dark:bg-gray-800/60",
+  bgColor = "bg-card dark:bg-[#18181b]",
+  iconBg = "bg-muted dark:bg-gray-800/60",
   iconColor = "text-primary dark:text-primary-light",
   isComingSoon = false,
 }) => {
@@ -41,7 +41,7 @@ export const ServiceCard: React.FC<ServiceProps> = ({
       className={`
         ${bgColor}
         ${isComingSoon ? "cursor-not-allowed opacity-75" : ""}
-        rounded-xl shadow-sm border border-gray-100 dark:border-gray-800
+        rounded-xl shadow-sm border border-border dark:border-gray-800
         overflow-hidden transition-all duration-300 hover:shadow-md
         ${className}
       `}
@@ -67,20 +67,22 @@ export const ServiceCard: React.FC<ServiceProps> = ({
             )}
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        <h3 className="text-xl font-semibold mb-2 text-foreground text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 flex-grow">
+        <p className="text-muted-foreground dark:text-gray-400 text-sm mb-6 flex-grow">
+          
           {description}
+        
         </p>
         <a
           href={isComingSoon ? "#" : actionUrl}
           onClick={handleDisabledClick}
           className={`
-            block w-full py-2 text-white text-center rounded-md transition
+            block w-full py-2 text-center rounded-md transition
             ${isComingSoon
-              ? "bg-gray-500 dark:bg-gray-700 cursor-not-allowed pointer-events-none"
-              : "bg-primary dark:bg-primary-light hover:bg-primary/90 dark:hover:bg-primary"
+              ? "bg-muted text-muted-foreground dark:bg-gray-700 cursor-not-allowed pointer-events-none"
+              : "bg-primary dark:bg-primary-light text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary"
             }
           `}
           tabIndex={isComingSoon ? -1 : 0}

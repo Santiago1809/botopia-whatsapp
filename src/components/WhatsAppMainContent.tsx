@@ -22,7 +22,7 @@ export default function WhatsAppMainContent({
   selectedChat,
 }: WhatsAppMainContentProps) {
   return selectedNumber ? (
-    <div className="flex-1 overflow-auto bg-[#e5ded8]">
+    <div className="flex-1 overflow-auto bg-[#e5ded8] dark:bg-[#111b21]">
       <WhatsAppMessageSection
         selectedNumber={selectedNumber}
         qrCodes={qrCodes}
@@ -30,9 +30,9 @@ export default function WhatsAppMainContent({
       />
     </div>
   ) : (
-    <div className="flex-1 flex items-center justify-center overflow-auto bg-[#f5f5f5]">
+    <div className="flex-1 flex items-center justify-center overflow-auto bg-muted dark:bg-card">
       <div className="text-center p-6">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#075e54] flex items-center justify-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary dark:bg-primary flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-8 w-8 text-white"
@@ -46,7 +46,7 @@ export default function WhatsAppMainContent({
             />
           </svg>
         </div>
-        <p className="text-gray-500 text-lg font-light">
+        <p className="text-muted-foreground text-lg font-light">
           Selecciona un número para comenzar
         </p>
       </div>
