@@ -168,6 +168,11 @@ export default function VerifyWhatsApp() {
             error={error}
             isSubmitting={isSubmitting}
             handleSubmit={handleSubmit}
+            showHeader={true}
+            headerTitle="Verificar código"
+            headerDescription="Ingresa el código de 6 dígitos que enviamos a tu WhatsApp para continuar con el proceso de verificación"
+            buttonText="Verificar código"
+            buttonLoadingText="Verificando código..."
           />
 
           <div className="mt-6 text-center">
