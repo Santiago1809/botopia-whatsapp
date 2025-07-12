@@ -1,12 +1,13 @@
 import { Node, Edge, Connection, NodeChange, EdgeChange, ReactFlowInstance } from 'reactflow'
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow'
-import { useCallback, useRef, useState, useEffect } from 'react'
+import { useCallback, useRef, useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Trash2, Save } from "lucide-react"
 import { ThemeSwitcher } from '@/components/flows/ThemeSwitcher'
 import './flow-controls.css'
 import { nodeTypes } from './nodeTypes';
 import { Copilot } from './copilot/copilot';
+import { Sidebar } from './sidebar';
 
 type FlowCanvasProps = {
   nodes: Node[];
@@ -51,6 +52,23 @@ export function FlowCanvas({
     
     // Limpiar event listener
     return () => window.removeEventListener('resize', checkOrientation);
+  }, []);
+
+  // Detectar móvil vertical
+  const [isMobileVertical, setIsMobileVertical] = useState(false);
+  useEffect(() => {
+    const checkMobileVertical = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobileVertical(window.innerWidth < 1024 && window.innerHeight > window.innerWidth);
+      }
+    };
+    checkMobileVertical();
+    window.addEventListener('resize', checkMobileVertical);
+    window.addEventListener('orientationchange', checkMobileVertical);
+    return () => {
+      window.removeEventListener('resize', checkMobileVertical);
+      window.removeEventListener('orientationchange', checkMobileVertical);
+    };
   }, []);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -153,39 +171,73 @@ export function FlowCanvas({
     return () => observer.disconnect();
   }, [isDarkMode]);
 
+  // Permite agregar un nodo al centro del canvas (para móvil)
+  const addNodeAtCenter = (type: string) => {
+    if (!reactFlowWrapper.current || !reactFlowInstance) return;
+    const bounds = reactFlowWrapper.current.getBoundingClientRect();
+    const center = reactFlowInstance.project({
+      x: bounds.width / 2,
+      y: bounds.height / 2,
+    });
+    if (!(type in nodeTypes)) return;
+    const newNode = {
+      id: `${type}-${Date.now()}`,
+      type,
+      position: center,
+      data: {},
+    };
+    setNodes((nds) => nds.concat(newNode));
+  };
 
+  // Memoizar nodeTypes para evitar recreación en cada renderizado
+  const memoizedNodeTypes = useMemo(() => nodeTypes, []);
+
+  // Ocultar explícitamente cualquier botón de menú hamburguesa cuando el chat está abierto en móvil vertical
+  useEffect(() => {
+    if (isCopilotOpen && isMobileVertical) {
+      // Seleccionar todos los posibles botones hamburguesa en la app
+      const menuButtons = document.querySelectorAll('.menu-button-hamburger');
+      menuButtons.forEach(button => {
+        (button as HTMLElement).style.display = 'none';
+      });
+    } else {
+      // Restaurar la visibilidad
+      const menuButtons = document.querySelectorAll('.menu-button-hamburguesa');
+      menuButtons.forEach(button => {
+        (button as HTMLElement).style.display = '';
+      });
+    }
+  }, [isCopilotOpen, isMobileVertical]);
 
   return (
     <div className={`h-screen bg-[hsl(var(--canvas))] relative ${isLandscape ? 'w-auto' : 'w-screen'} md:ml-[320px] md:w-[calc(100vw-320px)]`}>
       {/* Contenedor para móvil que agrupa Copilot y los botones principales */}
-      <div className={`fixed z-[900] flex flex-col gap-2 md:hidden top-4 transition-all duration-300 ${
-        isCopilotOpen ? 'right-[330px]' : 'right-4'
-      }`}>
-        {/* Copilot para móvil - Ahora el primer elemento */}
-        <div className="bg-[hsl(var(--sidebar))] p-3 rounded-lg backdrop-blur shadow-md border w-[58px] h-[58px] z-[1000]">
-          <Copilot isMobile={true} onOpenChange={setIsCopilotOpen} isOpen={isCopilotOpen} />
-        </div>
+      <div className={`fixed z-[900] flex flex-col md:hidden top-4 transition-all duration-300
+        ${isMobileVertical && isCopilotOpen ? 'left-6' : isCopilotOpen ? 'right-[330px]' : 'right-4'}
+        ${!isLandscape ? 'flex-col-reverse gap-4' : 'gap-4'}`}
+      >
+        {/* Copilot para móvil - con animación y estilo igual a escritorio, sin div externo */}
+        <Copilot isMobile={true} onOpenChange={setIsCopilotOpen} isOpen={isCopilotOpen} />
         
-        {/* Botones principales para móvil - Ahora en vertical debajo de Copilot */}
+        {/* CAMBIO AQUÍ: Eliminar la condición para que siempre se muestren los botones */}
         <div className="flex flex-col gap-2 bg-[hsl(var(--sidebar))] p-3 rounded-lg backdrop-blur shadow-md border w-[58px]">
           <ThemeSwitcher />
-          
           <Button 
             variant="destructive" 
             size="icon"
             onClick={() => setNodes([])}
             title="Limpiar Canvas"
+            className="clear-button action-button" // Añade clase action-button
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-[1.2rem] w-[1.2rem]" />
           </Button>
-          
           <Button 
             onClick={handleSave}
             size="icon"
-            className="bg-primary text-white hover:bg-primary/90 dark:text-white dark:hover:bg-primary/70"
+            className="bg-primary text-white hover:bg-primary/90 dark:text-white dark:hover:bg-primary/70 save-button action-button" // Añade clase action-button
             title="Guardar flujo"
           >
-            <Save className="h-4 w-4" />
+            <Save className="h-[1.2rem] w-[1.2rem]" />
           </Button>
         </div>
       </div>
@@ -201,7 +253,7 @@ export function FlowCanvas({
           <Button 
             variant="destructive" 
             onClick={() => setNodes([])}
-            className="flex items-center"
+            className="flex items-center clear-button" // Añade esta clase
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Limpiar Canvas
@@ -209,7 +261,7 @@ export function FlowCanvas({
           
           <Button 
             onClick={handleSave}
-            className="bg-primary text-white hover:bg-primary/90 dark:text-white dark:hover:bg-primary/70 flex items-center"
+            className="bg-primary text-white hover:bg-primary/90 dark:text-white dark:hover:bg-primary/70 flex items-center save-button" // Añade esta clase
           >
             <Save className="h-4 w-4 mr-2" />
             Guardar flujo
@@ -234,8 +286,10 @@ export function FlowCanvas({
           onInit={setReactFlowInstance}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          nodeTypes={nodeTypes}
+          nodeTypes={memoizedNodeTypes} // <-- Usar la versión memoizada
           fitView
+          nodesDraggable={true} // Permite mover nodos libremente
+          panOnDrag={[1, 2]} // Permite panear el canvas con touch (1 dedo) y mouse (2 clicks)
           className={`h-full w-full border rounded-lg bg-[hsl(var(--canvas))] ${isDarkMode ? 'dark-flow-controls' : ''}`}
           proOptions={{ hideAttribution: true }}
         >
@@ -255,6 +309,20 @@ export function FlowCanvas({
             nodeBorderRadius={4}
           />
         </ReactFlow>
+        
+        {/* SOLUCIÓN: Renderizado condicional del Sidebar basado en múltiples factores */}
+        {typeof window !== 'undefined' && (
+          // No renderizar el Sidebar en absoluto si el chat está abierto y es móvil vertical
+          !(isCopilotOpen && isMobileVertical) && 
+          // Solo permitir agregar nodos con touch en móvil y tablet
+          (window.innerWidth < 1280 || /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile|Tablet/i.test(navigator.userAgent)) && (
+            <Sidebar 
+              onMobileAddNode={addNodeAtCenter} 
+              isCopilotOpen={isCopilotOpen} 
+              isMobileVertical={isMobileVertical}
+            />
+          )
+        )}
       </div>
     </div>
   );

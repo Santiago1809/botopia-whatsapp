@@ -155,31 +155,33 @@ export default function BillingPage() {
 
   return (
     <SidebarLayout>
-      <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
-        {/* Existing SubscriptionDashboard */}
-        <div className="mb-10">
-          <SubscriptionDashboard />
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-8 mt-6 mb-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Planes</h2>
-            <p className="text-gray-600 text-lg">
-              Elige el plan que mejor se adapte a tus necesidades
-            </p>
+      <div className="flex flex-col min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
+        <div className="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+          {/* Existing SubscriptionDashboard */}
+          <div className="mb-10">
+            <SubscriptionDashboard />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {PLANS.map((plan) => (
-              <div key={plan.id} className={plan.popular ? "relative z-10" : ""}>
-                <PlanCard
-                  {...plan}
-                  isSelected={selectedPlan === plan.id}
-                  loading={loading}
-                  onSelect={handleSelectPlan}
-                />
-              </div>
-            ))}
+          <div className="bg-card dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm p-8 mt-6 mb-10">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-foreground mb-4">Planes</h2>
+              <p className="text-muted-foreground dark:text-muted-foreground text-lg">
+                Elige el plan que mejor se adapte a tus necesidades
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {PLANS.map((plan) => (
+                <div key={plan.id} className={plan.popular ? "relative z-10" : ""}>
+                  <PlanCard
+                    {...plan}
+                    isSelected={selectedPlan === plan.id}
+                    loading={loading}
+                    onSelect={handleSelectPlan}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -87,7 +87,7 @@ export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/auth/get-numbers`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/get-numbers`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

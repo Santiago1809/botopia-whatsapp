@@ -19,6 +19,7 @@ import DelayNode from './elementos/retraso/diseño';
 import CounterNode from './elementos/contador/diseño';
 import LoopNode from './elementos/bucle/diseño';
 import ConditionNode from './elementos/condicion/diseño';
+import { WebhookNode } from './baruc/webhook/WebhookNode';
 
 // Añadir phoneWithIA como alias para LlamadasIANode
 export const nodeTypes = {
@@ -43,5 +44,8 @@ export const nodeTypes = {
   delay: DelayNode,
   counter: CounterNode,
   loop: LoopNode,
-  condition: ConditionNode
+  condition: ConditionNode,
+
+  // Nuevo nodo registrado
+  webhookNode: WebhookNode,
 };

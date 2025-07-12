@@ -1,4 +1,4 @@
-"use client"; // Añadir directiva use client
+"use client";
 import React, { ReactNode } from "react";
 import Image from "next/image";
 
@@ -13,7 +13,7 @@ export interface ServiceProps {
   bgColor?: string;
   iconBg?: string;
   iconColor?: string;
-  isComingSoon?: boolean; // Nueva prop
+  isComingSoon?: boolean;
 }
 
 export const ServiceCard: React.FC<ServiceProps> = ({
@@ -24,10 +24,10 @@ export const ServiceCard: React.FC<ServiceProps> = ({
   actionLabel,
   actionUrl,
   className = "",
-  bgColor = "bg-card",
-  iconBg = "bg-muted",
-  iconColor = "text-primary",
-  isComingSoon = false, // Valor por defecto
+  bgColor = "bg-card dark:bg-[#18181b]",
+  iconBg = "bg-muted dark:bg-gray-800/60",
+  iconColor = "text-primary dark:text-primary-light",
+  isComingSoon = false,
 }) => {
   // Manejador de clic para componentes deshabilitados
   const handleDisabledClick = (e: React.MouseEvent) => {
@@ -38,9 +38,13 @@ export const ServiceCard: React.FC<ServiceProps> = ({
 
   return (
     <div
-      className={`${bgColor} ${
-        isComingSoon ? "cursor-not-allowed opacity-75" : ""
-      } rounded-xl shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md ${className}`}
+      className={`
+        ${bgColor}
+        ${isComingSoon ? "cursor-not-allowed opacity-75" : ""}
+        rounded-xl shadow-sm border border-border dark:border-gray-800
+        overflow-hidden transition-all duration-300 hover:shadow-md
+        ${className}
+      `}
       aria-disabled={isComingSoon}
     >
       <div className="p-6 flex flex-col h-full">
@@ -63,18 +67,24 @@ export const ServiceCard: React.FC<ServiceProps> = ({
             )}
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2 text-foreground">{title}</h3>
-        <p className="text-muted-foreground text-sm mb-6 flex-grow">
+        <h3 className="text-xl font-semibold mb-2 text-foreground text-gray-900 dark:text-gray-100">
+          {title}
+        </h3>
+        <p className="text-muted-foreground dark:text-gray-400 text-sm mb-6 flex-grow">
+          
           {description}
+        
         </p>
         <a
           href={isComingSoon ? "#" : actionUrl}
           onClick={handleDisabledClick}
-          className={`block w-full py-2 text-center rounded-md transition ${
-            isComingSoon
-              ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
-          }`}
+          className={`
+            block w-full py-2 text-center rounded-md transition
+            ${isComingSoon
+              ? "bg-muted text-muted-foreground dark:bg-gray-700 cursor-not-allowed pointer-events-none"
+              : "bg-primary dark:bg-primary-light text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary"
+            }
+          `}
           tabIndex={isComingSoon ? -1 : 0}
           aria-disabled={isComingSoon}
         >

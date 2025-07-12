@@ -194,3 +194,32 @@
     --ring: 240 4.9% 83.9%;
   }
 }
+
+/* Añadir al final del archivo */
+
+/* Control explícito para ocultar SOLO el menú hamburguesa cuando el copilot está abierto */
+.menu-button-hamburger {
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+/* Útil para depurar - añade un borde de color para identificar cuál es el botón */
+.menu-button-hamburger {
+  /* border: 2px solid #ff0000; */ /* Descomenta para depuración */
+}
+
+/* SOLO oculta el botón hamburguesa, no los otros botones de acción */
+html[data-copilot-active="true"] .menu-button-hamburger {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Garantiza que los botones de acción (guardar, limpiar, modo oscuro) permanezcan visibles */
+.action-button,
+.save-button,
+.clear-button,
+.theme-toggle {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
