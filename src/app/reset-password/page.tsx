@@ -105,6 +105,11 @@ export default function Page() {
             error={error}
             handleSubmit={handleVerifyCode}
             isSubmitting={isSubmitting}
+            showHeader={true}
+            headerTitle="Verificar código"
+            headerDescription="Ingresa el código de 6 dígitos que enviamos a tu correo electrónico para restablecer tu contraseña"
+            buttonText="Verificar código"
+            buttonLoadingText="Verificando código..."
           />
         )}
         {currentForm === "setPassword" && (

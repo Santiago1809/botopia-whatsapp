@@ -25,12 +25,20 @@ export default function Login() {
   useEffect(() => {
     // Verificar diferentes tipos de mensajes de los parámetros de búsqueda
     const verified = searchParams.get("verified");
+    const registered = searchParams.get("registered");
     const messageParam = searchParams.get("message");
 
     if (verified === "true") {
       setMessage({
         type: "success",
         text: "¡Verificación exitosa! Tu cuenta ha sido activada. Ahora puedes iniciar sesión.",
+      });
+      // Ocultar el mensaje después de 7 segundos
+      setTimeout(() => setMessage(null), 7000);
+    } else if (registered === "true") {
+      setMessage({
+        type: "success",
+        text: "¡Registro exitoso! Revisa tu correo electrónico para activar tu cuenta. Luego podrás iniciar sesión.",
       });
       // Ocultar el mensaje después de 7 segundos
       setTimeout(() => setMessage(null), 7000);
