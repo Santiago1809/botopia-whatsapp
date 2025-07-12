@@ -1,12 +1,16 @@
-import React from 'react';
+import React from "react";
 
 interface DiagonalBackgroundProps {
   className?: string;
 }
 
-export const DiagonalBackground: React.FC<DiagonalBackgroundProps> = ({ className = '' }) => {
+export const DiagonalBackground: React.FC<DiagonalBackgroundProps> = ({
+  className = "",
+}) => {
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+    <div
+      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+    >
       <svg
         width="100%"
         height="100%"
@@ -16,9 +20,12 @@ export const DiagonalBackground: React.FC<DiagonalBackgroundProps> = ({ classNam
       >
         {/* Fondo secundario para toda la SVG */}
         <rect width="100" height="100" fill="currentColor" />
-        
-        {/* Diagonal de color blanco */}
-        <polygon points="0,0 180,0 0,90" fill="white" />
+
+        {/* Diagonal que se adapta al tema */}
+        <polygon
+          points="0,0 180,0 0,90"
+          className="fill-background dark:fill-muted"
+        />
       </svg>
     </div>
   );

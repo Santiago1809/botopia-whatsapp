@@ -13,7 +13,7 @@ const serviceData: ServiceProps[] = [
         width="2em"
         height="2em"
         viewBox="0 0 24 24"
-        className="text-green-600"
+        className="text-green-600 dark:text-green-400"
       >
         <path
           fill="currentColor"
@@ -24,9 +24,9 @@ const serviceData: ServiceProps[] = [
     iconAlt: "WhatsApp Business Icon",
     actionLabel: "Abrir",
     actionUrl: "/services/whatsapp",
-    bgColor: "bg-white",
-    iconBg: "bg-green-50",
-    iconColor: "text-green-600",
+    bgColor: "bg-white dark:bg-[#18181b]",
+    iconBg: "bg-green-50 dark:bg-green-900/30",
+    iconColor: "text-green-600 dark:text-green-400",
     isComingSoon: false,
   },
   {
@@ -39,6 +39,7 @@ const serviceData: ServiceProps[] = [
         width="2em"
         height="2em"
         viewBox="0 0 24 24"
+        className="text-secondary dark:text-secondary-light"
       >
         {/* Nodos principales */}
         <circle cx="6" cy="6" r="2.5" fill="currentColor" />
@@ -76,9 +77,9 @@ const serviceData: ServiceProps[] = [
     iconAlt: "IA Flows Icon",
     actionLabel: "Crear",
     actionUrl: "/services/flows/principal",
-    bgColor: "bg-white",
-    iconBg: "bg-secondary/10",
-    iconColor: "text-secondary",
+    bgColor: "bg-white dark:bg-[#18181b]",
+    iconBg: "bg-secondary/10 dark:bg-white",
+    iconColor: "text-secondary dark:text-secondary-light",
     isComingSoon: false,
   },
   {
@@ -91,7 +92,7 @@ const serviceData: ServiceProps[] = [
         width="2em"
         height="2em"
         viewBox="0 0 48 48"
-        className="text-blue-600"
+        className="text-blue-600 dark:text-blue-400"
       >
         <path
           fill="currentColor"
@@ -110,9 +111,9 @@ const serviceData: ServiceProps[] = [
     iconAlt: "Meta Developers Icon",
     actionLabel: "Explorar",
     actionUrl: "/services/meta",
-    bgColor: "bg-white",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
+    bgColor: "bg-white dark:bg-[#18181b]",
+    iconBg: "bg-blue-50 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
     isComingSoon: false,
   },
   {
@@ -125,7 +126,7 @@ const serviceData: ServiceProps[] = [
         width="2em"
         height="2em"
         viewBox="0 0 24 24"
-        className="text-[#f37021]"
+        className="text-[#f37021] dark:text-orange-400"
       >
         <path
           fill="currentColor"
@@ -136,9 +137,9 @@ const serviceData: ServiceProps[] = [
     iconAlt: "Phone AI Icon",
     actionLabel: "Probar",
     actionUrl: "/services/calls",
-    bgColor: "bg-white",
-    iconBg: "bg-orange-100",
-    iconColor: "text-[#f37021]",
+    bgColor: "bg-white dark:bg-[#18181b]",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-[#f37021] dark:text-orange-400",
     isComingSoon: true,
   },
 ];
@@ -146,12 +147,12 @@ const serviceData: ServiceProps[] = [
 export default function ServicesPage() {
   return (
     <SidebarLayout>
-      <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+      <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 bg-gray-50 dark:bg-[#101014] min-h-screen transition-colors">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100">
             Nuestros Productos
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-2">
             Selecciona el producto que deseas utilizar
           </p>
         </div>

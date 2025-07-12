@@ -1,5 +1,6 @@
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   title: string;
@@ -8,7 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ title, logoSrc }) => {
   return (
-    <header className="bg-white border-b border-gray-200 py-4 px-6">
+    <header className="bg-background border-b border-border py-4 px-6 dark:bg-card">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <Image
@@ -24,31 +25,31 @@ const Header: React.FC<HeaderProps> = ({ title, logoSrc }) => {
           <nav className="flex space-x-5">
             <a
               href="/products"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium"
+              className="text-foreground hover:text-primary text-sm font-medium"
             >
               Products
             </a>
             <a
               href="/members"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium"
+              className="text-foreground hover:text-primary text-sm font-medium"
             >
               Members and roles
             </a>
             <a
               href="/usage"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium"
+              className="text-foreground hover:text-primary text-sm font-medium"
             >
               Usage
             </a>
             <a
               href="/api-keys"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium"
+              className="text-foreground hover:text-primary text-sm font-medium"
             >
               API keys
             </a>
             <a
               href="/webhooks"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium"
+              className="text-foreground hover:text-primary text-sm font-medium"
             >
               Webhooks / automations
             </a>
@@ -56,7 +57,8 @@ const Header: React.FC<HeaderProps> = ({ title, logoSrc }) => {
         </div>
 
         <div className="flex items-center">
-          <button className="text-gray-600 hover:bg-gray-100 p-2 rounded-full">
+          <ThemeToggle />
+          <button className="text-foreground hover:bg-muted p-2 rounded-full ml-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -72,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ title, logoSrc }) => {
               />
             </svg>
           </button>
-          <button className="ml-4 md:hidden">
+          <button className="ml-4 md:hidden text-foreground">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"

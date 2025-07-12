@@ -12,7 +12,8 @@ export function DraggableNode({
   darkBorderColor,
   darkBgColor,
   section,
-  className = ""
+  className = "",
+  onMobileAddNode // Agregado como prop
 }: DraggableNodeProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -73,10 +74,41 @@ export function DraggableNode({
     // Asegurarse de que se pasa el tipo exacto, sin cambios de mayúsculas/minúsculas
   };
 
+  // Soporte para touch en móvil y tablet (vertical y horizontal)
+  // Esta función detecta móviles y tablets en ambas orientaciones
+    // Incluye iPad Pro 12.9" (1366x1024) en horizontal y vertical
+  const isMobileOrTabletDevice = () => {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent;
+    // Detecta dispositivos móviles y tablets por userAgent
+    const isMobileOrTabletUA = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile|Tablet/.test(ua);
+    // Detecta tablets por tamaño de pantalla (ambas orientaciones, incluye iPad Pro 12.9")
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // Incluye exactamente 1366x1024 y 1024x1366
+    const isIpadPro = (w === 1366 && h === 1024) || (w === 1024 && h === 1366);
+    const isTabletSize = (
+      (w <= 1366 && h <= 1024) ||
+      (w <= 1024 && h <= 1366)
+    );
+    return isMobileOrTabletUA || isTabletSize || isIpadPro;
+  };
+
+  const onTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    // Permitir en dispositivos móviles o tablets (ambas orientaciones)
+    if (isMobileOrTabletDevice() && typeof onMobileAddNode === 'function') {
+      event.preventDefault();
+      onMobileAddNode(type);
+      return;
+    }
+    // En escritorio, no hacemos nada especial para touch
+  };
+
   return (
     <Card
       draggable
       onDragStart={onDragStart}
+      onTouchStart={onTouchStart}
       style={{
         borderColor: activeBorderColor,
         backgroundColor: activeBgColor,

@@ -11,6 +11,7 @@ export interface DraggableNodeProps {
   darkBorderColor?: string;
   darkBgColor?: string;
   className?: string;
+  onMobileAddNode?: (type: string) => void;
 }
 
 export interface SidebarSectionProps {

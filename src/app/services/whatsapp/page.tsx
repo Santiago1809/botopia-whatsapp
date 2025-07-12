@@ -9,6 +9,7 @@ import { Contact, Group } from "@/types/global";
 import { useCallback, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -133,6 +134,9 @@ export default function Page() {
   const [newName, setNewName] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
+  const [isLoadingNumbers, setIsLoadingNumbers] = useState(false);
+  const [numbersLoaded, setNumbersLoaded] = useState(false);
+  const isInitialized = useRef(false);
 
   // Separar contactos y grupos (debe ir antes de cualquier uso)
   const personalContacts = uniqueById(
@@ -236,12 +240,62 @@ export default function Page() {
     // NO limpiar el chat seleccionado aquí
   }, [selectedNumber, getToken]);
 
+  // Memorizar la función de obtener números para evitar re-renders
+  const getNumbers = useCallback(async () => {
+    if (isLoadingNumbers || numbersLoaded) {
+      console.log(
+        "Ya se está cargando números o ya se cargaron, saltando llamada"
+      );
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      console.error("No hay token disponible");
+      return;
+    }
+
+    setIsLoadingNumbers(true);
+    try {
+      console.log("Obteniendo números de WhatsApp...");
+      const res = await fetch(`${BACKEND_URL}/api/user/get-numbers`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(`Error obteniendo números: ${data.message}`);
+        return;
+      }
+
+      console.log("Números obtenidos exitosamente:", data);
+      setWhatsappNumbers(data);
+      setNumbersLoaded(true);
+    } catch (error) {
+      console.error("Error obteniendo números:", error);
+    } finally {
+      setIsLoadingNumbers(false);
+    }
+  }, [getToken, isLoadingNumbers, numbersLoaded]);
+
   // Efecto para inicializar la aplicación y obtener los números de WhatsApp
   useEffect(() => {
+    // Evitar múltiples inicializaciones
+    if (isInitialized.current) {
+      console.log("Componente ya inicializado, saltando");
+      return;
+    }
+
     if (!isAuthenticated) {
       logout();
       return;
     }
+
+    isInitialized.current = true;
+    console.log("Inicializando componente WhatsApp");
 
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
     setSocket(newSocket);
@@ -252,39 +306,13 @@ export default function Page() {
       } */
     });
 
-    const getNumbers = async () => {
-      const token = getToken();
-      if (!token) {
-        alert("No hay token");
-        return;
-      }
-
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/user/get-numbers`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          alert(`⚠️ Error: ${data.message}`);
-          return;
-        }
-
-        setWhatsappNumbers(data);
-      } catch (error) {
-        console.error("Error obteniendo números:", error);
-      }
-    };
-
+    // Solo llamar getNumbers una vez al montar el componente
     getNumbers();
 
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, logout, getToken, setSocket, setWhatsappNumbers]);
+  }, [isAuthenticated, logout, getNumbers]);
 
   const toggleAi = useCallback(
     async (number: string | number, newVal: boolean) => {
@@ -1247,7 +1275,7 @@ export default function Page() {
   };
 
   return (
-    <div className="flex h-screen min-h-screen overflow-hidden bg-white">
+    <div className="flex h-screen min-h-screen overflow-hidden bg-background">
       {/* Sidebar izquierdo */}
       <WhatsAppSideBar
         sidebarOpen={sidebarOpen}
@@ -1266,7 +1294,7 @@ export default function Page() {
         removeNumber={removeNumber}
       />
       {/* Contenido central */}{" "}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white w-full">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background w-full">
         <WhatsAppHeader
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}

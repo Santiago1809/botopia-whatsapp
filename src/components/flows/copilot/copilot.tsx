@@ -53,6 +53,9 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
   const [aiModel, setAiModel] = useState<AIModel>('standard');
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Estado para controlar la visibilidad del panel durante la animación de cierre
+  const [showPanel, setShowPanel] = useState(isCopilotOpen);
+  
   // Referencias
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -62,6 +65,17 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
   const buttonRef = useRef<HTMLButtonElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
   
+  // Estado para hover del botón Copilot
+  const [isHovering, setIsHovering] = useState(false);
+  const [hoverParticles, setHoverParticles] = useState<{ id: number; top: number; left: number }[]>([]);
+
+  // Nuevos estados para la animación tipo Dynamic Island
+  const [copilotBtnFade, setCopilotBtnFade] = useState('visible'); // 'visible', 'fading', 'hidden'
+  const [chatPanelAnim, setChatPanelAnim] = useState('hidden'); // 'hidden', 'fading-in', 'visible', 'fading-out'
+
+  // Dynamic Island: calcula la posición y tamaño para la burbuja/gota
+  const [islandStyle, setIslandStyle] = useState({});
+
   // Funciones de animación factorizadas
   const handleCreateCellParticles = useCallback((direction: 'in' | 'out') => {
     createCellParticles(
@@ -278,24 +292,22 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
   const toggleOpen = () => {
     const newState = !isCopilotOpen;
     setIsCopilotOpen(newState);
-    
+
     if (onOpenChange) {
       onOpenChange(newState);
     }
-    
+
     // Ejecutar las animaciones
     handleCreateCellParticles(newState ? 'in' : 'out');
-    
+
     if (newState) {
       // Abrir chat - animar el icono del botón al chat
       handleAnimateIconTransition('to-chat');
-      
-      // Asegurarnos de que el icono esté oculto inicialmente
       setShowHeaderIcon(false);
-      
+      // Asegurarnos de que el icono esté oculto inicialmente
       // Usando newState directamente en lugar de isCopilotOpen para evitar problemas de closure
       const iconTimer = setTimeout(() => {
-        setShowHeaderIcon(true); // Siempre activamos el icono porque sabemos que estamos en modo abierto
+        setShowHeaderIcon(true);
         // Forzar actualización del componente
         setIconTransition(prev => ({ ...prev }));
       }, 1800);
@@ -323,9 +335,14 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
       if (isRecording) {
         cancelRecording();
       }
-      
       // Cerrar chat - animar el icono del chat al botón
       handleAnimateIconTransition('to-button');
+      // Ocultar el icono del header durante la animación de cierre
+      setShowHeaderIcon(false);
+      // Mostrar el icono del botón JARVIS después de la animación de cierre (500ms)
+      setTimeout(() => {
+        setShowHeaderIcon(true);
+      }, 500);
     }
   };
 
@@ -341,35 +358,207 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
     }
   }, [isCopilotOpen, showHeaderIcon]);
 
-  if (isCopilotOpen) {
-    // Cuando el chat está abierto, mostrar SOLO el panel de chat y posiblemente la animación de transición
-    return (
-      <>
-        {/* Renderizar partículas independientemente del estado de iconTransition */}
-        {isAnimating && cellParticles.map(particle => (
-          <div
-            key={particle.id}
-            className={`absolute w-1 h-1 bg-amber-300 rounded-full pointer-events-none cellular-particle-${particle.direction}`}
-            style={{
-              top: `${particle.top}%`,
-              left: '50%',
-              animationDelay: `${particle.delay}s`,
-              zIndex: 2000 // Asegurar que estén por encima de todo
-            }}
-          />
-        ))}
+  // Sincronizar showPanel con isCopilotOpen para animación de cierre
+  useEffect(() => {
+    if (isCopilotOpen) {
+      setShowPanel(true);
+    } else if (showPanel) {
+      // Esperar la duración de la animación antes de ocultar el panel
+      const timeout = setTimeout(() => setShowPanel(false), 500); // 500ms igual que la animación
+      return () => clearTimeout(timeout);
+    }
+  }, [isCopilotOpen, showPanel]);
 
-        {/* Panel de chat */}
-        <div 
+  // Manejo de partículas de hover
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    // Generar partículas de hover (10 aleatorias)
+    const particles = Array.from({ length: 10 }, (_, i) => ({
+      id: Date.now() + i,
+      top: Math.random() * 100,
+      left: 40 + Math.random() * 20 // alrededor del centro del botón
+    }));
+    setHoverParticles(particles);
+  };
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setHoverParticles([]);
+  };
+
+  // --- Dynamic Island tipo gota/burbuja ---
+  const [isIslandActive, setIsIslandActive] = useState(false);
+  const [isIslandExpanding, setIsIslandExpanding] = useState(false);
+  // Removed unused state variables showCopilotBtn and setShowCopilotBtn
+  // Using copilotBtnFade instead to determine visibility
+  const [showChatPanel, setShowChatPanel] = useState(showPanel);
+
+  // Sincroniza la animación visual con la apertura/cierre del chat
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      if (externalIsOpen) {
+        // Al abrir: inicia expansión, oculta botón, muestra chat al final
+        setIsIslandActive(true);
+        setIsIslandExpanding(true);
+        setCopilotBtnFade('fading');
+        setTimeout(() => setCopilotBtnFade('hidden'), 320); // fade más suave
+        setTimeout(() => {
+          setShowChatPanel(true);
+          setChatPanelAnim('fading-in');
+          setIsIslandExpanding(false);
+        }, 380); // chat aparece justo cuando la burbuja "llega"
+        setTimeout(() => setChatPanelAnim('visible'), 800); // chat completamente visible
+        setTimeout(() => setIsIslandActive(false), 1100); // isla se apaga después de la elasticidad
+      } else {
+        // Al cerrar: inicia contracción, oculta chat, muestra botón al final
+        setIsIslandActive(true);
+        setIsIslandExpanding(false);
+        setChatPanelAnim('fading-out');
+        setTimeout(() => setShowChatPanel(false), 380); // chat desaparece progresivo
+        setTimeout(() => setCopilotBtnFade('fading'), 380); // botón empieza a aparecer
+        setTimeout(() => setCopilotBtnFade('visible'), 800); // botón completamente visible
+        setTimeout(() => setIsIslandActive(false), 1100); // isla se apaga
+      }
+    }
+  }, [externalIsOpen]);
+
+  // Calcula la posición/tamaño de la burbuja para cubrir del botón al chat, pero la hace más grande para un efecto impactante
+  useEffect(() => {
+    if (isIslandActive && buttonRef.current) {
+      const btnRect = buttonRef.current.getBoundingClientRect();
+      let style = {
+        top: (btnRect.top - btnRect.height * 0.3) + 'px',
+        left: (btnRect.left - btnRect.width * 0.3) + 'px',
+        width: (btnRect.width * 1.6) + 'px',
+        height: (btnRect.height * 1.6) + 'px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle at 60% 40%, rgba(245,158,11,0.18) 0%, rgba(59,130,246,0.10) 100%)',
+        boxShadow: '0 0 32px 8px rgba(245,158,11,0.15)',
+        transition: 'all 0.38s cubic-bezier(0.22,1,0.36,1)',
+        pointerEvents: 'none',
+        transform: 'translateX(0)' // default
+      };
+      if (isIslandExpanding && panelRef.current) {
+        const panelRect = panelRef.current.getBoundingClientRect();
+        const minTop = Math.min(btnRect.top, panelRect.top) - 40;
+        const minLeft = Math.min(btnRect.left, panelRect.left) - 40;
+        const maxRight = Math.max(btnRect.right, panelRect.right) + 40;
+        const maxBottom = Math.max(btnRect.bottom, panelRect.bottom) + 40;
+        style = {
+          top: minTop + 'px',
+          left: minLeft + 'px',
+          width: (maxRight - minLeft) + 'px',
+          height: (maxBottom - minTop) + 'px',
+          borderRadius: '20px',
+          background: 'radial-gradient(circle at 60% 40%, rgba(245,158,11,0.18) 0%, rgba(59,130,246,0.10) 100%)',
+          boxShadow: '0 8px 48px 0 rgba(245,158,11,0.22)',
+          transition: 'all 0.62s cubic-bezier(0.22,1.2,0.36,1)',
+          pointerEvents: 'none',
+          transform: 'translateX(0)'
+        };
+      } else if (!isIslandExpanding && panelRef.current) {
+        // Animación de cierre: burbuja se contrae hacia la derecha (de chat a botón)
+        const panelRect = panelRef.current.getBoundingClientRect();
+        const minTop = Math.min(btnRect.top, panelRect.top) - 40;
+        const minLeft = Math.min(btnRect.left, panelRect.left) - 40;
+        const maxRight = Math.max(btnRect.right, panelRect.right) + 40;
+        const maxBottom = Math.max(btnRect.bottom, panelRect.bottom) + 40;
+        // Calcula la distancia horizontal del chat al botón
+        const deltaX = btnRect.left - panelRect.left;
+        style = {
+          top: minTop + 'px',
+          left: minLeft + 'px',
+          width: (maxRight - minLeft) + 'px',
+          height: (maxBottom - minTop) + 'px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 60% 40%, rgba(245,158,11,0.18) 0%, rgba(59,130,246,0.10) 100%)',
+          boxShadow: '0 0 32px 8px rgba(245,158,11,0.15)',
+          transition: 'all 0.52s cubic-bezier(0.22,1.2,0.36,1)',
+          pointerEvents: 'none',
+          // Efecto de cierre: mueve la burbuja de derecha a izquierda
+          transform: `translateX(${deltaX}px)`
+        };
+      }
+      setIslandStyle(style);
+    }
+  }, [isIslandActive, isIslandExpanding, showChatPanel]);
+
+  // --- Renderizado ---
+  return (
+    <>
+      {/* Dynamic Island tipo gota/burbuja: animación con clip-path */}
+      {isIslandActive && (
+        <div
+          className={`dynamic-island-bubble pointer-events-none ${isIslandExpanding ? 'island-bubble-expand' : 'island-bubble-contract'}`}
+          style={{
+            position: 'fixed',
+            ...islandStyle,
+            zIndex: 2000,
+          }}
+        />
+      )}
+
+      {/* Botón Copilot: fade y scale progresivo */}
+      {copilotBtnFade !== 'hidden' && (
+        <button
+          ref={buttonRef}
+          onClick={toggleOpen}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className={`w-full h-full flex items-center justify-center rounded-md transition-all duration-300 bg-transparent shadow-none text-amber-400 hover:bg-transparent hover:bg-opacity-0 custom-pointer copilot-btn-fade-${copilotBtnFade}`}
+          style={{
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+            position: 'relative',
+            filter: copilotBtnFade === 'hidden' ? 'none' : undefined // Elimina el brillo al ocultar
+          }}
+          aria-label="Abrir asistente A.T.O.M."
+          title="Asistente A.T.O.M."
+        >
+          {!iconTransition.active && (
+            <div className={`relative w-9 h-9 bg-transparent copilot-icon-fade-${copilotBtnFade}`}
+              style={{ opacity: copilotBtnFade === 'hidden' ? 0 : 1, transition: 'opacity 0.3s', filter: copilotBtnFade === 'hidden' ? 'none' : undefined }}>
+              <JarvisIcon className={`w-9 h-9 transition-transform duration-300 ${(!isMobile && isHovering) ? 'scale-150' : ''} ${isAnimating ? 'animate-pulse' : ''}`} />
+              {/* Render hover particles when hovering */}
+              {isHovering && hoverParticles.map(particle => (
+                <div
+                  key={particle.id}
+                  className="absolute w-1 h-1 bg-amber-200/60 rounded-full pointer-events-none animate-ping"
+                  style={{
+                    top: `${particle.top}%`,
+                    left: `${particle.left}%`,
+                    animationDuration: `${0.8 + Math.random() * 1}s`
+                  }}
+                />
+              ))}
+              {isAnimating && cellParticles.map(particle => (
+                <div
+                  key={particle.id}
+                  className={`absolute w-1 h-1 bg-amber-300 rounded-full pointer-events-none cellular-particle-${particle.direction}`}
+                  style={{
+                    top: `${particle.top}%`,
+                    left: '50%',
+                    animationDelay: `${particle.delay}s`
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </button>
+      )}
+      {iconTransition.active && (
+        <div style={iconTransition.style as React.CSSProperties} className="pointer-events-none">
+          <JarvisIcon className={`w-full h-full text-amber-400 ${isAnimating ? 'animate-pulse' : ''}`} />
+        </div>
+      )}
+
+      {/* Panel de chat: fade y scale progresivo */}
+      {showChatPanel && (
+        <div
           ref={panelRef}
-          className="absolute left-full ml-4 z-[1001] bg-card border rounded-lg shadow-lg w-80 md:w-[320px] transition-all duration-500"
-          style={{ 
-            top: '-12px',
+          className={`absolute left-full ml-4 z-[1001] bg-card border rounded-lg shadow-lg w-80 md:w-[320px] transition-all duration-500 chat-panel-anim-${chatPanelAnim}`}
+          style={{
+            top: '1px', // <-- Alineado con los botones superiores
             height: isMobile ? 'calc(98vh)' : 'calc(100vh - 1rem)',
-            transform: `translateX(${isCopilotOpen ? '0' : '-30px'}) scale(${isCopilotOpen ? '1' : '0.8'})`,
-            opacity: isCopilotOpen ? 1 : 0,
-            transformOrigin: 'left top',
-            animation: isCopilotOpen ? 'panel-emerge 0.5s ease-out forwards' : 'none',
             boxShadow: '0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 8px 10px -6px rgba(245, 158, 11, 0.2)'
           }}
         >
@@ -451,47 +640,15 @@ export function Copilot({ isMobile = false, onOpenChange, isOpen: externalIsOpen
             />
           </div>
         </div>
-      </>
-    );
-  } else {
-    // Cuando el chat está cerrado, mostrar el botón y la animación de transición
-    return (
-      <>
-        <button
-          ref={buttonRef}
-          onClick={toggleOpen}
-          className="w-full h-full flex items-center justify-center rounded-md transition-all duration-300 bg-transparent shadow-none text-amber-400 hover:bg-transparent hover:bg-opacity-0"
-          style={{
-            backgroundColor: 'transparent',
-            boxShadow: 'none'
-          }}
-          aria-label="Abrir asistente A.T.O.M."
-          title="Asistente A.T.O.M."
-        >
-          {!iconTransition.active && (
-            <div className="relative w-7 h-7 bg-transparent">
-              <JarvisIcon className={`w-7 h-7 ${isAnimating ? 'animate-pulse' : ''}`} />
-              {isAnimating && cellParticles.map(particle => (
-                <div
-                  key={particle.id}
-                  className={`absolute w-1 h-1 bg-amber-300 rounded-full pointer-events-none cellular-particle-${particle.direction}`}
-                  style={{
-                    top: `${particle.top}%`,
-                    left: '50%',
-                    animationDelay: `${particle.delay}s`
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </button>
-
-        {iconTransition.active && (
-          <div style={iconTransition.style as React.CSSProperties} className="pointer-events-none">
-            <JarvisIcon className={`w-full h-full text-amber-400 ${isAnimating ? 'animate-pulse' : ''}`} />
-          </div>
-        )}
-      </>
-    );
-  }
+      )}
+    </>
+  );
 }
+
+// CSS global recomendado (agregar en el archivo CSS principal):
+//
+// .custom-pointer, button, [role="button"] {
+//   cursor: url('/public/cursor-pointer-hand.cur'), pointer;
+// }
+//
+// Asegúrate de tener el archivo 'cursor-pointer-hand.cur' en tu carpeta 'public' o la ruta correspondiente.

@@ -198,6 +198,31 @@
   }
 }
 
+/* Animación inversa para el cierre del panel de chat (cierre suave y consistente con la apertura) */
+@keyframes panel-emerge-reverse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0px);
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 8px 10px -6px rgba(245, 158, 11, 0.2);
+    clip-path: circle(100% at 50% 50%);
+  }
+  80% {
+    filter: blur(0px);
+    opacity: 1;
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 8px 10px -6px rgba(245, 158, 11, 0.2);
+    transform: scale(0.95);
+    clip-path: circle(10% at 50% 50%);
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+    filter: blur(6px);
+    box-shadow: none;
+    clip-path: circle(0% at 50% 50%);
+  }
+}
+
 /* Partícula de conexión que conecta el botón con el chat */
 .connection-particle {
   position: absolute;
@@ -340,4 +365,181 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+/* Aplica el cursor personalizado a todos los botones y elementos con rol button */
+.custom-pointer, button, [role="button"] {
+  cursor: url('/cursor-pointer-hand.cur'), pointer;
+}
+
+/* Animación botón Copilot */
+@keyframes copilot-btn-expand {
+  0% { transform: scale(1); filter: none; opacity: 1; }
+  60% { transform: scale(1.18,0.85); filter: blur(2px) brightness(1.2); opacity: 0.7; }
+  100% { transform: scale(1.1,0.9); filter: blur(1px); opacity: 0.8; }
+}
+@keyframes copilot-btn-contract {
+  0% { transform: scale(1.1,0.9); filter: blur(1px); opacity: 0.8; }
+  60% { transform: scale(1.18,0.85); filter: blur(2px) brightness(1.2); opacity: 0.7; }
+  100% { transform: scale(1); filter: none; opacity: 1; }
+}
+
+/* Animación icono Copilot */
+@keyframes copilot-icon-expand {
+  0% { filter: none; opacity: 1; }
+  60% { filter: drop-shadow(0 0 16px #f59e0b); opacity: 0.7; }
+  100% { filter: drop-shadow(0 0 8px #f59e0b); opacity: 0.8; }
+}
+@keyframes copilot-icon-contract {
+  0% { filter: drop-shadow(0 0 8px #f59e0b); opacity: 0.8; }
+  60% { filter: drop-shadow(0 0 16px #f59e0b); opacity: 0.7; }
+  100% { filter: none; opacity: 1; }
+}
+
+/* Fade in/out para el chat */
+.jarvis-chat-fade-in {
+  animation: jarvis-fade-in 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.jarvis-chat-fade-out {
+  animation: jarvis-fade-out 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes jarvis-fade-in {
+  from { opacity: 0; filter: blur(8px); }
+  to { opacity: 1; filter: blur(0); }
+}
+@keyframes jarvis-fade-out {
+  from { opacity: 1; filter: blur(0); }
+  to { opacity: 0; filter: blur(8px); }
+}
+
+/* --- Dynamic Island Animations for JARVIS Chat (iPhone 15 Pro style) --- */
+.dynamic-island-bubble {
+  pointer-events: none;
+  background: radial-gradient(circle at 60% 40%, rgba(245,158,11,0.18) 0%, rgba(59,130,246,0.10) 100%);
+  box-shadow: 0 8px 32px 0 rgba(245,158,11,0.18), 0 2px 8px 0 rgba(59,130,246,0.10);
+  will-change: top, left, width, height, border-radius, opacity, box-shadow, transform;
+  opacity: 1;
+  transition: none;
+  /* El fondo y sombra se mantienen suaves para el efecto island */
+}
+.island-bubble-expand {
+  animation: island-bubble-dynamic-expand 0.62s cubic-bezier(0.22,1.2,0.36,1) both;
+}
+.island-bubble-contract {
+  animation: island-bubble-dynamic-contract 0.52s cubic-bezier(0.22,1.2,0.36,1) both;
+}
+@keyframes island-bubble-dynamic-expand {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.2);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(245,158,11,0.10);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(0.7, 0.8);
+    border-radius: 32px;
+    box-shadow: 0 8px 32px 0 rgba(245,158,11,0.18);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05, 0.95);
+    border-radius: 24px;
+    box-shadow: 0 16px 48px 0 rgba(245,158,11,0.22);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 20px;
+    box-shadow: 0 16px 48px 0 rgba(245,158,11,0.22);
+  }
+}
+@keyframes island-bubble-dynamic-contract {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 20px;
+    box-shadow: 0 16px 48px 0 rgba(245,158,11,0.22);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.05, 0.95);
+    border-radius: 24px;
+    box-shadow: 0 16px 48px 0 rgba(245,158,11,0.22);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.7, 0.8);
+    border-radius: 32px;
+    box-shadow: 0 8px 32px 0 rgba(245,158,11,0.18);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(0.2);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(245,158,11,0.10);
+  }
+}
+
+/* --- Animación personalizada para el panel de chat tipo Dynamic Island --- */
+.chat-panel-anim-fading-in {
+  animation: chat-panel-slide-in 0.6s cubic-bezier(0.22,1.2,0.36,1) both;
+}
+.chat-panel-anim-fading-out {
+  /* Mejora: mayor desplazamiento y escala para efecto inverso notorio */
+  animation: chat-panel-slide-out-left 0.6s cubic-bezier(0.22,1.2,0.36,1) both;
+}
+@keyframes chat-panel-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-120px) scale(0.92); /* Mayor desplazamiento para efecto island */
+    filter: blur(8px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(16px) scale(1.04);
+    filter: blur(1.5px);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(0px) scale(1.01);
+    filter: blur(0.2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0px) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes chat-panel-slide-out-left {
+  0% {
+    opacity: 1;
+    transform: translateX(0px) scale(1,1);
+    filter: blur(0);
+    border-radius: 20px;
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-32px) scale(0.98,1.04);
+    filter: blur(1.5px);
+    border-radius: 28px;
+  }
+  45% {
+    opacity: 0.95;
+    transform: translateX(-120px) scale(0.85,0.92);
+    filter: blur(6px);
+    border-radius: 40px;
+  }
+  70% {
+    opacity: 0.7;
+    transform: translateX(-220px) scale(0.5,0.7);
+    filter: blur(12px);
+    border-radius: 50%;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-320px) scale(0.2,0.2);
+    filter: blur(24px);
+    border-radius: 50%;
+  }
 }
