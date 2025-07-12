@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedUser && storedIsAuthenticated === "true" && storedToken) {
         try {
           // Verificar si el token es válido haciendo una petición al servidor
-          const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
+          const response = await fetch(`${BACKEND_URL}/api/auth/user-info`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${storedToken}`,

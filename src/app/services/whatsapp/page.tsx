@@ -258,7 +258,7 @@ export default function Page() {
     setIsLoadingNumbers(true);
     try {
       console.log("Obteniendo números de WhatsApp...");
-      const res = await fetch(`${BACKEND_URL}/api/auth/get-numbers`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/get-numbers`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
