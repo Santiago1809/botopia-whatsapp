@@ -1,9 +1,10 @@
-'use client'
+"use client";
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
 interface WhatsAppAccount {
   id: string;
@@ -16,7 +17,9 @@ interface WhatsAppContextType {
   accounts: WhatsAppAccount[];
   setAccounts: React.Dispatch<React.SetStateAction<WhatsAppAccount[]>>;
   selectedAccount: WhatsAppAccount | null;
-  setSelectedAccount: React.Dispatch<React.SetStateAction<WhatsAppAccount | null>>;
+  setSelectedAccount: React.Dispatch<
+    React.SetStateAction<WhatsAppAccount | null>
+  >;
   socket: Socket | null;
   fetchAccounts: () => Promise<void>;
   connectAccount: (numberId: string) => Promise<void>;
@@ -30,41 +33,47 @@ const WhatsAppContext = createContext<WhatsAppContextType | null>(null);
 
 export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<WhatsAppAccount | null>(null);
+  const [selectedAccount, setSelectedAccount] =
+    useState<WhatsAppAccount | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<{ [key: string]: string }>({});
+  const [connectionStatus, setConnectionStatus] = useState<{
+    [key: string]: string;
+  }>({});
   const [qrCodes, setQrCodes] = useState<{ [key: string]: string | null }>({});
 
   const updateConnectionStatus = (accountId: string, status: string) => {
-    setConnectionStatus(prev => ({
+    setConnectionStatus((prev) => ({
       ...prev,
-      [accountId]: status
+      [accountId]: status,
     }));
   };
 
   const setQrCode = (numberId: string, qr: string | null) => {
-    setQrCodes(prev => ({
+    setQrCodes((prev) => ({
       ...prev,
-      [numberId]: qr
+      [numberId]: qr,
     }));
   };
 
   useEffect(() => {
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
-    
+
     newSocket.on("qr-code", (data: { numberId: number; qr: string }) => {
       setQrCode(String(data.numberId), data.qr);
-      updateConnectionStatus(String(data.numberId), 'connecting');
+      updateConnectionStatus(String(data.numberId), "connecting");
     });
 
     newSocket.on("whatsapp-ready", (data: { numberId: string | number }) => {
       setQrCode(String(data.numberId), null);
-      updateConnectionStatus(String(data.numberId), 'connected');
+      updateConnectionStatus(String(data.numberId), "connected");
     });
 
-    newSocket.on("whatsapp-disconnected", (data: { numberId: string | number }) => {
-      updateConnectionStatus(String(data.numberId), 'disconnected');
-    });
+    newSocket.on(
+      "whatsapp-disconnected",
+      (data: { numberId: string | number }) => {
+        updateConnectionStatus(String(data.numberId), "disconnected");
+      }
+    );
 
     setSocket(newSocket);
 
@@ -74,7 +83,7 @@ export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchAccounts = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
@@ -84,29 +93,29 @@ export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      if (!res.ok) throw new Error('Error fetching accounts');
+      if (!res.ok) throw new Error("Error fetching accounts");
       const data = await res.json();
       setAccounts(data);
     } catch (error) {
-      console.error('Error fetching WhatsApp accounts:', error);
+      console.error("Error fetching WhatsApp accounts:", error);
     }
   };
 
   const connectAccount = async (numberId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No token found');
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No token found");
 
     const response = await fetch(`${BACKEND_URL}/api/whatsapp/start-whatsapp`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ numberId })
+      body: JSON.stringify({ numberId }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to connect account');
+      throw new Error("Failed to connect account");
     }
 
     socket?.emit("join-room", numberId);
@@ -117,11 +126,11 @@ export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <WhatsAppContext.Provider 
-      value={{ 
-        accounts, 
-        setAccounts, 
-        selectedAccount, 
+    <WhatsAppContext.Provider
+      value={{
+        accounts,
+        setAccounts,
+        selectedAccount,
         setSelectedAccount,
         socket,
         fetchAccounts,
@@ -140,7 +149,7 @@ export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
 export const useWhatsApp = () => {
   const context = useContext(WhatsAppContext);
   if (!context) {
-    throw new Error('useWhatsApp must be used within a WhatsAppProvider');
+    throw new Error("useWhatsApp must be used within a WhatsAppProvider");
   }
   return context;
 };

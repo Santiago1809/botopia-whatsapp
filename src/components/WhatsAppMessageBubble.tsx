@@ -16,8 +16,8 @@ export default function WhatsAppChatBubble({
       <div
         className={`p-3 rounded-lg break-words max-w-[75%] text-sm font-medium relative ${
           isMine
-            ? "bg-[#d6bcfa] text-black rounded-tr-none mr-2"
-            : "bg-gray-200 text-black rounded-tl-none ml-2"
+            ? "bg-primary/30 text-foreground dark:text-foreground rounded-tr-none mr-2"
+            : "bg-muted text-foreground dark:text-foreground rounded-tl-none ml-2"
         }`}
       >
         {message}
@@ -25,7 +25,7 @@ export default function WhatsAppChatBubble({
         {/* Triángulo para la burbuja (similar a WhatsApp) */}
         <div
           className={`absolute top-0 w-4 ${
-            isMine ? "right-0 -mr-2 bg-[#d6bcfa]" : "left-0 -ml-2 bg-gray-200"
+            isMine ? "right-0 -mr-2 bg-primary/30" : "left-0 -ml-2 bg-muted"
           }`}
           style={{
             clipPath: isMine

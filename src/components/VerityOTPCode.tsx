@@ -8,6 +8,11 @@ interface VerityOTPCodeProps {
   setCode: (val: string) => void;
   error: string;
   isSubmitting: boolean;
+  showHeader?: boolean; // Nuevo prop para controlar si mostrar el header
+  headerTitle?: string; // Título personalizable del header
+  headerDescription?: string; // Descripción personalizable del header
+  buttonText?: string; // Texto personalizable del botón
+  buttonLoadingText?: string; // Texto personalizable del botón cuando está cargando
 }
 
 export default function VerityOTPCode({
@@ -16,6 +21,11 @@ export default function VerityOTPCode({
   handleSubmit,
   isSubmitting,
   setCode,
+  showHeader = true, // Por defecto muestra el header
+  headerTitle = "Verificar código", // Título por defecto
+  headerDescription = "Ingresa el código de 6 dígitos que llegó a tu WhatsApp para continuar con el proceso de verificación", // Descripción por defecto
+  buttonText = "Verificar código", // Texto del botón por defecto
+  buttonLoadingText = "Verificando código...", // Texto del botón cargando por defecto
 }: VerityOTPCodeProps) {
   // Handle paste event to automatically fill all boxes
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -25,32 +35,34 @@ export default function VerityOTPCode({
       setCode(pastedData);
     }
   };
+  
   return (
-    <div className="md:3/5 p-6 sm:p-8 bg-white">
-      <div className="mb-6 sm:mb-8">
-        {" "}
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Verificar código
-        </h2>
-        <p>
-          Ingresa el código de 6 dígitos que llegó a tu correo electrónico para
-          continuar con el proceso de recuperación
-        </p>
-      </div>
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+    <div className="bg-background">
+      {showHeader && (
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+            {headerTitle}
+          </h2>
+          <p className="text-muted-foreground">
+            {headerDescription}
+          </p>
+        </div>
+      )}
+      
+      {error && showHeader && (
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
           {error}
         </div>
       )}
+      
       <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
         <div>
-          {" "}
           <Label
             htmlFor="code"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Código de verificación
-          </Label>{" "}
+          </Label>
           <div className="flex gap-2 justify-between" onPaste={handlePaste}>
             {[0, 1, 2, 3, 4, 5].map((index) => (
               <Input
@@ -84,7 +96,7 @@ export default function VerityOTPCode({
                     if (prevInput) prevInput.focus();
                   }
                 }}
-                className="w-12 h-12 text-center text-lg font-medium border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                className="w-12 h-12 text-center text-lg font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 inputMode="numeric"
                 pattern="[0-9]"
                 required
@@ -98,11 +110,10 @@ export default function VerityOTPCode({
             disabled={isSubmitting}
             className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 flex items-center justify-center"
           >
-            {" "}
             {isSubmitting ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
             ) : null}
-            {isSubmitting ? "Verificando código..." : "Verificar código"}
+            {isSubmitting ? buttonLoadingText : buttonText}
           </button>
         </div>
       </form>
