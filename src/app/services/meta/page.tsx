@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import MetaSidebar from "./components/MetaSidebar";
-import MetaAppTabs from "./components/MetaAppTabs";
-import DocumentationSection from "./components/Documentation";
-import PlaceholderSection from "./components/PlaceholderSection";
-import { MetaAppType } from "./components/MetaAppTabs";
+import MetaSidebar from "../../../components/metaApi/MetaSidebar";
+import MetaAppTabs from "../../../components/metaApi/MetaAppTabs";
+import DocumentationSection from "../../../components/metaApi/Documentation";
+import PlaceholderSection from "../../../components/metaApi/PlaceholderSection";
+import WhatsAppMetricsSection from "../../../components/metaApi/WhatsAppMetrics";
+import { MetaAppType } from "../../../components/metaApi/MetaAppTabs";
+import { MetaProviderService } from "../../../services/meta-provider.service";
 
 /**
  * Componente principal para la página de Meta Business API
@@ -28,6 +30,9 @@ export default function MetaBusinessApiPage() {
 
   // Estado para la app activa (WhatsApp por defecto)
   const [activeApp, setActiveApp] = useState<MetaAppType>("whatsapp");
+
+  // Estado para la cuenta de negocio activa
+  const [businessAccountId, setBusinessAccountId] = useState<string>("");
 
   // Cerrar sidebar al redimensionar la ventana a un tamaño más grande
   useEffect(() => {
@@ -54,6 +59,24 @@ export default function MetaBusinessApiPage() {
       document.body.style.overflow = "auto";
     };
   }, [isMobileSidebarOpen]);
+
+  // Obtener el businessAccountId al montar la página
+  useEffect(() => {
+    async function fetchBusinessAccountId() {
+      // Aquí deberías obtener el businessAccountId real desde tu API Gateway o contexto de usuario
+      // Ejemplo: consulta a MetaProviderService.getMetaAccounts()
+      try {
+        const accounts = await MetaProviderService.getMetaAccounts();
+        if (accounts.length > 0) {
+          setBusinessAccountId(accounts[0].id.toString());
+        }
+      } catch {
+        setBusinessAccountId("");
+      }
+    }
+    fetchBusinessAccountId();
+  }, []);
+
   /**
    * Función para cambiar la aplicación activa
    * Resetea la sección del sidebar a "outbound" al cambiar de app
@@ -133,11 +156,17 @@ export default function MetaBusinessApiPage() {
           {/* Contenido dinámico según la sección activa */}
           {activeApp === "whatsapp" && (
             <>
-              {activeSection === "outbound" && (
-                <PlaceholderSection
-                  title="Mensajes salientes de WhatsApp"
-                  appType="whatsapp"
+              {activeSection === "outbound" && businessAccountId && (
+                // Dashboard funcional con métricas reales
+                <WhatsAppMetricsSection
+                  businessAccountId={businessAccountId}
+                  period="30days"
                 />
+              )}
+              {activeSection === "outbound" && !businessAccountId && (
+                <div className="text-center py-8 text-red-500">
+                  No se encontró una cuenta de negocio válida
+                </div>
               )}
               {activeSection === "wa-flows" && (
                 <PlaceholderSection
@@ -190,7 +219,7 @@ export default function MetaBusinessApiPage() {
             <>
               {activeSection === "outbound" && (
                 <PlaceholderSection
-                  title="Mensajes salientes de Facebook"
+                  title="Dashboard de Facebook"
                   appType="facebook"
                 />
               )}
@@ -245,7 +274,7 @@ export default function MetaBusinessApiPage() {
             <>
               {activeSection === "outbound" && (
                 <PlaceholderSection
-                  title="Mensajes salientes de Instagram"
+                  title="Dashboard de Instagram"
                   appType="instagram"
                 />
               )}
@@ -300,7 +329,7 @@ export default function MetaBusinessApiPage() {
             <>
               {activeSection === "outbound" && (
                 <PlaceholderSection
-                  title="Mensajes salientes de Threads"
+                  title="Dashboard de Threads"
                   appType="threads"
                 />
               )}

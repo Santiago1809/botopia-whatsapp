@@ -3,7 +3,6 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import {
-  MessageSquare,
   Settings,
   FileSpreadsheet,
   BarChart3,
@@ -16,6 +15,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { MetaAppType, appColors } from "./MetaAppTabs";
+import { useAuth } from "@/lib/auth";
 
 interface SidebarItemProps {
   icon: ReactNode;
@@ -124,6 +124,8 @@ export default function MetaSidebar({
     threads: "hover:text-gray-800",
   }[appType];
 
+  const { user } = useAuth();
+
   return (
     <aside className="w-60 bg-white border-r border-gray-200 overflow-y-auto flex flex-col h-full">
       {/* Botón de regresar */}
@@ -226,8 +228,8 @@ export default function MetaSidebar({
         <div className="space-y-1 flex-grow">
           {" "}
           <SidebarItem
-            icon={<MessageSquare className="h-4.5 w-4.5" />}
-            title="Mensajes Salientes"
+            icon={<BarChart3 className="h-4.5 w-4.5" />}
+            title="Dashboard"
             isActive={activeSection === "outbound"}
             onClick={() => setActiveSection("outbound")}
             appType={appType}
@@ -236,7 +238,7 @@ export default function MetaSidebar({
             {" "}
             <SidebarItem
               icon={<FileSpreadsheet className="h-4.5 w-4.5" />}
-              title="Flujos WA (formularios)"
+              title="Plantillas"
               isActive={activeSection === "wa-flows"}
               onClick={() => setActiveSection("wa-flows")}
               appType={appType}
@@ -258,7 +260,7 @@ export default function MetaSidebar({
           />{" "}
           <SidebarItem
             icon={<History className="h-4.5 w-4.5" />}
-            title="Historial del Chatbot"
+            title="Historial de Chats"
             isActive={activeSection === "chatbot-history"}
             onClick={() => setActiveSection("chatbot-history")}
             appType={appType}
@@ -356,19 +358,23 @@ export default function MetaSidebar({
             />
           </div>
         </div>{" "}
-        {/* Sección de usuario */}
+        {/* Sección de usuario - Hacerla Dinamica*/}
         <div className="mt-auto pt-3 border-t border-gray-200">
           <div className="flex items-center px-3 py-2">
             <div
               className={`w-8 h-8 rounded-full ${colors.badge} text-white flex items-center justify-center mr-3`}
             >
-              <span className="font-medium text-sm">EB</span>
+              <span className="font-medium text-sm">
+                {user?.username?.slice(0, 2).toUpperCase() || "US"}
+              </span>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700">
-                Emmanuel Berrio
+                {user?.name || user?.username || "Usuario"}
               </p>
-              <p className="text-xs text-gray-500">Plan Básico</p>
+              <p className="text-xs text-gray-500">
+                {user?.role || "Sin plan"}
+              </p>
             </div>
           </div>
           <div className="px-3 py-1 text-xs text-gray-500">v1.2.0</div>
