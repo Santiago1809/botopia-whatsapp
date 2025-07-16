@@ -237,8 +237,9 @@ export default function AudioRecorder({
     checkSilence();
   };
 
-  // Sube el audio a Cloudinary y retorna el link público usando todas las credenciales del .env.local
+  // Sube el audio a Cloudinary y retorna el link público usando solo las variables NEXT_PUBLIC_ del .env.local
   const uploadToCloudinary = async (audioBlob: Blob): Promise<string> => {
+    // Log de las variables y del FormData
     console.log("Cloudinary envs:", {
       preset: process.env.NEXT_PUBLIC_CLOUDINARY_PRESET,
       folder: process.env.NEXT_PUBLIC_CLOUDINARY_FOLDER,
@@ -253,15 +254,30 @@ export default function AudioRecorder({
       process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!
     );
     formData.append("folder", process.env.NEXT_PUBLIC_CLOUDINARY_FOLDER!);
-    // api_key and api_secret are not needed for unsigned uploads from the client
+    // Log del contenido real del FormData
+    for (const pair of formData.entries()) {
+      if (typeof pair[1] === "object" && pair[1] && "size" in pair[1]) {
+        // Es un Blob
+        console.log(
+          "FormData:",
+          pair[0],
+          `Blob(${(pair[1] as Blob).size} bytes)`
+        );
+      } else {
+        console.log("FormData:", pair[0], pair[1]);
+      }
+    }
+    console.log("Subiendo audio a Cloudinary...");
     const url = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`;
     const res = await fetch(url, { method: "POST", body: formData });
     const data = await res.json();
-    if (!data.secure_url)
+    if (!data.secure_url) {
+      console.error("[Cloudinary Error] POST response:", data);
       throw new Error(
         "No se pudo subir el audio: " +
           (data.error?.message || JSON.stringify(data))
       );
+    }
     return data.secure_url;
   };
 
