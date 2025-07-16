@@ -8,7 +8,9 @@ export default function VideoPreview({
   videoSrc: string;
   className?: string;
 }) {
-  const [currentSrc, setCurrentSrc] = useState("/avatar_IA/video_IA/videoIA.mp4");
+  const [currentSrc, setCurrentSrc] = useState(
+    "/avatar_IA/video_IA/videoIA.mp4"
+  );
   const [isMuted, setIsMuted] = useState(true);
   const [userTriedPlay, setUserTriedPlay] = useState(false);
   const [needsUserPlay, setNeedsUserPlay] = useState(false);
@@ -21,7 +23,8 @@ export default function VideoPreview({
   useEffect(() => {
     if (
       (videoSrc && videoSrc !== fallbackVideo && currentSrc !== videoSrc) ||
-      ((!videoSrc || videoSrc === fallbackVideo) && currentSrc !== fallbackVideo)
+      ((!videoSrc || videoSrc === fallbackVideo) &&
+        currentSrc !== fallbackVideo)
     ) {
       setFade(true); // Start fade out
       setTimeout(() => {
@@ -85,7 +88,9 @@ export default function VideoPreview({
 
   return (
     <div
-      className={`w-full h-full flex items-center justify-center bg-black rounded-xl relative ${className || ""}`}
+      className={`w-full h-full flex items-center justify-center bg-black rounded-xl relative ${
+        className || ""
+      }`}
       style={{ overflow: "hidden" }}
     >
       <video
@@ -95,7 +100,9 @@ export default function VideoPreview({
         controls={false}
         autoPlay
         muted={isMuted}
-        className={`rounded-xl w-full h-full object-cover border-4 border-white bg-black video-fade ${fade ? "fade-out" : "fade-in"}`}
+        className={`rounded-xl w-full h-full object-cover border-4 border-white bg-black video-fade ${
+          fade ? "fade-out" : "fade-in"
+        }`}
         style={{ background: "#222" }}
         onLoadedData={handleLoadedData}
         onEnded={handleEnded}
