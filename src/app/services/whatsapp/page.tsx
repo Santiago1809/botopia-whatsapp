@@ -400,39 +400,6 @@ export default function Page() {
         setSelectedNumber((prev) =>
           prev ? { ...prev, responseGroups: newVal } : null
         );
-
-        // NUEVO: Actualizar agenteHabilitado en todos los grupos sincronizados
-        if (selectedNumber) {
-          // Obtener los grupos sincronizados actuales
-          const resGroups = await fetch(
-            `${BACKEND_URL}/api/whatsapp/synced-contacts?numberId=${selectedNumber.id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          let dataGroups = await resGroups.json();
-          if (!Array.isArray(dataGroups)) dataGroups = [];
-          const syncedGroups = dataGroups.filter(
-            (x: { type: string }) => x.type === "group"
-          );
-          // Actualizar agenteHabilitado para todos los grupos
-          await Promise.all(
-            syncedGroups.map((g: { id: string; agenteHabilitado: boolean }) =>
-              fetch(`${BACKEND_URL}/api/whatsapp/update-agente-habilitado`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ id: g.id, agenteHabilitado: newVal }),
-              })
-            )
-          );
-          // Actualizar el estado local
-          setSyncedGroups((prev) =>
-            prev.map((g) => ({ ...g, agenteHabilitado: newVal }))
-          );
-        }
       } catch (error) {
         console.error("❌ Error actualizando AI:", error);
       }
@@ -1021,6 +988,7 @@ export default function Page() {
           g.id === id ? { ...g, agenteHabilitado: newValue } : g
         )
       );
+      // No hacer fetch global aquí, el estado local ya refleja el cambio
     } else {
       // PATCH para Unsyncedcontact
       const res = await fetch(`${BACKEND_URL}/api/unsyncedcontacts/${id}`, {
@@ -1029,28 +997,13 @@ export default function Page() {
         body: JSON.stringify({ agentehabilitado: newValue }),
       });
       await res.json().catch(() => ({}));
-      // Refresca la lista de no sincronizados
-      if (selectedNumber) {
-        fetch(
-          `${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`
+      // Actualiza el estado local de unsyncedContacts inmediatamente
+      setUnsyncedContacts((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, agenteHabilitado: newValue } : c
         )
-          .then((res) => res.json())
-          .then((data) => {
-            const fixed = Array.isArray(data)
-              ? normalizeUnsyncedContacts(
-                  data.map((c) => ({
-                    ...c,
-                    agenteHabilitado: !!c.agentehabilitado,
-                  }))
-                )
-              : [];
-            setUnsyncedContacts(fixed);
-          })
-          .catch((err) => {
-            console.error("Error refrescando unsyncedContacts", err);
-            setUnsyncedContacts([]);
-          });
-      }
+      );
+      // No hacer fetch global aquí, el estado local ya refleja el cambio
     }
   };
   const handleBulkDelete = async () => {
@@ -1278,6 +1231,49 @@ export default function Page() {
     }
   }, [selectedNumber]);
 
+  // Normaliza y compara usando wa_id para filtrar los no sincronizados
+  const normalizeId = (id: string | number | undefined) => String(id ?? '').trim().toLowerCase();
+  const syncedContactWaIds = new Set(syncedContacts.map((c) => normalizeId(c.wa_id)));
+  const syncedGroupWaIds = new Set(syncedGroups.map((g) => normalizeId(g.wa_id)));
+  const filteredPersonalContactsToShow = filteredPersonalContacts.filter(
+    (c) => !syncedContactWaIds.has(normalizeId(c.wa_id || c.id))
+  );
+  const filteredGroupContactsToShow = filteredGroupContacts.filter(
+    (g) => !syncedGroupWaIds.has(normalizeId(g.wa_id || g.id))
+  );
+
+  // Añade la función para abrir el modal y actualizar sincronizados
+  const handleOpenContactsModal = async () => {
+    if (selectedNumber) {
+      await fetchSynced(); // Actualiza la base de datos de sincronizados
+      // Refresca la lista base de contactos desde WhatsApp Web
+      const token = getToken();
+      if (token) {
+        try {
+          const res = await fetch(
+            `${BACKEND_URL}/api/whatsapp/contacts?numberId=${selectedNumber.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (res.ok) {
+            const contactList = await res.json();
+            setContacts(
+              uniqueById(
+                (contactList as WhatsAppContact[]).map(
+                  (c: WhatsAppContact) => ({ ...c, id: String(c.id) })
+                )
+              )
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching contacts:", error);
+        }
+      }
+    }
+    setContactsModalOpen(true);
+  };
+
   return (
     <div className="flex h-screen min-h-screen overflow-hidden bg-background">
       {/* Sidebar izquierdo */}
@@ -1364,7 +1360,7 @@ export default function Page() {
             contacts={uniqueById(syncedContacts)}
             groups={uniqueById(syncedGroups)}
             onSelect={handleSelectSynced}
-            onSyncClick={() => setContactsModalOpen(true)}
+            onSyncClick={handleOpenContactsModal}
             onRemoveContact={handleRemoveContact}
             onRemoveGroup={handleRemoveGroup}
             selectedId={selectedChatId || undefined}
@@ -1517,13 +1513,13 @@ export default function Page() {
                     onChange={(e) => setContactSearch(e.target.value)}
                   />
                 )}
-                {filteredPersonalContacts.length === 0 ? (
+                {filteredPersonalContactsToShow.length === 0 ? (
                   <div className="text-sm text-gray-500">
                     No hay contactos disponibles.
                   </div>
                 ) : (
                   <ul className="grid grid-cols-1 gap-2">
-                    {filteredPersonalContacts.map(
+                    {filteredPersonalContactsToShow.map(
                       (contact: WhatsAppContact) => (
                         <li
                           key={contact.id}
@@ -1583,7 +1579,7 @@ export default function Page() {
                   />
                 )}
                 {filterType === "all" && <></>}
-                {filteredGroupContacts.length === 0 ? (
+                {filteredGroupContactsToShow.length === 0 ? (
                   <div className="text-sm text-gray-500">
                     No hay grupos disponibles.
                     <br />
@@ -1592,7 +1588,7 @@ export default function Page() {
                   </div>
                 ) : (
                   <ul className="grid grid-cols-1 gap-2">
-                    {filteredGroupContacts.map((group: WhatsAppGroup) => (
+                    {filteredGroupContactsToShow.map((group: WhatsAppGroup) => (
                       <li
                         key={group.id}
                         className="flex items-center p-2 rounded hover:bg-gray-100 transition"
