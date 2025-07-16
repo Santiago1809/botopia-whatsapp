@@ -22,6 +22,7 @@ export default function AudioRecorder({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [micActive, setMicActive] = useState(false); // Nuevo estado para feedback visual
   const silenceTimeout = useRef<NodeJS.Timeout | null>(null);
   const silenceDetected = useRef(false);
 
@@ -136,6 +137,7 @@ export default function AudioRecorder({
     input.connect(processor);
     processor.connect(audioContext.destination);
     setIsRecording(true);
+    setMicActive(true); // Mostrar feedback visual
     setMessage("Grabando... (se detendrá si no detecta sonido en 5 segundos)");
     // Detecta silencio usando el stream de análisis
     detectSilence(analyzeStream, () => {
@@ -157,6 +159,7 @@ export default function AudioRecorder({
     if (hasProcessedRef.current) return;
     hasProcessedRef.current = true;
     setIsRecording(false);
+    setMicActive(false); // Ocultar feedback visual
     setMessage(auto ? "Procesando audio..." : "Procesando audio...");
     if (scriptProcessorRef.current) {
       scriptProcessorRef.current.disconnect();
@@ -375,6 +378,16 @@ export default function AudioRecorder({
     return new Blob([buffer], { type: "audio/wav" });
   }
 
+  // Permitir detener manualmente la grabación
+  const handleMicButton = () => {
+    if (isProcessing) return;
+    if (isRecording) {
+      stopRecording(false);
+    } else {
+      startRecording();
+    }
+  };
+
   return (
     <div
       style={{
@@ -403,6 +416,34 @@ export default function AudioRecorder({
           {message}
         </div>
       )}
+      {/* Indicador visual de micrófono activo */}
+      <div style={{ marginBottom: 10, height: 24 }}>
+        {micActive && !isProcessing && (
+          <span
+            style={{
+              color: "#ff5252",
+              fontWeight: 600,
+              fontSize: 16,
+              letterSpacing: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              animation: "blink 1s steps(2, start) infinite",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="#ff5252"
+              style={{ marginRight: 4 }}
+            >
+              <circle cx="12" cy="12" r="8" />
+            </svg>
+            Micrófono encendido
+          </span>
+        )}
+      </div>
       {/* Debug bar: solo visible durante la grabación */}
       {isRecording && (
         <div
@@ -454,74 +495,88 @@ export default function AudioRecorder({
           </div>
         </div>
       )}
-      {/* Botón de micrófono blanco */}
+      {/* Botón de micrófono toggle */}
       <button
-        onClick={isProcessing || isRecording ? undefined : startRecording}
-        disabled={isProcessing || isRecording}
+        onClick={handleMicButton}
+        disabled={isProcessing}
         style={{
           width: 80,
           height: 80,
           borderRadius: "50%",
-          background: "#fff",
-          color: isRecording ? "#ff5252" : "#2196f3",
-          border: "none",
+          background: isRecording ? "#ff5252" : "#fff",
+          color: isRecording ? "#fff" : "#2196f3",
+          border: isRecording ? "2px solid #ff5252" : "none",
           fontSize: 36,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          cursor: isProcessing || isRecording ? "not-allowed" : "pointer",
-          transition: "background 0.2s, opacity 0.2s",
+          cursor: isProcessing ? "not-allowed" : "pointer",
+          transition: "background 0.2s, opacity 0.2s, border 0.2s",
           outline: "none",
-          opacity: isProcessing || isRecording ? 0.5 : 1,
-          pointerEvents: isProcessing || isRecording ? "none" : "auto",
+          opacity: isProcessing ? 0.5 : 1,
+          pointerEvents: isProcessing ? "none" : "auto",
         }}
         aria-label={isRecording ? "Detener grabación" : "Iniciar grabación"}
-        tabIndex={isProcessing || isRecording ? -1 : 0}
-        onMouseDown={(e) => {
-          if (!isProcessing && !isRecording)
-            e.currentTarget.style.background = "#e0e0e0";
-        }}
-        onMouseUp={(e) => {
-          if (!isProcessing && !isRecording)
-            e.currentTarget.style.background = "#fff";
-        }}
-        onMouseLeave={(e) => {
-          if (!isProcessing && !isRecording)
-            e.currentTarget.style.background = "#fff";
-        }}
+        tabIndex={isProcessing ? -1 : 0}
       >
-        <svg
-          width="48"
-          height="48"
-          viewBox="0 0 48 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="24" cy="24" r="24" fill="#fff" />
-          <rect
-            x="18"
-            y="12"
-            width="12"
-            height="24"
-            rx="6"
-            fill="#fff"
-            stroke="#000"
-            strokeWidth="2"
-          />
-          <rect
-            x="21"
-            y="32"
-            width="6"
-            height="8"
-            rx="3"
-            fill="#fff"
-            stroke="#000"
-            strokeWidth="2"
-          />
-          <rect x="22" y="36" width="4" height="4" rx="2" fill="#000" />
-        </svg>
+        {isRecording ? (
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="24" cy="24" r="24" fill="#ff5252" />
+            <rect x="18" y="18" width="12" height="12" rx="3" fill="#fff" />
+          </svg>
+        ) : (
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="24" cy="24" r="24" fill="#fff" />
+            <rect
+              x="18"
+              y="12"
+              width="12"
+              height="24"
+              rx="6"
+              fill="#fff"
+              stroke="#000"
+              strokeWidth="2"
+            />
+            <rect
+              x="21"
+              y="32"
+              width="6"
+              height="8"
+              rx="3"
+              fill="#fff"
+              stroke="#000"
+              strokeWidth="2"
+            />
+            <rect x="22" y="36" width="4" height="4" rx="2" fill="#000" />
+          </svg>
+        )}
       </button>
+      <style>{`
+        @keyframes blink {
+          0% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.3;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }

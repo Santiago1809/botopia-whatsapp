@@ -46,6 +46,7 @@ export default function VideoPreview({
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
       videoRef.current.load();
+      videoRef.current.playbackRate = 1; // Solo forward
       videoRef.current.play().catch(() => setNeedsUserPlay(true));
     }
   }, [currentSrc, isMuted]);
@@ -68,6 +69,16 @@ export default function VideoPreview({
         setUserTriedPlay(false);
         setNeedsUserPlay(false);
         setFade(false);
+      }, 300);
+    } else {
+      // Si es el video base, reinicia con fundido
+      setFade(true);
+      setTimeout(() => {
+        setFade(false);
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play().catch(() => setNeedsUserPlay(true));
+        }
       }, 300);
     }
   };
@@ -113,16 +124,16 @@ export default function VideoPreview({
       )}
       <style jsx global>{`
         .video-fade {
-          transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
-            transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+          transition: opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1),
+            transform 1200ms cubic-bezier(0.4, 0, 0.2, 1);
         }
         .fade-in {
           opacity: 1;
           transform: scale(1);
         }
         .fade-out {
-          opacity: 0;
-          transform: scale(0.98);
+          opacity: 0.85;
+          transform: scale(0.995);
         }
       `}</style>
     </div>
