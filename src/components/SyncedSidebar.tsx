@@ -199,7 +199,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         </div>{" "}
         {/* Menú desplegable de acciones */}
         {showActions && (
-          <div className="absolute right-4 top-12 bg-white rounded-xl py-2 z-50 w-52 border border-gray-100">
+          <div className="absolute right-4 top-12 bg-white dark:bg-[hsl(240,10%,14%)] rounded-xl py-2 z-50 w-52 border border-gray-100 dark:border-[hsl(240,10%,20%)]">
             <button
               className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
               onClick={async () => {
@@ -295,27 +295,27 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         )}
       </div>{" "}
       {/* Input de búsqueda en la parte superior con estilo Botopia */}
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 to-white px-4 py-3">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 to-white dark:from-[hsl(240,10%,5%)] dark:to-[hsl(240,10%,10%)] px-4 py-3">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-[#411E8A]" />
+            <Search className="h-4 w-4 text-[#411E8A] dark:text-gray-400" />
           </div>
           <input
             type="text"
             placeholder="Buscar o iniciar un nuevo chat"
-            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-white border border-[#411E8A]/20 focus:ring-2 focus:ring-[#411E8A]/30 focus:border-[#411E8A] focus:outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-white dark:bg-[hsl(240,10%,14%)] border border-[#411E8A]/20 dark:border-[hsl(240,10%,20%)] focus:ring-2 focus:ring-[#411E8A]/30 dark:focus:ring-[hsl(240,10%,30%)] focus:border-[#411E8A] focus:outline-none transition-all dark:text-white"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>{" "}
       {/* Filtro visual mejorado tipo Botopia */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-[#FAECD4]">
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white dark:bg-[hsl(240,10%,14%)] border-b border-[#FAECD4] dark:border-[hsl(240,10%,20%)]">
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "all"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-200 hover:bg-[#FAECD4]/50 dark:hover:bg-[hsl(240,10%,20%)]"
           }`}
           onClick={() => setFilterType("all")}
         >
@@ -325,7 +325,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "contacts"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-200 hover:bg-[#FAECD4]/50 dark:hover:bg-[hsl(240,10%,20%)]"
           }`}
           onClick={() => setFilterType("contacts")}
         >
@@ -335,7 +335,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "groups"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-200 hover:bg-[#FAECD4]/50 dark:hover:bg-[hsl(240,10%,20%)]"
           }`}
           onClick={() => setFilterType("groups")}
         >
@@ -345,7 +345,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "unsynced"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-200 hover:bg-[#FAECD4]/50 dark:hover:bg-[hsl(240,10%,20%)]"
           }`}
           onClick={() => setFilterType("unsynced")}
         >
@@ -353,11 +353,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         </button>
       </div>{" "}
       {/* Lista de contactos y grupos con estilo Botopia */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-[#FAECD4]/20">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-[#FAECD4]/20 dark:from-[hsl(240,10%,10%)] dark:to-[hsl(240,10%,5%)]">
         {(filterType === "all" || filterType === "contacts") && (
           <div>
             {filteredContacts.length === 0 ? (
-              <div className="text-sm text-[#050044] p-4 text-center">
+              <div className="text-sm text-[#050044] dark:text-gray-300 p-4 text-center">
                 No hay contactos sincronizados
               </div>
             ) : (
@@ -365,9 +365,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 ${
+                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 dark:hover:bg-[hsl(240,10%,15%)] ${
                       selectedId === contact.id && selectedType === "contact"
-                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 border-l-4 border-[#411E8A]"
+                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 dark:from-[hsl(240,10%,14%)] dark:to-[hsl(240,10%,10%)] border-l-4 border-[#411E8A]"
                         : ""
                     }`}
                     onClick={() => handleSelect(contact, "contact")}
@@ -377,16 +377,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-[#010009] truncate pr-2">
+                        <h3 className="font-semibold text-[#010009] dark:text-white truncate pr-2">
                           {contact.name || contact.number || "Sin nombre"}
                         </h3>
-                        <span className="text-xs text-[#411E8A] whitespace-nowrap font-medium">
+                        <span className="text-xs text-[#411E8A] dark:text-gray-300 whitespace-nowrap font-medium">
                           {formatLastMessageTime(contact.lastMessageTimestamp)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         {" "}
-                        <p className="text-sm text-[#050044] truncate pr-2">
+                        <p className="text-sm text-[#050044] dark:text-gray-400 truncate pr-2">
                           {contact.lastMessagePreview || "Sin mensajes"}
                         </p>
                         <div className="flex items-center gap-1">
@@ -427,7 +427,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este contacto?"))
                                 onRemoveContact(contact.id);
                             }}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 transition-colors"
                             title="Eliminar contacto"
                           >
                             <Trash className="w-4 h-4" />
@@ -510,7 +510,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este grupo?"))
                                 onRemoveGroup(group.id);
                             }}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 transition-colors"
                             title="Eliminar grupo"
                           >
                             <Trash className="w-4 h-4" />
@@ -591,7 +591,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                           )}
                         </p>
                         <button
-                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] dark:hover:bg-[hsl(240,10%,20%)] text-[#54656f] dark:text-gray-300"
                           title="Eliminar contacto no sincronizado"
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -668,7 +668,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
       </div>
       {/* Botón flotante de sincronización */}
       <button
-        className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] transition-colors z-10"
+        className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] dark:hover:bg-[#0D6D54] transition-colors z-10"
         onClick={onSyncClick}
         title="Sincronizar contactos y grupos"
       >
