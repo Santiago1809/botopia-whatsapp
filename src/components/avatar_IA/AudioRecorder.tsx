@@ -306,7 +306,7 @@ export default function AudioRecorder({
       console.log("[DEBUG] Cloudinary audioUrl:", audioUrl);
       setMessage("Audio subido. Procesando conversación...");
       // Envía el link al microservicio WAV2LIP_MICRO
-      const response = await fetch("http://18.116.242.235:8081/conversation", {
+      const response = await fetch("https://18.116.242.235:8081/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audioUrl }),
@@ -540,11 +540,39 @@ export default function AudioRecorder({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M24 14a6 6 0 0 1 6 6v8a6 6 0 0 1-12 0v-8a6 6 0 0 1 6-6z" fill="#fff" stroke="#8B2323" strokeWidth="2" />
-            <rect x="21" y="32" width="6" height="8" rx="3" fill="#fff" stroke="#8B2323" strokeWidth="2" />
+            <path
+              d="M24 14a6 6 0 0 1 6 6v8a6 6 0 0 1-12 0v-8a6 6 0 0 1 6-6z"
+              fill="#fff"
+              stroke="#8B2323"
+              strokeWidth="2"
+            />
+            <rect
+              x="21"
+              y="32"
+              width="6"
+              height="8"
+              rx="3"
+              fill="#fff"
+              stroke="#8B2323"
+              strokeWidth="2"
+            />
             <rect x="22" y="36" width="4" height="4" rx="2" fill="#8B2323" />
-            <line x1="16" y1="16" x2="32" y2="32" stroke="#8B2323" strokeWidth="3" />
-            <line x1="32" y1="16" x2="16" y2="32" stroke="#8B2323" strokeWidth="3" />
+            <line
+              x1="16"
+              y1="16"
+              x2="32"
+              y2="32"
+              stroke="#8B2323"
+              strokeWidth="3"
+            />
+            <line
+              x1="32"
+              y1="16"
+              x2="16"
+              y2="32"
+              stroke="#8B2323"
+              strokeWidth="3"
+            />
           </svg>
         )}
       </button>
