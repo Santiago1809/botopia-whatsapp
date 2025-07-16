@@ -234,7 +234,6 @@ export default function Page() {
         (a: SyncedItem, b: SyncedItem) =>
           (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0)
       );
-    console.log(contacts);
     setSyncedContacts(contacts);
     setSyncedGroups(groups);
     // NO limpiar el chat seleccionado aquí
@@ -243,9 +242,6 @@ export default function Page() {
   // Memorizar la función de obtener números para evitar re-renders
   const getNumbers = useCallback(async () => {
     if (isLoadingNumbers || numbersLoaded) {
-      console.log(
-        "Ya se está cargando números o ya se cargaron, saltando llamada"
-      );
       return;
     }
 
@@ -257,7 +253,6 @@ export default function Page() {
 
     setIsLoadingNumbers(true);
     try {
-      console.log("Obteniendo números de WhatsApp...");
       const res = await fetch(`${BACKEND_URL}/api/user/get-numbers`, {
         method: "GET",
         headers: {
@@ -270,8 +265,6 @@ export default function Page() {
         console.error(`Error obteniendo números: ${data.message}`);
         return;
       }
-
-      console.log("Números obtenidos exitosamente:", data);
       setWhatsappNumbers(data);
       setNumbersLoaded(true);
     } catch (error) {
@@ -285,7 +278,6 @@ export default function Page() {
   useEffect(() => {
     // Evitar múltiples inicializaciones
     if (isInitialized.current) {
-      console.log("Componente ya inicializado, saltando");
       return;
     }
 
@@ -295,15 +287,14 @@ export default function Page() {
     }
 
     isInitialized.current = true;
-    console.log("Inicializando componente WhatsApp");
 
     const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
     setSocket(newSocket);
 
-    newSocket.on("qr-code", () => {
-      /* if (data.numberId === selectedNumber?.id) {
+    newSocket.on("qr-code", (data) => {
+      if (data.numberId === selectedNumber?.id) {
         setQrCodes((prev) => ({ ...prev, [data.numberId]: data.qr }));
-      } */
+      }
     });
 
     // Solo llamar getNumbers una vez al montar el componente
@@ -518,7 +509,6 @@ export default function Page() {
     socket.on("chat-history", (data: ChatHistoryData) => {
       if (!data || !data.to) return;
       const isGroup = data.to.endsWith("@g.us");
-      console.log("chat-history recibido:", data); // DEPURACIÓN
       // Si NO está sincronizado, refresca la lista de no sincronizados y selecciónalo SIEMPRE
       const isSynced =
         (isGroup && syncedGroups.some((g) => g.wa_id === data.to)) ||
@@ -596,7 +586,6 @@ export default function Page() {
 
     // Refuerza el evento unsynced-contacts-updated para que siempre actualice la lista
     socket.on("unsynced-contacts-updated", () => {
-      console.log("Evento unsynced-contacts-updated recibido"); // DEPURACIÓN
       if (selectedNumber) {
         fetch(
           `${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`
@@ -708,11 +697,6 @@ export default function Page() {
     }
 
     try {
-      // console.log("Enviando solicitud para agregar número:", {
-      //   number: newNumber,
-      //   name: newName,
-      // });
-
       const res = await fetch(`${BACKEND_URL}/api/user/add-number`, {
         method: "POST",
         headers: {
@@ -736,8 +720,6 @@ export default function Page() {
         alert(`⚠️ Error: ${data?.message || "No se pudo agregar el número"}`);
         return;
       }
-
-      // console.log("Respuesta exitosa:", data);
       const { numberId } = data;
 
       if (!numberId) {
@@ -1232,9 +1214,16 @@ export default function Page() {
   }, [selectedNumber]);
 
   // Normaliza y compara usando wa_id para filtrar los no sincronizados
-  const normalizeId = (id: string | number | undefined) => String(id ?? '').trim().toLowerCase();
-  const syncedContactWaIds = new Set(syncedContacts.map((c) => normalizeId(c.wa_id)));
-  const syncedGroupWaIds = new Set(syncedGroups.map((g) => normalizeId(g.wa_id)));
+  const normalizeId = (id: string | number | undefined) =>
+    String(id ?? "")
+      .trim()
+      .toLowerCase();
+  const syncedContactWaIds = new Set(
+    syncedContacts.map((c) => normalizeId(c.wa_id))
+  );
+  const syncedGroupWaIds = new Set(
+    syncedGroups.map((g) => normalizeId(g.wa_id))
+  );
   const filteredPersonalContactsToShow = filteredPersonalContacts.filter(
     (c) => !syncedContactWaIds.has(normalizeId(c.wa_id || c.id))
   );
@@ -1354,7 +1343,7 @@ export default function Page() {
       </div>{" "}
       {/* Sidebar derecho */}
       {selectedNumber && (
-        <div className="hidden md:block  bg-gray-50 border-l shadow-lg flex-col">
+        <div className="hidden md:block w-80 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg flex-col">
           <SyncedSidebar
             key={sidebarRefreshKey}
             contacts={uniqueById(syncedContacts)}

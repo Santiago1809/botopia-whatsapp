@@ -46,12 +46,12 @@ export default function WhatsAppSideBar({
             h-full
             ${sidebarOpen ? "left-0" : "-left-full md:left-0"}`}
     >
-      <div className="p-3.5 border-b mt-14 md:mt-0 bg-gradient-to-r from-primary to-secondary dark:from-secondary dark:to-primary">
+      <div className="p-2.5 border-b mt-14 md:mt-0 bg-gradient-to-r from-primary to-secondary dark:from-secondary dark:to-primary">
         <div className="flex justify-between items-center mb-2">
           <ThemeToggle />
           <Button
             variant="outline"
-            className="w-full ml-2 flex cursor-pointer items-center justify-center gap-2 text-primary dark:text-white hover:text-white hover:bg-tertiary/10 border-primary dark:border-white rounded-full transition-all duration-200"
+            className="w-full ml-2 flex cursor-pointer items-center justify-center text-primary dark:text-white hover:text-white hover:bg-tertiary/10 border-primary dark:border-white rounded-full transition-all duration-200"
             onClick={handleLogout}
           >
             <ArrowLeft className="h-4 w-4" />

@@ -54,10 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Función para iniciar sesión con la API real
   const login = async (identifier: string, password: string) => {
     try {
-      console.log("Enviando solicitud de login...", {
-        identifier,
-        backend: BACKEND_URL,
-      });
 
       const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: "POST",
@@ -65,11 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ identifier, password }),
-      });
-
-      console.log("Respuesta recibida:", {
-        status: response.status,
-        ok: response.ok,
       });
 
       if (!response.ok) {
@@ -80,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      console.log("Datos de login exitoso:", data);
 
       // Guardamos el token en localStorage si tu API lo devuelve
       if (data.token) {

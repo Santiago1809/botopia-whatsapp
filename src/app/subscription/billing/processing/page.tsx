@@ -15,33 +15,20 @@ export default function SuccessPage() {
   const { subscriptionInfo, loading, error } = useSubscriptionInfo();
 
   // Debug logs for component state
-  useEffect(() => {
-    console.log('🔄 Component State:', {
-      isProcessing,
-      loading,
-      error,
-      hasSubscriptionInfo: !!subscriptionInfo,
-      subscriptionDetails: subscriptionInfo?.subscription
-    });
-  }, [isProcessing, loading, error, subscriptionInfo]);
 
   // Processing delay with logs
   useEffect(() => {
-    console.log('⏳ Starting processing delay...');
     const timer = setTimeout(() => {
-      console.log('✅ Processing delay completed');
       setIsProcessing(false);
     }, DELAY);
 
     return () => {
-      console.log('🧹 Cleaning up timer');
       clearTimeout(timer);
     };
   }, []);
 
   // Log when showing processing animation
   if (isProcessing) {
-    console.log('🔄 Showing processing animation');
     return <ProcessingAnimation />;
   }
 
@@ -57,7 +44,6 @@ export default function SuccessPage() {
 
   // Log loading state
   if (loading) {
-    console.log('⌛ Component in loading state');
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
@@ -202,18 +188,9 @@ export default function SuccessPage() {
   }
 
   const { subscription } = subscriptionInfo;
-  
-  // Log successful render
-  console.log('✅ Rendering success state:', {
-    planName: subscription.planName,
-    amount: subscription.amount,
-    nextPaymentDate: subscription.nextPaymentDate,
-    clientName: subscription.details.clientName
-  });
 
   // Add logs to actions
   const handlePrint = () => {
-    console.log('🖨️ Initiating print action');
     window.print();
   };
 
@@ -313,7 +290,6 @@ export default function SuccessPage() {
         >
           <Link
             href="/billing"
-            onClick={() => console.log('🔙 Navigating to billing dashboard')}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl"
           >
             Ir al Dashboard
@@ -337,7 +313,6 @@ export default function SuccessPage() {
           <p>¿Necesitas ayuda? Contáctanos en</p>
           <a 
             href="mailto:contacto@botopia.tech" 
-            onClick={() => console.log('📧 Support email click')}
             className="text-blue-500 hover:text-blue-600"
           >
             contacto@botopia.tech

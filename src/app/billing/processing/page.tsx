@@ -26,7 +26,6 @@ export default function ProcessingPage() {
         if (!res.ok) throw new Error('Error al verificar el pago');
         
         const data = await res.json();
-        //console.log("📥 data recibido en frontend:", data);
 
         if (data.status === "paid") {
           // Aquí puedes redirigir al usuario a la página de éxito

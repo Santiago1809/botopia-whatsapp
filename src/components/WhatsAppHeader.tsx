@@ -248,24 +248,30 @@ export default function WhatsAppHeader({
           {/* Pestañas */}
           <div className="flex">
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "contacts" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "contacts"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("contacts")}
             >
               Contactos
             </button>
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "groups" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "groups"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("groups")}
             >
               Grupos
             </button>
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "unsynced" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "unsynced"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("unsynced")}
             >

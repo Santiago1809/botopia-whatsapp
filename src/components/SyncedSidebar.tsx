@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import { Contact, Group } from "@/types/global";
 import {
-  Trash,
-  Users,
-  UserCheck,
-  UserX,
-  RefreshCcw,
-  Search,
   Filter,
   MoreVertical,
+  RefreshCcw,
+  Search,
+  Trash,
+  UserCheck,
+  Users,
+  UserX,
 } from "lucide-react";
-import { Contact, Group } from "@/types/global";
+import React, { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 const BACKEND_URL =
@@ -33,7 +33,9 @@ interface SyncedSidebarProps {
 }
 
 // Estado local optimista para agenteHabilitado
-interface LocalAgenteState { [id: string]: boolean | undefined }
+interface LocalAgenteState {
+  [id: string]: boolean | undefined;
+}
 
 const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   contacts,
@@ -67,7 +69,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     const estado: LocalAgenteState = {};
     contacts.forEach((c) => (estado[c.id.toString()] = c.agenteHabilitado));
     groups.forEach((g) => (estado[g.id.toString()] = g.agenteHabilitado));
-    unsyncedContacts.forEach((c) => (estado[c.id.toString()] = c.agenteHabilitado));
+    unsyncedContacts.forEach(
+      (c) => (estado[c.id.toString()] = c.agenteHabilitado)
+    );
     setLocalAgente(estado);
   }, [contacts, groups, unsyncedContacts]);
 
@@ -197,9 +201,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     }
   };
   return (
-    <div className="h-full w-[320px] flex flex-col relative">
+    <div className="h-full w-full flex flex-col relative bg-gray-50 dark:bg-gray-900">
       {/* Cabecera con estilo Botopia */}
-      <div className="bg-gradient-to-l h-8 from-[#411E8A] to-[#050044] text-white flex justify-between items-center px-4 py-8 shadow-md z-10">
+      <div className="bg-gradient-to-l h-16 from-seconday to-primary text-white flex justify-between items-center px-4 shadow-md z-10">
         <h2 className="text-lg font-semibold">Chats</h2>
         <div className="flex items-center gap-3">
           <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
@@ -214,9 +218,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         </div>{" "}
         {/* Menú desplegable de acciones */}
         {showActions && (
-          <div className="absolute right-4 top-12 bg-white rounded-xl py-2 z-50 w-52 border border-gray-100">
+          <div className="absolute right-4 top-16 bg-white dark:bg-gray-800 rounded-xl py-2 z-50 w-52 border border-gray-100 dark:border-gray-700 shadow-lg">
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] dark:hover:bg-gray-700 text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (
@@ -235,10 +239,12 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               }}
             >
               <Trash className="w-4 h-4 text-red-500" />
-              <span className="text-[#010009]">Eliminar todos</span>
+              <span className="text-[#010009] dark:text-white">
+                Eliminar todos
+              </span>
             </button>
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] dark:hover:bg-gray-700 text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (unsyncedContacts.length > 0) {
@@ -264,10 +270,12 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               }}
             >
               <UserX className="w-4 h-4 text-yellow-600" />
-              <span className="text-[#010009]">Desactivar todos</span>
+              <span className="text-[#010009] dark:text-white">
+                Desactivar todos
+              </span>
             </button>
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] dark:hover:bg-gray-700 text-left transition-colors"
               onClick={async () => {
                 setShowActions(false);
                 if (unsyncedContacts.length > 0) {
@@ -293,44 +301,48 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
               }}
             >
               <UserCheck className="w-4 h-4 text-green-600" />
-              <span className="text-[#010009]">Activar todos</span>
+              <span className="text-[#010009] dark:text-white">
+                Activar todos
+              </span>
             </button>
-            <div className="my-2 border-t border-gray-100"></div>
+            <div className="my-2 border-t border-gray-100 dark:border-gray-700"></div>
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] text-left transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#FAECD4] dark:hover:bg-gray-700 text-left transition-colors"
               onClick={() => {
                 setShowActions(false);
                 onSyncClick();
               }}
             >
-              <RefreshCcw className="w-4 h-4 text-[#411E8A]" />
-              <span className="text-[#010009]">Sincronizar ahora</span>
+              <RefreshCcw className="w-4 h-4 text-[#411E8A] dark:text-blue-400" />
+              <span className="text-[#010009] dark:text-white">
+                Sincronizar ahora
+              </span>
             </button>
           </div>
         )}
       </div>{" "}
       {/* Input de búsqueda en la parte superior con estilo Botopia */}
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 to-white px-4 py-3">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-[#FAECD4]/50 dark:from-gray-800/50 to-white dark:to-gray-900 px-4 py-3">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-[#411E8A]" />
+            <Search className="h-4 w-4 text-[#411E8A] dark:text-blue-400" />
           </div>
           <input
             type="text"
             placeholder="Buscar o iniciar un nuevo chat"
-            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-white border border-[#411E8A]/20 focus:ring-2 focus:ring-[#411E8A]/30 focus:border-[#411E8A] focus:outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 rounded-xl text-sm border border-[#411E8A]/20 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#411E8A]/30 dark:focus:ring-blue-500/30 focus:border-[#411E8A] dark:focus:border-blue-500 focus:outline-none transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>{" "}
       {/* Filtro visual mejorado tipo Botopia */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-[#FAECD4]">
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-[#FAECD4] dark:border-gray-700">
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "all"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4]/50 dark:hover:bg-gray-700/50"
           }`}
           onClick={() => setFilterType("all")}
         >
@@ -340,7 +352,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "contacts"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4]/50 dark:hover:bg-gray-700/50"
           }`}
           onClick={() => setFilterType("contacts")}
         >
@@ -350,7 +362,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "groups"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4]/50 dark:hover:bg-gray-700/50"
           }`}
           onClick={() => setFilterType("groups")}
         >
@@ -360,7 +372,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
             filterType === "unsynced"
               ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white shadow-md"
-              : "text-[#050044] hover:bg-[#FAECD4]/50"
+              : "text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4]/50 dark:hover:bg-gray-700/50"
           }`}
           onClick={() => setFilterType("unsynced")}
         >
@@ -368,11 +380,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         </button>
       </div>{" "}
       {/* Lista de contactos y grupos con estilo Botopia */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-[#FAECD4]/20">
+      <div className="flex-1 overflow-y-auto">
         {(filterType === "all" || filterType === "contacts") && (
           <div>
             {filteredContacts.length === 0 ? (
-              <div className="text-sm text-[#050044] p-4 text-center">
+              <div className="text-sm text-[#050044] dark:text-gray-400 p-4 text-center">
                 No hay contactos sincronizados
               </div>
             ) : (
@@ -380,9 +392,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 {filteredContacts.map((contact) => (
                   <li
                     key={contact.id}
-                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 ${
+                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 dark:hover:bg-gray-700/30 ${
                       selectedId === contact.id && selectedType === "contact"
-                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 border-l-4 border-[#411E8A]"
+                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 dark:from-gray-700 dark:to-gray-700/60 border-l-4 border-[#411E8A] dark:border-blue-500"
                         : ""
                     }`}
                     onClick={() => handleSelect(contact, "contact")}
@@ -392,16 +404,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-[#010009] truncate pr-2">
+                        <h3 className="font-semibold text-[#010009] dark:text-white truncate pr-2">
                           {contact.name || contact.number || "Sin nombre"}
                         </h3>
-                        <span className="text-xs text-[#411E8A] whitespace-nowrap font-medium">
+                        <span className="text-xs text-[#411E8A] dark:text-blue-400 whitespace-nowrap font-medium">
                           {formatLastMessageTime(contact.lastMessageTimestamp)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         {" "}
-                        <p className="text-sm text-[#050044] truncate pr-2">
+                        <p className="text-sm text-[#050044] dark:text-gray-400 truncate pr-2">
                           {contact.lastMessagePreview || "Sin mensajes"}
                         </p>
                         <div className="flex items-center gap-1">
@@ -411,18 +423,24 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (onToggleAgente) {
                                 setLocalAgente((prev) => ({
                                   ...prev,
-                                  [contact.id.toString()]: !localAgente[contact.id.toString()],
+                                  [contact.id.toString()]:
+                                    !localAgente[contact.id.toString()],
                                 }));
-                                onToggleAgente(contact.id, !localAgente[contact.id.toString()]);
+                                onToggleAgente(
+                                  contact.id,
+                                  !localAgente[contact.id.toString()]
+                                );
                               }
                             }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
                               localAgente[contact.id.toString()]
                                 ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
-                                : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
+                                : "bg-gray-200 dark:bg-gray-700 text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4] dark:hover:bg-gray-600"
                             }`}
                             title={
-                              localAgente[contact.id.toString()] ? "Desactivar IA" : "Activar IA"
+                              localAgente[contact.id.toString()]
+                                ? "Desactivar IA"
+                                : "Activar IA"
                             }
                           >
                             <UserCheck className="size-4" />
@@ -454,9 +472,9 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                 {filteredGroups.map((group) => (
                   <li
                     key={group.id}
-                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 ${
+                    className={`py-4 flex items-center px-4 cursor-pointer transition-all hover:bg-[#FAECD4]/30 dark:hover:bg-gray-700/30 ${
                       selectedId === group.id && selectedType === "group"
-                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 border-l-4 border-[#411E8A]"
+                        ? "bg-gradient-to-r from-[#FAECD4] to-[#FAECD4]/60 dark:from-gray-700 dark:to-gray-700/60 border-l-4 border-[#411E8A] dark:border-blue-500"
                         : ""
                     }`}
                     onClick={() => handleSelect(group, "group")}
@@ -466,16 +484,16 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-[#010009] truncate pr-2">
+                        <h3 className="font-semibold text-[#010009] dark:text-white truncate pr-2">
                           {group.name || "Grupo sin nombre"}
                         </h3>
-                        <span className="text-xs text-[#411E8A] whitespace-nowrap font-medium">
+                        <span className="text-xs text-[#411E8A] dark:text-blue-400 whitespace-nowrap font-medium">
                           {formatLastMessageTime(group.lastMessageTimestamp)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         {" "}
-                        <p className="text-sm text-[#050044] truncate pr-2">
+                        <p className="text-sm text-[#050044] dark:text-gray-400 truncate pr-2">
                           {group.lastMessagePreview || "Sin mensajes"}
                         </p>
                         <div className="flex items-center gap-1">
@@ -485,18 +503,24 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (onToggleAgente) {
                                 setLocalAgente((prev) => ({
                                   ...prev,
-                                  [group.id.toString()]: !localAgente[group.id.toString()],
+                                  [group.id.toString()]:
+                                    !localAgente[group.id.toString()],
                                 }));
-                                onToggleAgente(group.id, !localAgente[group.id.toString()]);
+                                onToggleAgente(
+                                  group.id,
+                                  !localAgente[group.id.toString()]
+                                );
                               }
                             }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
                               localAgente[group.id.toString()]
                                 ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md"
-                                : "bg-gray-200 text-[#050044] hover:bg-[#FAECD4]"
+                                : "bg-gray-200 dark:bg-gray-700 text-[#050044] dark:text-gray-300 hover:bg-[#FAECD4] dark:hover:bg-gray-600"
                             }`}
                             title={
-                              localAgente[group.id.toString()] ? "Desactivar IA" : "Activar IA"
+                              localAgente[group.id.toString()]
+                                ? "Desactivar IA"
+                                : "Activar IA"
                             }
                           >
                             <UserCheck className="w-4 h-4" />
@@ -523,8 +547,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         {(filterType === "all" || filterType === "unsynced") &&
           filteredUnsyncedContacts.length > 0 && (
             <div>
-              <div className="py-2 px-4 bg-[#f0f2f5]">
-                <h3 className="text-xs font-medium text-[#54656f] uppercase">
+              <div className="py-2 px-4 bg-[#f0f2f5] dark:bg-gray-800">
+                <h3 className="text-xs font-medium text-[#54656f] dark:text-gray-400 uppercase">
                   Contactos no sincronizados
                 </h3>
               </div>
@@ -539,7 +563,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     }`}
                     onClick={() => handleSelect(contact, "contact")}
                   >
-                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] flex items-center justify-center text-[#54656f] flex-shrink-0 mr-3 relative">
+                    <div className="w-12 h-12 rounded-full bg-[#DFE5E7] dark:bg-gray-700 flex items-center justify-center text-[#54656f] dark:text-gray-300 flex-shrink-0 mr-3 relative">
                       {contact.name?.charAt(0)?.toUpperCase() || "C"}
                       <input
                         type="checkbox"
@@ -578,16 +602,18 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-[#111b21] truncate pr-2">
+                        <h3 className="font-medium text-[#111b21] dark:text-white truncate pr-2">
                           {contact.name || contact.number || "Sin nombre"}
                         </h3>
                       </div>
                       <div className="flex justify-between items-center">
-                        <p className="text-sm text-[#667781] truncate pr-2">
+                        <p className="text-sm text-[#667781] dark:text-gray-400 truncate pr-2">
                           {localAgente[contact.id.toString()] ? (
-                            <span className="text-[#25D366]">IA activada</span>
+                            <span className="text-[#25D366] dark:text-green-400">
+                              IA activada
+                            </span>
                           ) : (
-                            <span className="text-[#667781]">
+                            <span className="text-[#667781] dark:text-gray-400">
                               IA desactivada
                             </span>
                           )}
@@ -657,12 +683,12 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
         {filterType === "unsynced" && filteredUnsyncedContacts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-4">
-              <UserX className="w-8 h-8 text-[#54656f]" />
+              <UserX className="w-8 h-8 text-[#54656f] dark:text-gray-400" />
             </div>
-            <h3 className="text-[#111b21] font-medium mb-1">
+            <h3 className="text-[#111b21] dark:text-white font-medium mb-1">
               No hay contactos no sincronizados
             </h3>
-            <p className="text-sm text-[#667781] max-w-xs">
+            <p className="text-sm text-[#667781] dark:text-gray-400 max-w-xs">
               Los contactos que te escriban por primera vez aparecerán aquí
             </p>
           </div>
