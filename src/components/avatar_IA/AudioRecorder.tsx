@@ -503,8 +503,8 @@ export default function AudioRecorder({
           width: 80,
           height: 80,
           borderRadius: "50%",
-          background: isRecording ? "#ff5252" : "#fff",
-          color: isRecording ? "#fff" : "#2196f3",
+          background: isRecording ? "#ff5252" : "#ffeaea", // Fondo rojo claro cuando no graba
+          color: isRecording ? "#fff" : "#8B2323",
           border: isRecording ? "2px solid #ff5252" : "none",
           fontSize: 36,
           display: "flex",
@@ -517,7 +517,7 @@ export default function AudioRecorder({
           opacity: isProcessing ? 0.5 : 1,
           pointerEvents: isProcessing ? "none" : "auto",
         }}
-        aria-label={isRecording ? "Detener grabación" : "Iniciar grabación"}
+        aria-label={isRecording ? "Detener grabación" : "Activar micrófono"}
         tabIndex={isProcessing ? -1 : 0}
       >
         {isRecording ? (
@@ -532,6 +532,7 @@ export default function AudioRecorder({
             <rect x="18" y="18" width="12" height="12" rx="3" fill="#fff" />
           </svg>
         ) : (
+          // Micrófono muteado con X (estilo Meet, sin círculo blanco)
           <svg
             width="48"
             height="48"
@@ -539,28 +540,11 @@ export default function AudioRecorder({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <circle cx="24" cy="24" r="24" fill="#fff" />
-            <rect
-              x="18"
-              y="12"
-              width="12"
-              height="24"
-              rx="6"
-              fill="#fff"
-              stroke="#000"
-              strokeWidth="2"
-            />
-            <rect
-              x="21"
-              y="32"
-              width="6"
-              height="8"
-              rx="3"
-              fill="#fff"
-              stroke="#000"
-              strokeWidth="2"
-            />
-            <rect x="22" y="36" width="4" height="4" rx="2" fill="#000" />
+            <path d="M24 14a6 6 0 0 1 6 6v8a6 6 0 0 1-12 0v-8a6 6 0 0 1 6-6z" fill="#fff" stroke="#8B2323" strokeWidth="2" />
+            <rect x="21" y="32" width="6" height="8" rx="3" fill="#fff" stroke="#8B2323" strokeWidth="2" />
+            <rect x="22" y="36" width="4" height="4" rx="2" fill="#8B2323" />
+            <line x1="16" y1="16" x2="32" y2="32" stroke="#8B2323" strokeWidth="3" />
+            <line x1="32" y1="16" x2="16" y2="32" stroke="#8B2323" strokeWidth="3" />
           </svg>
         )}
       </button>
