@@ -62,7 +62,6 @@ export default function AvatarIASection() {
           {/* Muestra el video generado por la IA si existe, si no muestra fallback */}
           <VideoPreview
             videoSrc={videoUrl || "/avatar_IA/video_IA/videoIA.mp4"}
-            showFallback
             className="border-4 border-white rounded-xl bg-black w-full h-full max-w-[900px] max-h-[80vh]"
           />
         </div>

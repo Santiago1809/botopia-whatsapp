@@ -3,157 +3,128 @@ import { useState, useEffect, useRef } from "react";
 
 export default function VideoPreview({
   videoSrc,
-  showFallback,
   className,
 }: {
   videoSrc: string;
-  showFallback?: boolean;
   className?: string;
 }) {
-  // Estado para saber si el video cargó
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  // Estado para saber si el video está pausado por restricción de autoplay
-  const [needsUserPlay, setNeedsUserPlay] = useState(false);
-  // Estado para saber si el usuario ya intentó reproducir manualmente
+  const [currentSrc, setCurrentSrc] = useState("/avatar_IA/video_IA/videoIA.mp4");
+  const [isMuted, setIsMuted] = useState(true);
   const [userTriedPlay, setUserTriedPlay] = useState(false);
-  // Referencia al video
+  const [needsUserPlay, setNeedsUserPlay] = useState(false);
+  const [error, setError] = useState(false);
+  const [fade, setFade] = useState(false); // For fade effect
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  // Forzar recarga y reproducción del video cuando cambia videoSrc
+  const fallbackVideo = "/avatar_IA/video_IA/videoIA.mp4";
+
+  // Handle video switching with fade effect
   useEffect(() => {
-    setLoaded(false);
-    setError(false);
-    setNeedsUserPlay(false);
-    setUserTriedPlay(false);
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.load();
-      console.log("[VideoPreview] useEffect: videoRef", videoRef.current);
+    if (
+      (videoSrc && videoSrc !== fallbackVideo && currentSrc !== videoSrc) ||
+      ((!videoSrc || videoSrc === fallbackVideo) && currentSrc !== fallbackVideo)
+    ) {
+      setFade(true); // Start fade out
+      setTimeout(() => {
+        if (videoSrc && videoSrc !== fallbackVideo) {
+          setCurrentSrc(videoSrc);
+          setIsMuted(false);
+        } else {
+          setCurrentSrc(fallbackVideo);
+          setIsMuted(true);
+        }
+        setUserTriedPlay(false);
+        setNeedsUserPlay(false);
+        setError(false);
+        setFade(false); // Fade in
+      }, 300); // Fade duration (ms)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoSrc]);
 
-  // Intenta reproducir el video cuando se carga
-  const handleLoadedData = () => {
-    setLoaded(true);
-    setError(false);
+  // Play video when src or mute changes
+  useEffect(() => {
     if (videoRef.current) {
-      console.log(
-        "[VideoPreview] handleLoadedData: intentando play()",
-        videoRef.current
-      );
+      videoRef.current.muted = isMuted;
+      videoRef.current.load();
+      videoRef.current.play().catch(() => setNeedsUserPlay(true));
+    }
+  }, [currentSrc, isMuted]);
+
+  const handleLoadedData = () => {
+    if (videoRef.current) {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          setNeedsUserPlay(true);
-          console.warn(
-            "[VideoPreview] No se pudo reproducir el video automáticamente:",
-            err
-          );
-        });
+        playPromise.catch(() => setNeedsUserPlay(true));
       }
     }
-    console.log("[VideoPreview] Video loaded:", videoSrc);
   };
 
-  const START_AT = 3;
-  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    console.log("[VideoPreview] handleLoadedMetadata", video);
-    // Si el video ya está listo, setea el tiempo
-    if (video.readyState >= 2) {
-      video.currentTime = START_AT;
-      console.log("[VideoPreview] currentTime seteado a", START_AT);
-    } else {
-      // Si no, espera al siguiente evento 'canplay'
-      const setTime = () => {
-        video.currentTime = START_AT;
-        video.removeEventListener("canplay", setTime);
-        console.log(
-          "[VideoPreview] currentTime seteado a",
-          START_AT,
-          "(canplay)"
-        );
-      };
-      video.addEventListener("canplay", setTime);
+  const handleEnded = () => {
+    if (currentSrc !== fallbackVideo) {
+      setFade(true);
+      setTimeout(() => {
+        setCurrentSrc(fallbackVideo);
+        setIsMuted(true);
+        setUserTriedPlay(false);
+        setNeedsUserPlay(false);
+        setFade(false);
+      }, 300);
     }
   };
 
   return (
     <div
-      className={`w-full h-full flex items-center justify-center bg-black rounded-xl relative ${
-        className || ""
-      }`}
+      className={`w-full h-full flex items-center justify-center bg-black rounded-xl relative ${className || ""}`}
+      style={{ overflow: "hidden" }}
     >
-      {videoSrc ? (
-        <>
-          <video
-            key={videoSrc + String(userTriedPlay)}
-            ref={videoRef}
-            src={videoSrc}
-            controls={true}
-            autoPlay
-            muted
-            className="rounded-xl w-full h-full object-cover border-4 border-white bg-black"
-            style={{ background: "#222" }}
-            onLoadedData={handleLoadedData}
-            onLoadedMetadata={handleLoadedMetadata}
-            onEnded={() => {
-              if (videoRef.current) {
-                videoRef.current.pause();
-                console.log("[VideoPreview] onEnded: video pausado");
-              }
-            }}
-            onError={(e) => {
-              setLoaded(false);
-              setError(true);
-              console.error(
-                "[VideoPreview] Error cargando video:",
-                videoSrc,
-                e
-              );
-            }}
-            onPlay={() => {
-              setNeedsUserPlay(false);
-              console.log("[VideoPreview] onPlay");
-            }}
-          />
-          {needsUserPlay && (
-            <button
-              className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white text-lg rounded-xl z-10"
-              onClick={async () => {
-                setUserTriedPlay(true);
-                if (videoRef.current) {
-                  videoRef.current.muted = false;
-                  console.log(
-                    "[VideoPreview] Botón: muted=false, intentando play()"
-                  );
-                  await new Promise((res) => setTimeout(res, 0));
-                  videoRef.current
-                    .play()
-                    .then(() => {
-                      console.log("[VideoPreview] Botón: play() exitoso");
-                    })
-                    .catch((err) => {
-                      console.error("[VideoPreview] Botón: play() falló", err);
-                    });
-                }
-              }}
-            >
-              Reproducir video
-            </button>
-          )}
-          {error && (
-            <div className="absolute bottom-2 left-2 bg-black bg-opacity-80 text-white text-xs p-2 rounded">
-              <span>Error cargando video.</span>
-            </div>
-          )}
-        </>
-      ) : null}
-      {showFallback && (!loaded || !videoSrc) && (
-        <div className="absolute inset-0 flex items-center justify-center text-white text-lg bg-black bg-opacity-60 rounded-xl">
-          Cargando video IA...
+      <video
+        key={currentSrc + String(userTriedPlay)}
+        ref={videoRef}
+        src={currentSrc}
+        controls={false}
+        autoPlay
+        muted={isMuted}
+        className={`rounded-xl w-full h-full object-cover border-4 border-white bg-black video-fade ${fade ? "fade-out" : "fade-in"}`}
+        style={{ background: "#222" }}
+        onLoadedData={handleLoadedData}
+        onEnded={handleEnded}
+        onError={() => setError(true)}
+        onPlay={() => setNeedsUserPlay(false)}
+      />
+      {needsUserPlay && (
+        <button
+          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white text-lg rounded-xl z-10"
+          onClick={async () => {
+            setUserTriedPlay(true);
+            if (videoRef.current) {
+              videoRef.current.muted = isMuted;
+              await new Promise((res) => setTimeout(res, 0));
+              videoRef.current.play().catch(() => setNeedsUserPlay(true));
+            }
+          }}
+        >
+          Reproducir video
+        </button>
+      )}
+      {error && (
+        <div className="absolute bottom-2 left-2 bg-black bg-opacity-80 text-white text-xs p-2 rounded">
+          <span>Error cargando video.</span>
         </div>
       )}
+      <style jsx global>{`
+        .video-fade {
+          transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
+            transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fade-in {
+          opacity: 1;
+          transform: scale(1);
+        }
+        .fade-out {
+          opacity: 0;
+          transform: scale(0.98);
+        }
+      `}</style>
     </div>
   );
 }
