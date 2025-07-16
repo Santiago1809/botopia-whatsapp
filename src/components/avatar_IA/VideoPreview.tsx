@@ -15,35 +15,64 @@ export default function VideoPreview({
   const [error, setError] = useState(false);
   // Estado para saber si el video está pausado por restricción de autoplay
   const [needsUserPlay, setNeedsUserPlay] = useState(false);
+  // Estado para saber si el usuario ya intentó reproducir manualmente
+  const [userTriedPlay, setUserTriedPlay] = useState(false);
   // Referencia al video
   const videoRef = useRef<HTMLVideoElement | null>(null);
   // Forzar recarga y reproducción del video cuando cambia videoSrc
   useEffect(() => {
     setLoaded(false);
     setError(false);
+    setNeedsUserPlay(false);
+    setUserTriedPlay(false);
     if (videoRef.current) {
+      videoRef.current.muted = true;
       videoRef.current.load();
-      // Intentar reproducir el video automáticamente
+      console.log("[VideoPreview] useEffect: videoRef", videoRef.current);
+    }
+  }, [videoSrc]);
+
+  // Intenta reproducir el video cuando se carga
+  const handleLoadedData = () => {
+    setLoaded(true);
+    setError(false);
+    if (videoRef.current) {
+      console.log(
+        "[VideoPreview] handleLoadedData: intentando play()",
+        videoRef.current
+      );
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          console.warn("No se pudo reproducir el video automáticamente:", err);
+          setNeedsUserPlay(true);
+          console.warn(
+            "[VideoPreview] No se pudo reproducir el video automáticamente:",
+            err
+          );
         });
       }
     }
-  }, [videoSrc]);
+    console.log("[VideoPreview] Video loaded:", videoSrc);
+  };
 
   const START_AT = 3;
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
+    console.log("[VideoPreview] handleLoadedMetadata", video);
     // Si el video ya está listo, setea el tiempo
     if (video.readyState >= 2) {
       video.currentTime = START_AT;
+      console.log("[VideoPreview] currentTime seteado a", START_AT);
     } else {
       // Si no, espera al siguiente evento 'canplay'
       const setTime = () => {
         video.currentTime = START_AT;
         video.removeEventListener("canplay", setTime);
+        console.log(
+          "[VideoPreview] currentTime seteado a",
+          START_AT,
+          "(canplay)"
+        );
       };
       video.addEventListener("canplay", setTime);
     }
@@ -58,48 +87,55 @@ export default function VideoPreview({
       {videoSrc ? (
         <>
           <video
-            key={videoSrc}
+            key={videoSrc + String(userTriedPlay)}
             ref={videoRef}
             src={videoSrc}
-            controls={false}
+            controls={true}
             autoPlay
+            muted
             className="rounded-xl w-full h-full object-cover border-4 border-white bg-black"
             style={{ background: "#222" }}
-            onLoadedData={() => {
-              setLoaded(true);
-              setError(false);
-              setNeedsUserPlay(false);
-              console.log("Video loaded:", videoSrc);
-            }}
+            onLoadedData={handleLoadedData}
             onLoadedMetadata={handleLoadedMetadata}
             onEnded={() => {
               if (videoRef.current) {
                 videoRef.current.pause();
+                console.log("[VideoPreview] onEnded: video pausado");
               }
             }}
             onError={(e) => {
               setLoaded(false);
               setError(true);
-              console.error("Error cargando video:", videoSrc, e);
+              console.error(
+                "[VideoPreview] Error cargando video:",
+                videoSrc,
+                e
+              );
             }}
-            onPlay={() => setNeedsUserPlay(false)}
-            onPause={() => {
-              // Si el video está al principio y no se ha reproducido, probablemente es por restricción de autoplay
-              if (
-                videoRef.current &&
-                videoRef.current.currentTime < 0.5 &&
-                !videoRef.current.ended
-              ) {
-                setNeedsUserPlay(true);
-              }
+            onPlay={() => {
+              setNeedsUserPlay(false);
+              console.log("[VideoPreview] onPlay");
             }}
           />
           {needsUserPlay && (
             <button
               className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white text-lg rounded-xl z-10"
-              onClick={() => {
+              onClick={async () => {
+                setUserTriedPlay(true);
                 if (videoRef.current) {
-                  videoRef.current.play();
+                  videoRef.current.muted = false;
+                  console.log(
+                    "[VideoPreview] Botón: muted=false, intentando play()"
+                  );
+                  await new Promise((res) => setTimeout(res, 0));
+                  videoRef.current
+                    .play()
+                    .then(() => {
+                      console.log("[VideoPreview] Botón: play() exitoso");
+                    })
+                    .catch((err) => {
+                      console.error("[VideoPreview] Botón: play() falló", err);
+                    });
                 }
               }}
             >
