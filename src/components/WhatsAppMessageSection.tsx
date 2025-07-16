@@ -332,12 +332,13 @@ export default function WhatsAppMessageSection({
             </div>
             {!isAtBottom && (
               <button
-                className="fixed bottom-16 right-4 bg-[#128c7e] text-white p-2 rounded-full shadow-lg hover:bg-[#075e54] transition"
+                className="fixed bottom-16 right-4 bg-[#128c7e] text-white p-3 px-4 rounded-full shadow-lg hover:bg-[#075e54] transition text-base font-medium flex items-center gap-2"
                 onClick={() =>
                   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
                 }
               >
-                ⬇️ Bajar
+                <span className="text-lg">⬇️</span>
+                <span>Bajar</span>
               </button>
             )}
           </>
@@ -345,13 +346,13 @@ export default function WhatsAppMessageSection({
       </div>
 
       {/* Aviso de encriptación */}
-      <div className="flex justify-center items-center py-2 text-xs sm:text-sm text-gray-500 bg-[#f5f5f5]">
+      <div className="flex justify-center items-center py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-[#f5f5f5] dark:bg-[hsl(240,10%,14%)]">
         <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
         Tus mensajes personales están cifrados de extremo a extremo
       </div>
 
       {/* Sección de entrada de mensajes */}
-      <div className="p-2 sm:p-4 bg-[#f5f5f5]">
+      <div className="p-2 sm:p-4 bg-[#f5f5f5] dark:bg-[hsl(240,10%,14%)]">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <Input
@@ -359,7 +360,7 @@ export default function WhatsAppMessageSection({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="w-full rounded-full pl-4 pr-16 py-4 sm:py-3 border-gray-200"
+              className="w-full rounded-full pl-4 pr-16 py-4 sm:py-3 border-gray-200 dark:bg-[hsl(240,10%,10%)] dark:border-[hsl(240,10%,20%)]"
             />
           </div>
 
