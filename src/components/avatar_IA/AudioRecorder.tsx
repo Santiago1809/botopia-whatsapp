@@ -306,7 +306,7 @@ export default function AudioRecorder({
       console.log("[DEBUG] Cloudinary audioUrl:", audioUrl);
       setMessage("Audio subido. Procesando conversación...");
       // Envía el link al microservicio WAV2LIP_MICRO
-      const response = await fetch("https://18.116.242.235:8081/conversation", {
+      const response = await fetch("http://18.116.242.235:8080/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audioUrl }),
