@@ -47,23 +47,27 @@ export default function WhatsAppSideBar({
             ${sidebarOpen ? "left-0" : "-left-full md:left-0"}`}
     >
       <div className="p-3.5 border-b mt-14 md:mt-0 bg-gradient-to-r from-primary to-secondary dark:from-secondary dark:to-primary">
-        <div className="flex justify-between items-center mb-2">
-          <ThemeToggle />
-          <Button
-            variant="outline"
-            className="w-full ml-2 flex cursor-pointer items-center justify-center gap-2 text-primary dark:text-white hover:text-white hover:bg-tertiary/10 border-primary dark:border-white rounded-full transition-all duration-200"
-            onClick={handleLogout}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Volver al dashboard
-          </Button>
+        <div className="flex flex-col items-center gap-2 mb-0">
+          <div className="flex w-full justify-between items-center">
+            <ThemeToggle />
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                className="flex cursor-pointer items-center justify-center gap-1.5 text-primary dark:text-white hover:text-white hover:bg-tertiary/10 border-primary dark:border-white rounded-full transition-all duration-200 px-4 py-2 text-sm"
+                onClick={handleLogout}
+              >
+                <ArrowLeft className="h-4 w-4 flex-shrink-0" />
+                <span>Volver al dashboard</span>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="p-4 bg-card dark:bg-sidebar">
+      <div className="p-4 bg-card dark:bg-[hsl(240,10%,14%)]">
         <div className="relative">
           <Input
             placeholder="Buscar"
-            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-muted border-none"
+            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-[hsl(240,10%,10%)] border-none dark:text-white"
             onChange={handleSearch}
           />
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -77,7 +81,7 @@ export default function WhatsAppSideBar({
           <Input
             placeholder="Número"
             type="tel"
-            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-muted border-none"
+            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-[hsl(240,10%,10%)] border-none dark:text-white"
             value={newNumber}
             onChange={(e) => setNewNumber(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addNumber()}
@@ -89,7 +93,7 @@ export default function WhatsAppSideBar({
             placeholder="Nombre"
             type="text"
             required
-            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-muted border-none"
+            className="pl-10 pr-4 py-2 rounded-full bg-muted dark:bg-[hsl(240,10%,10%)] border-none dark:text-white"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
@@ -144,7 +148,7 @@ export default function WhatsAppSideBar({
           </div>
         ))}
       </div>
-      <div className="p-4 border-t border-border bg-card dark:bg-sidebar">
+      <div className="p-4 border-t border-border bg-card dark:bg-[hsl(240,10%,14%)]">
         <MessagesCard />
       </div>
     </div>
