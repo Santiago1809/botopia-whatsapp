@@ -333,12 +333,13 @@ export default function WhatsAppMessageSection({
             </div>
             {!isAtBottom && (
               <button
-                className="fixed bottom-16 right-4 bg-[#128c7e] text-white p-2 rounded-full shadow-lg hover:bg-[#075e54] transition"
+                className="fixed bottom-16 right-4 bg-[#128c7e] text-white p-3 px-4 rounded-full shadow-lg hover:bg-[#075e54] transition text-base font-medium flex items-center gap-2"
                 onClick={() =>
                   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
                 }
               >
-                ⬇️ Bajar
+                <span className="text-lg">⬇️</span>
+                <span>Bajar</span>
               </button>
             )}
           </>
@@ -360,7 +361,7 @@ export default function WhatsAppMessageSection({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="w-full rounded-full pl-4 pr-16 py-4 sm:py-3 border-gray-200"
+              className="w-full rounded-full pl-4 pr-16 py-4 sm:py-3 border-gray-200 dark:bg-[hsl(240,10%,10%)] dark:border-[hsl(240,10%,20%)]"
             />
           </div>
 

@@ -448,7 +448,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este contacto?"))
                                 onRemoveContact(contact.id);
                             }}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 transition-colors"
                             title="Eliminar contacto"
                           >
                             <Trash className="w-4 h-4" />
@@ -528,7 +528,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                               if (window.confirm("¿Eliminar este grupo?"))
                                 onRemoveGroup(group.id);
                             }}
-                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors"
+                            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 transition-colors"
                             title="Eliminar grupo"
                           >
                             <Trash className="w-4 h-4" />
@@ -616,7 +616,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
                           )}
                         </p>
                         <button
-                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] text-[#54656f]"
+                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] dark:hover:bg-[hsl(240,10%,20%)] text-[#54656f] dark:text-gray-300"
                           title="Eliminar contacto no sincronizado"
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -693,7 +693,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
       </div>
       {/* Botón flotante de sincronización */}
       <button
-        className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] transition-colors z-10"
+        className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#128C7E] dark:hover:bg-[#0D6D54] transition-colors z-10"
         onClick={onSyncClick}
         title="Sincronizar contactos y grupos"
       >

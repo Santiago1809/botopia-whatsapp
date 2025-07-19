@@ -130,7 +130,7 @@ export default function WhatsAppHeader({
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mb-1 mt-2">
               {/* Botón para mostrar contactos en móvil */}
               <Button
                 variant="ghost"
@@ -147,7 +147,7 @@ export default function WhatsAppHeader({
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="text-white bg-primary hover:bg-primary/50 rounded px-2"
+                        className="text-white bg-primary hover:bg-primary/50 rounded px-2 py-2"
                       >
                         {currentAgent
                           ? currentAgent.title
@@ -166,7 +166,7 @@ export default function WhatsAppHeader({
                   </Dialog>
 
                   <div className="hidden md:flex items-center gap-2 sm:gap-4">
-                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-1 rounded-full">
+                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-2 rounded-full">
                       <Switch
                         id={`ai-${selectedNumber.id}`}
                         checked={Boolean(selectedNumber?.aiEnabled)}
@@ -175,11 +175,11 @@ export default function WhatsAppHeader({
                           toggleAi(selectedNumber.number, checked);
                         }}
                       />
-                      <span className="text-xs sm:text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-white">
                         IA
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-1 rounded-full">
+                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-2 rounded-full">
                       <Switch
                         id={`groups-${selectedNumber.id}`}
                         checked={Boolean(selectedNumber?.responseGroups)}
@@ -188,11 +188,11 @@ export default function WhatsAppHeader({
                           toggleGroups(selectedNumber.number, check)
                         }
                       />
-                      <span className="text-xs sm:text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-white">
                         Grupos
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-1 rounded-full">
+                    <div className="flex items-center gap-1 sm:gap-2 bg-primary p-2 rounded-full">
                       <Switch
                         id={`unknown-${selectedNumber.id}`}
                         checked={Boolean(selectedNumber?.aiUnknownEnabled)}
