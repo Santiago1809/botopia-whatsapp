@@ -34,7 +34,7 @@ export default function MessagesCard() {
   }
 
   return (
-    <div className="w-fit max-h-44 text-foreground/80 flex gap-x-2 items-center justify-center text-lg">
+    <div className="w-fit max-h-44 text-foreground/80 flex gap-x-2 items-center justify-center text-md">
       <MessagesSquare />
       Mensajes usados: {credits}
     </div>

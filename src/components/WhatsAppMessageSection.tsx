@@ -96,6 +96,7 @@ export default function WhatsAppMessageSection({
     }
 
     socket.on("chat-history", (data: ChatHistory) => {
+      console.log('Te escribieron')
       // Merge: mantén los mensajes pendientes que no estén en el historial
       setMessages((prev) => {
         // Un mensaje se considera "confirmado" si hay uno igual en el historial (por contenido, fromMe y timestamp cercano)

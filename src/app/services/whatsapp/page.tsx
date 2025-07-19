@@ -4,10 +4,10 @@ import WhatsAppSideBar from "@/components/WhatsAppSideBar";
 import WhatsAppHeader from "@/components/WhatsAppHeader";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chatState";
+import { useSocketContext } from "@/context/SocketContext";
 import { Agent, WhatsappNumber } from "@/types/gobal";
 import { Contact, Group } from "@/types/global";
 import { useCallback, useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import {
@@ -98,6 +98,7 @@ function normalizeUnsyncedContacts(arr: WhatsAppContact[]): WhatsAppContact[] {
 export default function Page() {
   const { logout, isAuthenticated, getToken } = useAuth();
   const { setNumberStatus } = useChat();
+  const { socket, joinRoom, leaveRoom, on, off } = useSocketContext();
   const [whatsappNumbers, setWhatsappNumbers] = useState<WhatsappNumber[]>([]);
   const [selectedNumber, setSelectedNumber] = useState<WhatsappNumber | null>(
     null
@@ -107,7 +108,6 @@ export default function Page() {
     "contact" | "group" | null
   >(null);
   const [qrCodes, setQrCodes] = useState<{ [key: number]: string | null }>({});
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [syncedContacts, setSyncedContacts] = useState<Contact[]>([]);
   const [syncedGroups, setSyncedGroups] = useState<Group[]>([]);
   const [unsyncedContacts, setUnsyncedContacts] = useState<Contact[]>([]);
@@ -288,21 +288,8 @@ export default function Page() {
 
     isInitialized.current = true;
 
-    const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
-    setSocket(newSocket);
-
-    newSocket.on("qr-code", (data) => {
-      if (data.numberId === selectedNumber?.id) {
-        setQrCodes((prev) => ({ ...prev, [data.numberId]: data.qr }));
-      }
-    });
-
     // Solo llamar getNumbers una vez al montar el componente
     getNumbers();
-
-    return () => {
-      newSocket.disconnect();
-    };
   }, [isAuthenticated, logout, getNumbers]);
 
   const toggleAi = useCallback(
@@ -445,17 +432,17 @@ export default function Page() {
   useEffect(() => {
     if (!socket) return;
 
-    if (selectedNumber) {
-      socket.emit("join-room", String(selectedNumber.id));
-    }
-
-    socket.on("qr-code", (data: QrCodeEvent) => {
+    // Función para manejar QR codes
+    const handleQrCode = (...args: unknown[]) => {
+      const data = args[0] as QrCodeEvent;
       if (data.numberId === selectedNumber?.id) {
         setQrCodes((prev) => ({ ...prev, [data.numberId]: data.qr }));
       }
-    });
+    };
 
-    socket.on("whatsapp-ready", async (data: { numberId: string | number }) => {
+    // Función para manejar cuando WhatsApp está listo
+    const handleWhatsAppReady = async (...args: unknown[]) => {
+      const data = args[0] as { numberId: string | number };
       if (data.numberId === selectedNumber?.id) {
         setNumberStatus(data.numberId.toString(), "connected");
         setQrCodes((prev) => ({ ...prev, [data.numberId]: null }));
@@ -494,19 +481,22 @@ export default function Page() {
           setLoadingContacts(false);
         }
       }
-    });
+    };
 
-    socket.on("whatsapp-numbers-updated", () => {
+    // Función para manejar actualización de números
+    const handleNumbersUpdated = () => {
       whatsappNumbers.forEach((num) => {
         removeNumber(num.id.toString());
         setNumberStatus(num.id.toString(), "disconnected");
       });
       setWhatsappNumbers([]);
       setSelectedNumber(null);
-    });
+    };
 
-    // Al recibir un mensaje, selecciona el chat del mensaje más reciente
-    socket.on("chat-history", (data: ChatHistoryData) => {
+    // Función para manejar historial de chat
+    const handleChatHistory = (...args: unknown[]) => {
+      console.log('Te escribieron mano')
+      const data = args[0] as ChatHistoryData;
       if (!data || !data.to) return;
       const isGroup = data.to.endsWith("@g.us");
       // Si NO está sincronizado, refresca la lista de no sincronizados y selecciónalo SIEMPRE
@@ -582,10 +572,10 @@ export default function Page() {
           );
         });
       }
-    });
+    };
 
-    // Refuerza el evento unsynced-contacts-updated para que siempre actualice la lista
-    socket.on("unsynced-contacts-updated", () => {
+    // Función para manejar contactos no sincronizados actualizados
+    const handleUnsyncedContactsUpdated = () => {
       if (selectedNumber) {
         fetch(
           `${BACKEND_URL}/api/unsyncedcontacts?numberid=${selectedNumber.id}`
@@ -613,10 +603,10 @@ export default function Page() {
           })
           .catch(() => setUnsyncedContacts([]));
       }
-    });
+    };
 
-    // NUEVO: refrescar sincronizados cuando el backend desactive IA tras email
-    socket.on("synced-contacts-updated", () => {
+    // Función para manejar contactos sincronizados actualizados
+    const handleSyncedContactsUpdated = () => {
       if (selectedNumber) {
         fetchSynced();
         setSidebarRefreshKey((k) => k + 1);
@@ -629,19 +619,30 @@ export default function Page() {
           }
         }
       }
-    });
+    };
+
+    // Configurar event listeners
+    if (selectedNumber) {
+      joinRoom(String(selectedNumber.id));
+    }
+
+    on("qr-code", handleQrCode);
+    on("whatsapp-ready", handleWhatsAppReady);
+    on("whatsapp-numbers-updated", handleNumbersUpdated);
+    on("chat-history", handleChatHistory);
+    on("unsynced-contacts-updated", handleUnsyncedContactsUpdated);
+    on("synced-contacts-updated", handleSyncedContactsUpdated);
 
     return () => {
       if (selectedNumber) {
-        socket.emit("leave-room", String(selectedNumber.id));
+        leaveRoom(String(selectedNumber.id));
       }
-      socket.off("qr-code");
-      socket.off("whatsapp-ready");
-      socket.off("whatsapp-numbers-updated");
-      socket.off("chat-history");
-      // Limpiar también los nuevos listeners
-      socket.off("synced-contacts-updated");
-      socket.off("unsynced-contacts-updated");
+      off("qr-code", handleQrCode);
+      off("whatsapp-ready", handleWhatsAppReady);
+      off("whatsapp-numbers-updated", handleNumbersUpdated);
+      off("chat-history", handleChatHistory);
+      off("unsynced-contacts-updated", handleUnsyncedContactsUpdated);
+      off("synced-contacts-updated", handleSyncedContactsUpdated);
     };
   }, [
     socket,
@@ -655,6 +656,10 @@ export default function Page() {
     syncedGroups,
     fetchSynced,
     selectedChatId,
+    joinRoom,
+    leaveRoom,
+    on,
+    off,
   ]);
 
   // Resetear lastAutoChat cuando el usuario selecciona manualmente un chat o cambia de número
@@ -775,7 +780,7 @@ export default function Page() {
         }
 
         // Emit join-room for the new number so QR events are received
-        socket?.emit("join-room", String(numberId));
+        joinRoom(String(numberId));
       } catch (error) {
         console.error("❌ Error al solicitar código QR:", error);
         alert("⚠️ Error al solicitar el código QR de WhatsApp");
@@ -1373,12 +1378,12 @@ export default function Page() {
           }
         }}
       >
-        <DialogContent className="max-w-xl w-[500px] h-[600px] min-h-[600px] max-h-[600px] flex flex-col">
+        <DialogContent className="max-w-xl w-[500px] h-[600px] min-h-[600px] max-h-[600px] flex flex-col bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold mb-2 text-primary">
+            <DialogTitle className="text-2xl font-bold mb-2 text-[#411E8A] dark:text-blue-400">
               Sincronizar contactos y grupos
             </DialogTitle>
-            <DialogDescription className="mb-4 text-gray-600">
+            <DialogDescription className="mb-4 text-gray-600 dark:text-gray-300">
               Selecciona los contactos y grupos de WhatsApp que deseas
               sincronizar con el agente. Puedes actualizar tu selección en
               cualquier momento.
@@ -1386,8 +1391,8 @@ export default function Page() {
           </DialogHeader>
           {loadingContacts && (
             <div className="flex items-center justify-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-              <span className="ml-2 text-primary">Cargando contactos...</span>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#411E8A] dark:border-blue-400 border-t-transparent"></div>
+              <span className="ml-2 text-[#411E8A] dark:text-blue-400">Cargando contactos...</span>
             </div>
           )}
           <div className="flex justify-between gap-2 mb-4 items-center">
@@ -1395,8 +1400,8 @@ export default function Page() {
               <button
                 className={`px-4 py-1 rounded-full font-semibold border transition ${
                   filterType === "all"
-                    ? "bg-primary text-white"
-                    : "bg-gray-200 text-gray-700"
+                    ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                 }`}
                 onClick={() => setFilterType("all")}
               >
@@ -1405,8 +1410,8 @@ export default function Page() {
               <button
                 className={`px-4 py-1 rounded-full font-semibold border transition ${
                   filterType === "contacts"
-                    ? "bg-primary text-white"
-                    : "bg-gray-200 text-gray-700"
+                    ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                 }`}
                 onClick={() => setFilterType("contacts")}
               >
@@ -1415,8 +1420,8 @@ export default function Page() {
               <button
                 className={`px-4 py-1 rounded-full font-semibold border transition ${
                   filterType === "groups"
-                    ? "bg-primary text-white"
-                    : "bg-gray-200 text-gray-700"
+                    ? "bg-gradient-to-r from-[#411E8A] to-[#050044] text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                 }`}
                 onClick={() => setFilterType("groups")}
               >
@@ -1424,7 +1429,7 @@ export default function Page() {
               </button>
             </div>
             <button
-              className="p-2 rounded-full border bg-gray-200 text-gray-700 hover:bg-primary hover:text-white text-xs transition flex items-center justify-center"
+              className="p-2 rounded-full border bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-[#411E8A] dark:hover:bg-blue-600 hover:text-white text-xs transition flex items-center justify-center border-gray-300 dark:border-gray-600"
               onClick={async () => {
                 if (!selectedNumber) return;
                 setLoadingContacts(true);
@@ -1464,7 +1469,7 @@ export default function Page() {
             <input
               type="text"
               placeholder="Buscar contacto o grupo..."
-              className="mb-2 w-full px-3 py-1 rounded border border-gray-200"
+              className="mb-2 w-full px-3 py-1 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#411E8A] dark:focus:ring-blue-500 focus:border-[#411E8A] dark:focus:border-blue-500"
               value={contactSearch}
               onChange={(e) => setContactSearch(e.target.value)}
             />
@@ -1473,19 +1478,19 @@ export default function Page() {
             {(filterType === "all" || filterType === "contacts") && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg text-secondary">
+                  <h3 className="font-semibold text-lg text-[#050044] dark:text-gray-200">
                     Contactos
                   </h3>
                   <div className="flex gap-2">
                     <button
-                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
+                      className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-[#411E8A] dark:hover:bg-blue-600 hover:text-white transition border border-gray-300 dark:border-gray-600"
                       onClick={handleSelectAll}
                       disabled={isSelectAllDisabled}
                     >
                       Seleccionar todos
                     </button>
                     <button
-                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-red-400 hover:text-white transition"
+                      className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-red-400 dark:hover:bg-red-600 hover:text-white transition border border-gray-300 dark:border-gray-600"
                       onClick={handleDeselectAll}
                       disabled={isDeselectAllDisabled}
                     >
@@ -1497,13 +1502,13 @@ export default function Page() {
                   <input
                     type="text"
                     placeholder="Buscar contacto..."
-                    className="mb-2 w-full px-3 py-1 rounded border border-gray-200"
+                    className="mb-2 w-full px-3 py-1 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#411E8A] dark:focus:ring-blue-500 focus:border-[#411E8A] dark:focus:border-blue-500"
                     value={contactSearch}
                     onChange={(e) => setContactSearch(e.target.value)}
                   />
                 )}
                 {filteredPersonalContactsToShow.length === 0 ? (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     No hay contactos disponibles.
                   </div>
                 ) : (
@@ -1512,16 +1517,16 @@ export default function Page() {
                       (contact: WhatsAppContact) => (
                         <li
                           key={contact.id}
-                          className="flex items-center p-2 rounded hover:bg-gray-100 transition"
+                          className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                         >
                           <input
                             type="checkbox"
                             checked={selectedContacts.includes(contact.id)}
                             onChange={() => handleContactToggle(contact.id)}
-                            className="mr-3 accent-primary"
+                            className="mr-3 accent-[#411E8A] dark:accent-blue-500"
                           />
                           <span
-                            className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap"
+                            className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap text-gray-900 dark:text-gray-100"
                             title={contact.name || contact.number}
                           >
                             {contact.name || contact.number}
@@ -1536,12 +1541,12 @@ export default function Page() {
             {(filterType === "all" || filterType === "groups") && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg text-secondary">
+                  <h3 className="font-semibold text-lg text-[#050044] dark:text-gray-200">
                     Grupos
                   </h3>
                   <div className="flex gap-2">
                     <button
-                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-primary hover:text-white transition"
+                      className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-[#411E8A] dark:hover:bg-blue-600 hover:text-white transition border border-gray-300 dark:border-gray-600"
                       onClick={() =>
                         setSelectedGroups(groupContacts.map((g) => g.id))
                       }
@@ -1550,7 +1555,7 @@ export default function Page() {
                       Seleccionar todos
                     </button>
                     <button
-                      className="text-xs px-3 py-1 bg-gray-200 rounded-full hover:bg-red-400 hover:text-white transition"
+                      className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-red-400 dark:hover:bg-red-600 hover:text-white transition border border-gray-300 dark:border-gray-600"
                       onClick={() => setSelectedGroups([])}
                       disabled={selectedGroups.length === 0}
                     >
@@ -1562,14 +1567,14 @@ export default function Page() {
                   <input
                     type="text"
                     placeholder="Buscar grupo..."
-                    className="mb-2 w-full px-3 py-1 rounded border border-gray-200"
+                    className="mb-2 w-full px-3 py-1 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#411E8A] dark:focus:ring-blue-500 focus:border-[#411E8A] dark:focus:border-blue-500"
                     value={groupSearch}
                     onChange={(e) => setGroupSearch(e.target.value)}
                   />
                 )}
                 {filterType === "all" && <></>}
                 {filteredGroupContactsToShow.length === 0 ? (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     No hay grupos disponibles.
                     <br />
                     Asegúrate de que este número esté agregado a los grupos en
@@ -1580,16 +1585,16 @@ export default function Page() {
                     {filteredGroupContactsToShow.map((group: WhatsAppGroup) => (
                       <li
                         key={group.id}
-                        className="flex items-center p-2 rounded hover:bg-gray-100 transition"
+                        className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                       >
                         <input
                           type="checkbox"
                           checked={selectedGroups.includes(group.id)}
                           onChange={() => handleGroupToggle(group.id)}
-                          className="mr-3 accent-primary"
+                          className="mr-3 accent-[#411E8A] dark:accent-blue-500"
                         />
                         <span
-                          className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap"
+                          className="font-medium text-base max-w-[180px] truncate overflow-hidden whitespace-nowrap text-gray-900 dark:text-gray-100"
                           title={group.name || group.number}
                         >
                           {group.name || group.number}
@@ -1603,7 +1608,7 @@ export default function Page() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2 mt-6">
             <button
-              className="px-6 py-2 bg-primary text-white rounded-full font-semibold shadow hover:bg-secondary transition disabled:opacity-50"
+              className="px-6 py-2 bg-gradient-to-r from-[#411E8A] to-[#050044] text-white rounded-full font-semibold shadow hover:from-[#050044] hover:to-[#411E8A] transition disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={
                 (selectedContacts.length === 0 &&
                   selectedGroups.length === 0) ||
@@ -1621,7 +1626,7 @@ export default function Page() {
               )}
             </button>
             <DialogClose asChild>
-              <button className="px-6 py-2 bg-gray-200 rounded-full font-semibold">
+              <button className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600">
                 Cerrar
               </button>
             </DialogClose>

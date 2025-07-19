@@ -90,7 +90,7 @@ export default function WhatsAppHeader({
   };
 
   return (
-    <div className="flex items-center justify-between h-4 p-8 bg-secondary dark:bg-primary text-white sticky top-0 z-20 w-full">
+    <div className="flex items-center justify-between h-4 p-8 bg-secondary text-white sticky top-0 z-20 w-full">
       <div className="flex items-center gap-2 w-full">
         <Button
           variant="ghost"
@@ -201,7 +201,7 @@ export default function WhatsAppHeader({
                           toggleUnknownAi(selectedNumber.number, check)
                         }
                       />
-                      <span className="text-xs sm:text-sm font-semibold text-white">
+                      <span className="text-xs sm:text-sm font-medium text-white">
                         No agregados
                       </span>
                     </div>

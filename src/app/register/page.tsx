@@ -7,7 +7,6 @@ import Image from "next/image";
 import DiagonalBackground from "@/components/DiagonalBackground";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import VerityOTPCode from "@/components/VerityOTPCode";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -18,10 +17,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
-  const [step, setStep] = useState(1); // 1: form, 2: OTP verification, 3: success
-  const [otpCode, setOtpCode] = useState("");
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const router = useRouter();
   const { register } = useAuth();
 
@@ -52,13 +49,6 @@ export default function Register() {
       return;
     }
 
-    // Validación del número de teléfono
-    if (!phoneNumber || phoneNumber.trim() === "") {
-      setError("El número de teléfono es requerido");
-      setIsSubmitting(false);
-      return;
-    }
-
     // Validación del formato del número de teléfono (solo dígitos)
     if (phoneNumber && !/^\d+$/.test(phoneNumber)) {
       setError("El número de teléfono debe contener solo dígitos");
@@ -67,117 +57,22 @@ export default function Register() {
     }
 
     try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-      
-      // Solicitar código OTP para WhatsApp antes de registrar
-      const response = await fetch(`${BACKEND_URL}/api/auth/request-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          countryCode: countryCode,
-          type: "whatsapp"
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al enviar código OTP");
-      }
-
-      // Si el OTP se envió correctamente, pasar al paso 2
-      setStep(2);
+      await register(username, email, password, countryCode, phoneNumber);
+      // En lugar de redirigir al home, guardamos el email y mostramos mensaje de éxito
+      setRegisteredEmail(email);
+      setSuccess(true);
+      // Esperar 3 segundos y luego redirigir a verificación WhatsApp
+      setTimeout(() => {
+        router.push(
+          `/verify-whatsapp?email=${encodeURIComponent(
+            email
+          )}&phone=${encodeURIComponent(phoneNumber)}`
+        );
+      }, 3000);
     } catch (error) {
       setError((error as Error)?.message);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifyingOtp(true);
-    setError("");
-
-    if (otpCode.length !== 6) {
-      setError("El código debe tener 6 dígitos");
-      setIsVerifyingOtp(false);
-      return;
-    }
-
-    try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-
-      // Verificar el código OTP
-      const verifyResponse = await fetch(`${BACKEND_URL}/api/auth/verify-whatsapp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "phone",
-          phone: phoneNumber,
-          code: otpCode,
-        }),
-      });
-
-      if (!verifyResponse.ok) {
-        const errorData = await verifyResponse.json();
-        throw new Error(errorData.message || "Código inválido");
-      }
-
-      // Si el OTP es válido, proceder con el registro
-      await register(username, email, password, countryCode, phoneNumber);
-      
-      // Mostrar mensaje de éxito con el correo
-      setRegisteredEmail(email);
-      setStep(3);
-      
-      // Redirigir al login después de 5 segundos
-      setTimeout(() => {
-        router.push("/login?registered=true");
-      }, 5000);
-      
-    } catch (error) {
-      setError((error as Error)?.message);
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-
-      const response = await fetch(`${BACKEND_URL}/api/auth/request-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          countryCode: countryCode,
-          type: "whatsapp"
-        }),
-      });
-
-      if (response.ok) {
-        setError("");
-        // Mostrar mensaje de éxito temporal
-        const successDiv = document.createElement("div");
-        successDiv.className = "mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md text-sm";
-        successDiv.textContent = "Código reenviado exitosamente";
-        const form = document.querySelector("form");
-        const firstChild = form?.firstChild;
-        if (form && firstChild) {
-          form.insertBefore(successDiv, firstChild);
-        }
-        setTimeout(() => successDiv.remove(), 3000);
-      }
-    } catch {
-      setError("Error al reenviar el código");
     }
   };
 
@@ -198,26 +93,18 @@ export default function Register() {
             priority
           />
           <h1 className="text-xl sm:text-2xl font-bold text-foreground text-center">
-            {step === 3 ? "¡Registro Exitoso!" : step === 2 ? "Verificar WhatsApp" : "Únete a Botopia"}
+            {success ? "¡Registro Exitoso!" : "Únete a Botopia"}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2 text-center">
-            {step === 3
+            {success
               ? "Tu cuenta ha sido creada. Revisa tu correo electrónico para activar tu cuenta."
-              : step === 2
-              ? "Ingresa el código de 6 dígitos que enviamos a tu WhatsApp para continuar"
               : "Crea una cuenta y comienza a disfrutar de todas las funcionalidades de nuestra plataforma"}
           </p>
-          {step === 2 && phoneNumber && (
-            <p className="text-sm text-primary mt-2 text-center font-medium">
-              Código enviado a: {countryCode} {phoneNumber}
-            </p>
-          )}
         </div>
 
         {/* Formulario o mensaje de éxito - Lado derecho */}
         <div className="md:w-3/5 p-6 sm:p-8 bg-card">
-          {step === 3 ? (
-            // Mensaje de registro exitoso
+          {success ? (
             <div className="flex flex-col items-center justify-center h-full">
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -243,7 +130,8 @@ export default function Register() {
                   <strong>{registeredEmail}</strong>
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
-                  En unos segundos serás redirigido para iniciar sesión...
+                  En unos segundos serás redirigido para verificar tu número de
+                  WhatsApp...
                 </p>
                 <div className="flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -253,62 +141,7 @@ export default function Register() {
                 </div>
               </div>
             </div>
-          ) : step === 2 ? (
-            // Verificación OTP
-            <div>
-              <div className="mb-6 sm:mb-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-                  Código de verificación
-                </h2>
-                <p className="text-sm sm:text-base text-muted-foreground mt-2">
-                  Para completar tu registro, ingresa el código de 6 dígitos que enviamos a tu WhatsApp
-                </p>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                  {error}
-                </div>
-              )}
-
-              <VerityOTPCode
-                code={otpCode}
-                setCode={setOtpCode}
-                error={error}
-                isSubmitting={isVerifyingOtp}
-                handleSubmit={handleOtpSubmit}
-                showHeader={false}
-                headerTitle="Verificar WhatsApp"
-                headerDescription="Ingresa el código de 6 dígitos que enviamos a tu WhatsApp"
-                buttonText="Verificar y registrarse"
-                buttonLoadingText="Verificando y registrando..."
-              />
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  ¿No recibiste el código?
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  className="text-primary hover:text-primary/80 font-medium text-sm"
-                >
-                  Reenviar código
-                </button>
-              </div>
-
-              <div className="mt-8 text-center">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-muted-foreground hover:text-foreground text-sm"
-                >
-                  ← Volver al formulario
-                </button>
-              </div>
-            </div>
           ) : (
-            // Formulario de registro (Paso 1)
             <>
               <div className="mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground">
@@ -387,7 +220,6 @@ export default function Register() {
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="Número de celular"
                       className="flex-1 sm:rounded-l-none"
-                      required
                     />
                   </div>
                 </div>
@@ -437,7 +269,7 @@ export default function Register() {
                     {isSubmitting ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                     ) : null}
-                    {isSubmitting ? "Enviando código..." : "Enviar código de verificación"}
+                    {isSubmitting ? "Registrando..." : "Registrarse"}
                   </button>
                 </div>
               </form>

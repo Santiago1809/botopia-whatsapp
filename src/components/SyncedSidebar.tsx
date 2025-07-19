@@ -10,7 +10,7 @@ import {
   UserX,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { useSocketContext } from "@/context/SocketContext";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -58,7 +58,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   const [filterType, setFilterType] = useState<
     "all" | "contacts" | "groups" | "unsynced"
   >("all");
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const { getChatHistory, on, off } = useSocketContext();
   const [showActions, setShowActions] = useState(false);
 
   // Estado local optimista para agenteHabilitado
@@ -75,13 +75,11 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
     setLocalAgente(estado);
   }, [contacts, groups, unsyncedContacts]);
 
-  // Inicializar socket
+  // Efecto para configurar event listeners
   React.useEffect(() => {
-    const newSocket = io(BACKEND_URL, { transports: ["websocket"] });
-    setSocket(newSocket);
-
-    // Escuchar actualizaciones de contactos no sincronizados
-    newSocket.on("unsynced-contacts-updated", (data) => {
+    // Función para manejar actualizaciones de contactos no sincronizados
+    const handleUnsyncedContactsUpdated = (...args: unknown[]) => {
+      const data = args[0] as { numberid?: string | number };
       if (
         data.numberid &&
         data.numberid.toString() === selectedNumberId?.toString()
@@ -101,13 +99,15 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
             }
           });
       }
-    });
+    };
+
+    // Configurar event listener
+    on("unsynced-contacts-updated", handleUnsyncedContactsUpdated);
 
     return () => {
-      newSocket.disconnect();
-      newSocket.off("unsynced-contacts-updated");
+      off("unsynced-contacts-updated", handleUnsyncedContactsUpdated);
     };
-  }, [selectedNumberId]);
+  }, [selectedNumberId, on, off]);
 
   // Escuchar evento global para actualizar la prop unsyncedContacts si el padre lo permite
   React.useEffect(() => {
@@ -172,11 +172,8 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
 
   const handleSelect = (item: Contact | Group, type: "contact" | "group") => {
     onSelect(item, type);
-    if (socket && selectedNumberId) {
-      socket.emit("get-chat-history", {
-        numberId: selectedNumberId,
-        to: item.wa_id || item.id,
-      });
+    if (selectedNumberId) {
+      getChatHistory(Number(selectedNumberId), item.wa_id || item.id);
     }
   };
 
@@ -203,7 +200,7 @@ const SyncedSidebar: React.FC<SyncedSidebarProps> = ({
   return (
     <div className="h-full w-full flex flex-col relative bg-gray-50 dark:bg-gray-900">
       {/* Cabecera con estilo Botopia */}
-      <div className="bg-gradient-to-l h-16 from-seconday to-primary text-white flex justify-between items-center px-4 shadow-md z-10">
+      <div className="bg-secondary h-16 text-white flex justify-between items-center px-4 shadow-md z-10">
         <h2 className="text-lg font-semibold">Chats</h2>
         <div className="flex items-center gap-3">
           <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
