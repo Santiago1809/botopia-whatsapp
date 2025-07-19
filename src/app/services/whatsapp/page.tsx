@@ -495,7 +495,7 @@ export default function Page() {
 
     // Función para manejar historial de chat
     const handleChatHistory = (...args: unknown[]) => {
-      console.log('Te escribieron mano')
+      console.log("Te escribieron mano");
       const data = args[0] as ChatHistoryData;
       if (!data || !data.to) return;
       const isGroup = data.to.endsWith("@g.us");
@@ -1392,7 +1392,9 @@ export default function Page() {
           {loadingContacts && (
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#411E8A] dark:border-blue-400 border-t-transparent"></div>
-              <span className="ml-2 text-[#411E8A] dark:text-blue-400">Cargando contactos...</span>
+              <span className="ml-2 text-[#411E8A] dark:text-blue-400">
+                Cargando contactos...
+              </span>
             </div>
           )}
           <div className="flex justify-between gap-2 mb-4 items-center">
