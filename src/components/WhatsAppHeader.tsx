@@ -90,7 +90,7 @@ export default function WhatsAppHeader({
   };
 
   return (
-    <div className="flex items-center justify-between h-4 p-8 pb-8 bg-secondary dark:bg-primary text-white sticky top-0 z-20 w-full">
+    <div className="flex items-center justify-between h-4 p-8 bg-secondary text-white sticky top-0 z-20 w-full">
       <div className="flex items-center gap-2 w-full">
         <Button
           variant="ghost"
@@ -201,7 +201,7 @@ export default function WhatsAppHeader({
                           toggleUnknownAi(selectedNumber.number, check)
                         }
                       />
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-xs sm:text-sm font-medium text-white">
                         No agregados
                       </span>
                     </div>
@@ -248,24 +248,30 @@ export default function WhatsAppHeader({
           {/* Pestañas */}
           <div className="flex">
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "contacts" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "contacts"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("contacts")}
             >
               Contactos
             </button>
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "groups" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "groups"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("groups")}
             >
               Grupos
             </button>
             <button
-              className={`flex-1 py-2 text-sm font-medium ${
-                activeTab === "unsynced" ? "text-primary" : "text-gray-500"
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "unsynced"
+                  ? "text-white bg-primary/20 border-b-2 border-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
               onClick={() => setActiveTab("unsynced")}
             >

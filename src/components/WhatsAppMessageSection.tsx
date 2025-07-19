@@ -96,6 +96,7 @@ export default function WhatsAppMessageSection({
     }
 
     socket.on("chat-history", (data: ChatHistory) => {
+      console.log('Te escribieron')
       // Merge: mantén los mensajes pendientes que no estén en el historial
       setMessages((prev) => {
         // Un mensaje se considera "confirmado" si hay uno igual en el historial (por contenido, fromMe y timestamp cercano)
@@ -346,13 +347,13 @@ export default function WhatsAppMessageSection({
       </div>
 
       {/* Aviso de encriptación */}
-      <div className="flex justify-center items-center py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-[#f5f5f5] dark:bg-[hsl(240,10%,14%)]">
+      <div className="flex justify-center items-center py-2 text-xs sm:text-sm">
         <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
         Tus mensajes personales están cifrados de extremo a extremo
       </div>
 
       {/* Sección de entrada de mensajes */}
-      <div className="p-2 sm:p-4 bg-[#f5f5f5] dark:bg-[hsl(240,10%,14%)]">
+      <div className="p-2 sm:p-4">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <Input
