@@ -225,51 +225,48 @@ export default function FilterSidebar({
                 <button
                   onClick={() => onTagToggle(tag)}
                   className="w-full text-left px-3 py-2 text-sm"
+                  title={tag}
                 >
-                  <div className="flex items-center justify-between pr-16">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{tag}</span>
+                  <div className="flex items-center justify-between pr-2">
+                    <div className="flex items-center gap-2 max-w-[120px]">
+                      <span className="truncate block max-w-[80px]" title={tag}>{tag}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        isSelected 
+                          ? 'bg-primary text-white' 
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      }`}>
+                        {tagCount}
+                      </span>
+                      {/* Íconos de acción solo para etiquetas de línea */}
                       {isFromLine && (
-                        <span className="text-xs bg-primary/20 text-primary px-1 py-0.5 rounded">
-                          Línea
+                        <span className="flex gap-1 ml-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditingTag(tag);
+                            }}
+                            className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-600 dark:bg-blue-900/50 dark:hover:bg-blue-800/50"
+                            title="Editar etiqueta"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTag(tag);
+                            }}
+                            className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/50 dark:hover:bg-red-800/50"
+                            title="Eliminar etiqueta"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
                         </span>
                       )}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      isSelected 
-                        ? 'bg-primary text-white' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                    }`}>
-                      {tagCount}
-                    </span>
                   </div>
                 </button>
-                
-                {/* Botones de acción (solo para etiquetas de línea) */}
-                {isFromLine && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditingTag(tag);
-                      }}
-                      className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-600 dark:bg-blue-900/50 dark:hover:bg-blue-800/50"
-                      title="Editar etiqueta"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteTag(tag);
-                      }}
-                      className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/50 dark:hover:bg-red-800/50"
-                      title="Eliminar etiqueta"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}

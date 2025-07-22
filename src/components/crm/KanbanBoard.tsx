@@ -10,6 +10,7 @@ interface KanbanBoardProps {
   onContactStatusChange: (contactId: string, newStatus: string) => void;
   onContactUpdate?: (contactId: string, updates: Partial<Contact>) => void;
   onContactSelect?: (contact: Contact) => void;
+  onGotoChat?: (contact: Contact) => void;
 }
 
 const statusColumns = [
@@ -84,17 +85,22 @@ interface ContactCardProps {
   index: number;
   onContactUpdate?: (contactId: string, updates: Partial<Contact>) => void;
   onContactSelect?: (contact: Contact) => void;
+  onGotoChat?: (contact: Contact) => void;
 }
 
-const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpdate, onContactSelect }) => {
+const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpdate, onContactSelect, onGotoChat }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(contact.nombre || '');
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [showSeeMore, setShowSeeMore] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -121,6 +127,17 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
       tagInputRef.current.focus();
     }
   }, [isAddingTag]);
+
+  useEffect(() => {
+    if (messageRef.current && measureRef.current && !expanded) {
+      // Medir si el mensaje se trunca visualmente (más de 2 líneas)
+      const messageHeight = messageRef.current.offsetHeight;
+      const measureHeight = measureRef.current.offsetHeight;
+      setShowSeeMore(messageHeight < measureHeight);
+    } else if (expanded) {
+      setShowSeeMore(false);
+    }
+  }, [contact.ultimoMensaje?.mensaje, expanded]);
 
   const handleSaveName = () => {
     if (onContactUpdate && editedName.trim() !== contact.nombre) {
@@ -171,6 +188,13 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
       onContactSelect(contact);
     }
   };
+
+  const priorityOptions = [
+    { value: 'alta', label: 'Alta' },
+    { value: 'media', label: 'Media' },
+    { value: 'baja', label: 'Baja' },
+  ];
+
   return (
     <Draggable draggableId={contact.id} index={index}>
       {(provided, snapshot) => (
@@ -178,12 +202,13 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-                className={`
-                  bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border-l-4 p-4 mb-3 w-full max-w-[320px]
-                  hover:shadow-md transition-all cursor-pointer
-                  ${statusColumns.find(col => col.id === contact.status)?.cardColor}
-                  ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
-                `}
+          className={`
+            relative bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border-l-4 p-4 mb-2 w-full max-w-[320px] ${isEditingName ? 'min-h-[300px]' : 'min-h-[260px]'}
+            hover:shadow-md transition-all cursor-pointer
+            ${statusColumns.find(col => col.id === contact.status)?.cardColor}
+            ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
+            ${isEditingName ? 'ring-2 ring-primary/60 border-primary/80 shadow-lg' : ''}
+          `}
           onClick={handleContactClick}
         >
           {/* Header */}
@@ -191,94 +216,103 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 {isEditingName ? (
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="w-full">
+                    <div className="flex justify-end gap-1 mb-2">
+                      <button
+                        onClick={handleSaveName}
+                        className="p-1 hover:bg-green-100 rounded text-green-600 border border-green-200"
+                        tabIndex={0}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditedName(contact.nombre || '');
+                          setIsEditingName(false);
+                        }}
+                        className="p-1 hover:bg-red-100 rounded text-red-600 border border-red-200"
+                        tabIndex={0}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                     <input
                       ref={nameInputRef}
                       type="text"
                       value={editedName}
                       onChange={(e) => setEditedName(e.target.value)}
                       onKeyDown={(e) => handleKeyPress(e, 'name')}
-                      className="text-base font-semibold bg-transparent border-b border-blue-500 focus:outline-none flex-1"
+                      className="text-base font-semibold bg-white dark:bg-gray-900 border border-primary/40 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/60 w-full shadow-sm min-w-0"
                       placeholder="Nombre del contacto"
                     />
-                    <button
-                      onClick={handleSaveName}
-                      className="p-1 hover:bg-green-100 rounded text-green-600"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditedName(contact.nombre || '');
-                        setIsEditingName(false);
-                      }}
-                      className="p-1 hover:bg-red-100 rounded text-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                 ) : (
                   <h3 className="font-semibold text-foreground text-base">
                     {contact.nombre && contact.nombre.trim() !== '' ? contact.nombre : 'Sin nombre'}
                   </h3>
                 )}
-                {/* AI Status Indicator */}
-                <div className={`w-2 h-2 rounded-full ${contact.estaAlHabilitado ? 'bg-green-500' : 'bg-red-500'}`} 
-                     title={contact.estaAlHabilitado ? 'IA Activa' : 'IA Desactivada'}>
-                </div>
               </div>
               <p className="text-sm text-muted-foreground font-medium">
                 {contact.telefono || 'Sin teléfono'}
               </p>
             </div>
             <div className="flex items-center space-x-1">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(contact.prioridad)}`}>
-                {contact.prioridad}
-              </span>
-              <div className="relative" ref={menuRef}>
-                <button 
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                >
-                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                </button>
-                
-                {/* Dropdown Menu */}
-                {showMenu && (
-                  <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[150px]">
-                    <button
-                      onClick={() => {
-                        setIsEditingName(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Editar nombre
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsAddingTag(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Agregar etiqueta
-                    </button>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(contact.prioridad)}`}>{contact.prioridad}</span>
+            </div>
+            <div className="relative" ref={menuRef}>
+              <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+              </button>
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[150px]">
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    {priorityOptions.map(opt => (
+                      <button
+                        key={opt.value}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-primary/10 flex items-center gap-2 ${contact.prioridad === opt.value ? 'font-bold text-primary' : ''}`}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setShowMenu(false);
+                          if (onContactUpdate) onContactUpdate(contact.id, { prioridad: opt.value });
+                        }}
+                      >
+                        <span className={`inline-block w-2 h-2 rounded-full ${getPriorityColor(opt.value).split(' ')[0]}`}></span>
+                        {opt.label}
+                        {contact.prioridad === opt.value && <Check className="w-3 h-3 ml-1" />}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => {
+                      setIsEditingName(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Editar nombre
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingTag(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar etiqueta
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Contact Info */}
           <div className="space-y-2">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span>{contact.identificacion}</span>
-            </div>
-            
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
               <span>Última actividad: {formatDate(contact.ultimaActividad)}</span>
@@ -349,9 +383,42 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
               <p className="text-xs text-muted-foreground mb-1">
                 Último mensaje ({contact.ultimoMensaje.remitente}):
               </p>
-                <p className="text-sm text-foreground">
-                {contact.ultimoMensaje.mensaje}
-              </p>
+              <div className="relative">
+                <p
+                  ref={messageRef}
+                  className={`text-sm text-foreground ${!expanded ? 'line-clamp-2' : ''}`}
+                  style={{ minHeight: '3.3em', maxWidth: '100%', wordBreak: 'break-word' }}
+                >
+                  {contact.ultimoMensaje.mensaje}
+                </p>
+                {/* Medidor oculto para saber si hay truncamiento visual */}
+                {!expanded && (
+                  <span
+                    ref={measureRef}
+                    className="text-sm text-foreground invisible block absolute z-[-1] left-0 top-0 w-full"
+                    style={{ whiteSpace: 'pre-line', maxWidth: '100%', wordBreak: 'break-word' }}
+                  >
+                    {contact.ultimoMensaje.mensaje}
+                  </span>
+                )}
+                {showSeeMore && !expanded && (
+                  <div className="absolute bottom-[-0.5em] right-0 w-full flex justify-end items-end pointer-events-none">
+                    <button
+                      className="text-xs text-primary underline pr-2 pointer-events-auto bg-opacity-80 mt-2"
+                      style={{ background: 'inherit' }}
+                      onClick={e => { e.stopPropagation(); setExpanded(true); }}
+                    >Ver más</button>
+                  </div>
+                )}
+              </div>
+              {expanded && (
+                <div className="flex justify-end mt-1">
+                  <button
+                    className="text-xs text-primary underline pr-2"
+                    onClick={e => { e.stopPropagation(); setExpanded(false); }}
+                  >Ver menos</button>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 {formatDate(contact.ultimoMensaje.timestamp)}
               </p>
@@ -360,15 +427,33 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
 
           {/* Actions */}
           <div className="mt-3 flex items-center justify-between">
-            <div className="flex space-x-2">
-              <button className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded text-blue-600">
-                <Phone className="w-4 h-4" />
-              </button>
-              <button className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded text-blue-600">
-                <Mail className="w-4 h-4" />
-              </button>
+            <div className="flex-1 flex justify-center">
+              <div className="flex flex-col items-center">
+                <button
+                  className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-lg shadow transition"
+                  title="Ir al chat"
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (onGotoChat) {
+                      onGotoChat(contact);
+                    } else if (onContactSelect) {
+                      onContactSelect(contact);
+                    }
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8l-4 1 1-3.2A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </button>
+                <span className="text-xs text-muted-foreground mt-1">Ir a chat</span>
+              </div>
             </div>
-            <div className={`w-2 h-2 rounded-full ${contact.estaAlHabilitado ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            {/* El puntico de estado va en la esquina inferior derecha */}
+            <div className={`w-2 h-2 rounded-full absolute bottom-3 right-3 ${
+              contact.prioridad === 'alta' ? 'bg-red-500' :
+              contact.prioridad === 'media' ? 'bg-yellow-400' :
+              contact.prioridad === 'baja' ? 'bg-green-500' : 'bg-gray-400'
+            }`}></div>
           </div>
         </div>
       )}
@@ -430,7 +515,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContact
   );
 };
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChange, onContactUpdate, onContactSelect }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChange, onContactUpdate, onContactSelect, onGotoChat }) => {
   const [draggedContact, setDraggedContact] = useState<Contact | null>(null);
 
   // Debug logs
