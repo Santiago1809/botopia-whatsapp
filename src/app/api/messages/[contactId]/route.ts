@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface ConversationData {
+  id: string;
+  remitente: string;
+  idDeContacto: string;
+  mensaje: string;
+  marcaDeTiempo: string;
+  esLeido?: boolean;
+  idDeLinea: string;
+  fluir?: string;
+  intencion?: string;
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { contactId: string } }
+  { params }: { params: Promise<{ contactId: string }> }
 ) {
   try {
     const { contactId } = await params;
@@ -10,7 +22,7 @@ export async function GET(
     const limit = url.searchParams.get('limit') || '50';
 
     // Llamar al microservicio CRM para obtener las conversaciones
-    const crmApiUrl = process.env.CRM_API_URL || 'http://localhost:5005';
+    const crmApiUrl = process.env.NEXT_PUBLIC_BACKEND_URL2|| 'http://localhost:5005';
     
     const response = await fetch(`${crmApiUrl}/api/contacts/${contactId}/conversations?limit=${limit}`, {
       method: 'GET',
@@ -30,7 +42,7 @@ export async function GET(
     }
 
     // Transformar los datos al formato esperado por el frontend
-    const messages = data.data.map((conv: any) => ({
+    const messages = data.data.map((conv: ConversationData) => ({
       id: conv.id,
       senderId: conv.remitente === 'user' ? conv.idDeContacto : 'agent',
       senderName: conv.remitente === 'user' ? 'Usuario' : 'Agente',

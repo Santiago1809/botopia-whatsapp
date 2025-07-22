@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Phone, Mail, Clock, Tag, User, MoreVertical, Edit2, Plus, X, Check } from "lucide-react";
+import { Clock, Tag, MoreVertical, Edit2, Plus, X, Check } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 
 interface KanbanBoardProps {
