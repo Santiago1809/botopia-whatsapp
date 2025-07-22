@@ -45,11 +45,13 @@ export async function GET(
     const messages = data.data.map((conv: ConversationData) => ({
       id: conv.id,
       senderId: conv.remitente === 'user' ? conv.idDeContacto : 'agent',
-      senderName: conv.remitente === 'user' ? 'Usuario' : 'Agente',
+      senderName: conv.remitente === 'user' ? 'Usuario' : 
+                 conv.remitente === 'bot' ? 'Bot' : 'Agente',
       content: conv.mensaje,
       timestamp: conv.marcaDeTiempo,
       type: conv.remitente === 'user' ? 'incoming' : 'outgoing',
       isRead: conv.esLeido || true,
+      sender: conv.remitente, // Agregar el campo sender original
       contactId: conv.idDeContacto,
       lineId: conv.idDeLinea,
       flow: conv.fluir || 'general',

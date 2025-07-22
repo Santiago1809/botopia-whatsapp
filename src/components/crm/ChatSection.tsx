@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Search, MessageSquare, Clock, User } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, MessageSquare, Clock, User, Send, Bot, Phone } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 
 interface Message {
@@ -12,6 +12,7 @@ interface Message {
   timestamp: string;
   type: 'incoming' | 'outgoing';
   isRead: boolean;
+  sender?: 'bot' | 'agent' | 'user'; // Agregar campo para distinguir el tipo de remitente
 }
 
 interface ChatSectionProps {
@@ -27,8 +28,19 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const [searchTerm, setSearchTerm] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+
+  // Función para hacer scroll al final
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Hacer scroll cuando cambien los mensajes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Filter contacts for chat view
   const filteredContacts = contacts.filter(contact =>
@@ -72,28 +84,28 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       
       const contact = contacts.find(c => c.id === contactId);
       if (contact) {
-        const mockMessages: Message[] = [
-          {
-            id: `${contactId}-1`,
-            senderId: contactId,
-            senderName: contact.nombre || contact.telefono,
-            content: contact.ultimoMensaje?.mensaje || "Hola, estoy interesado en sus servicios",
-            timestamp: contact.ultimoMensaje?.timestamp || contact.ultimaActividad,
-            type: 'incoming',
-            isRead: true
-          },
-          {
-            id: `${contactId}-2`,
-            senderId: 'agent',
-            senderName: 'Agente',
-            content: "¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?",
-            timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-            type: 'outgoing',
-            isRead: true
-          }
-        ];
-        
-        if (contact.status === 'en-contacto') {
+      const mockMessages: Message[] = [
+        {
+          id: `${contactId}-1`,
+          senderId: contactId,
+          senderName: contact.nombre || contact.telefono,
+          content: contact.ultimoMensaje?.mensaje || "Hola, estoy interesado en sus servicios",
+          timestamp: contact.ultimoMensaje?.timestamp || contact.ultimaActividad,
+          type: 'incoming',
+          isRead: true,
+          sender: 'user'
+        },
+        {
+          id: `${contactId}-2`,
+          senderId: 'agent',
+          senderName: 'Agente',
+          content: "¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?",
+          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          type: 'outgoing',
+          isRead: true,
+          sender: 'bot'
+        }
+      ];        if (contact.status === 'en-contacto') {
           mockMessages.push({
             id: `${contactId}-3`,
             senderId: contactId,
@@ -101,7 +113,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             content: "Me gustaría agendar una cita para una consulta",
             timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
             type: 'incoming',
-            isRead: true
+            isRead: true,
+            sender: 'user'
           });
           mockMessages.push({
             id: `${contactId}-4`,
@@ -110,7 +123,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             content: "Perfecto, tenemos disponibilidad esta semana. ¿Qué día te conviene?",
             timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
             type: 'outgoing',
-            isRead: true
+            isRead: true,
+            sender: 'agent' // Este es un mensaje del agente humano
           });
         }
         
@@ -134,34 +148,63 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     if (!newMessage.trim() || !selectedContact) return;
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/messages/send`, {
+      setLoading(true);
+      
+      console.log(`📱 Enviando mensaje WhatsApp a ${selectedContact.nombre} (${selectedContact.telefono})`);
+      
+      // Enviar directamente al backend CRM-API
+      const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contactId: selectedContact.id,
-          content: newMessage,
-          lineId: lineId
+          to: selectedContact.telefono,
+          message: newMessage,
+          lineId: lineId,
+          messageType: 'text'
         }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Mensaje enviado por WhatsApp:', result.data);
+        
+        // Agregar mensaje al chat local
         const newMsg: Message = {
-          id: Date.now().toString(),
+          id: result.data?.messageId || Date.now().toString(),
           senderId: 'agent',
           senderName: 'Agente',
           content: newMessage,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(), // Usar hora actual sin modificar para mostrar inmediatamente
           type: 'outgoing',
-          isRead: true
+          isRead: true,
+          sender: 'agent' // Marcar como mensaje del agente humano
         };
         
         setMessages(prev => [...prev, newMsg]);
         setNewMessage("");
+        
+        // Mostrar confirmación visual
+        console.log(`✅ Mensaje WhatsApp enviado exitosamente a ${selectedContact.nombre}`);
+      } else {
+        console.error('❌ Error enviando mensaje WhatsApp:', result);
+        
+        let errorMessage = result.message || result.error || 'Error desconocido';
+        
+        // Si es un error de credenciales, dar más contexto
+        if (errorMessage.includes('credenciales de WhatsApp')) {
+          errorMessage = 'Error: La línea de WhatsApp no tiene configuradas las credenciales (JWT y NUMBER_ID). Contacta al administrador para configurar la integración con Meta.';
+        }
+        
+        alert(`Error enviando mensaje: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error de conexión enviando mensaje:', error);
+      alert('Error de conexión. Verifica que el backend esté funcionando.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -205,9 +248,14 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   };
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('es-ES', {
+    // Convertir el timestamp a hora de Colombia (UTC-5)
+    const date = new Date(timestamp);
+    // Si el timestamp ya está en hora de Colombia, no necesitamos ajustar
+    // Solo formateamos directamente
+    return date.toLocaleTimeString('es-CO', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Bogota'  // Usar zona horaria de Colombia
     });
   };
 
@@ -218,10 +266,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     
-    // Formatear la hora
-    const timeString = date.toLocaleTimeString('es-ES', {
+    // Formatear la hora en zona horaria de Colombia
+    const timeString = date.toLocaleTimeString('es-CO', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Bogota'
     });
 
     if (diffDays === 1) {
@@ -233,7 +282,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     } else if (diffHours <= 24) {
       return `${diffHours}h - ${timeString}`;
     } else {
-      return `${date.toLocaleDateString('es-ES')} - ${timeString}`;
+      return `${date.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })} - ${timeString}`;
     }
   };
 
@@ -418,27 +467,59 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 ) : messages.length > 0 ? (
-                  messages.map(message => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.type === 'outgoing' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`
-                        max-w-[70%] rounded-lg p-3 
-                        ${message.type === 'outgoing' 
-                          ? 'bg-primary text-white' 
-                          : 'bg-gray-100 dark:bg-gray-700 text-foreground'
-                        }
-                      `}>
-                        <p className="text-sm">{message.content}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.type === 'outgoing' ? 'text-white/70' : 'text-muted-foreground'
-                        }`}>
-                          {formatTime(message.timestamp)}
-                        </p>
+                  messages.map(message => {
+                    // Determinar si es mensaje del agente humano o bot
+                    const isHumanAgent = message.sender === 'agent';
+                    const isBot = message.sender === 'bot';
+                    
+                    // Determinar la alineación: agentes humanos y bots van a la derecha, usuarios a la izquierda
+                    const alignRight = isHumanAgent || isBot;
+                    
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`
+                          max-w-[70%] rounded-lg p-3 relative
+                          ${isHumanAgent 
+                            ? 'bg-green-600 text-white' 
+                            : isBot
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800'
+                            : 'bg-gray-100 dark:bg-gray-700 text-foreground'
+                          }
+                        `}>
+                          {/* Etiqueta de tipo de remitente */}
+                          {(isHumanAgent || isBot) && (
+                            <div className={`text-xs font-medium mb-1 flex items-center space-x-1 ${
+                              isHumanAgent ? 'text-green-100' : 'text-blue-600 dark:text-blue-300'
+                            }`}>
+                              {isHumanAgent ? (
+                                <>
+                                  <User className="w-3 h-3" />
+                                  <span>Respuesta Humana</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Bot className="w-3 h-3" />
+                                  <span>Respuesta IA</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          
+                          <p className="text-sm">{message.content}</p>
+                          <p className={`text-xs mt-1 ${
+                            isHumanAgent ? 'text-green-100' : 
+                            isBot ? 'text-blue-500 dark:text-blue-400' : 
+                            'text-muted-foreground'
+                          }`}>
+                            {formatTime(message.timestamp)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
                     <div className="text-center">
@@ -448,26 +529,45 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                     </div>
                   </div>
                 )}
+                {/* Referencia para scroll automático */}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Escribe un mensaje..."
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim()}
-                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Enviar
-                  </button>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Phone className="w-4 h-4 text-green-600" />
+                    <span>WhatsApp</span>
+                  </div>
+                  <div className="flex-1 flex space-x-2">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                      placeholder="Escribe un mensaje para WhatsApp..."
+                      disabled={loading}
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-background text-foreground disabled:opacity-50"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={!newMessage.trim() || loading}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Enviando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Enviar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </>

@@ -534,7 +534,7 @@ export default function LineDashboard() {
         {currentView === 'chat' && (
           <ChatSection
             contacts={allContacts}
-            lineId={line.numero}
+            lineId={line.id}
             selectedContactFromKanban={selectedContactForChat}
             onContactUpdate={handleContactUpdate}
           />
