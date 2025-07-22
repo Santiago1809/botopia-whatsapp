@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, MessageSquare, Clock, User, Phone, Video, MoreVertical } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, MessageSquare, Clock, User } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 
 interface Message {
@@ -18,9 +18,10 @@ interface ChatSectionProps {
   contacts: Contact[];
   lineId: string;
   selectedContactFromKanban?: Contact | null;
+  onContactUpdate?: (contactId: string, updates: Partial<Contact>) => void;
 }
 
-const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedContactFromKanban }) => {
+const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedContactFromKanban, onContactUpdate }) => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,15 +29,6 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const [loading, setLoading] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
-
-  // Effect to handle contact selection from Kanban
-  useEffect(() => {
-    if (selectedContactFromKanban) {
-      console.log('🎯 ChatSection: Received contact from Kanban:', selectedContactFromKanban);
-      setSelectedContact(selectedContactFromKanban);
-      loadMessages(selectedContactFromKanban.id);
-    }
-  }, [selectedContactFromKanban]);
 
   // Filter contacts for chat view
   const filteredContacts = contacts.filter(contact =>
@@ -49,74 +41,94 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     'nuevo-lead': filteredContacts.filter(c => c.status === 'nuevo-lead'),
     'en-contacto': filteredContacts.filter(c => c.status === 'en-contacto'),
     'cita-agendada': filteredContacts.filter(c => c.status === 'cita-agendada'),
-    'cerrado': filteredContacts.filter(c => c.status === 'cerrado')
+    'atencion-cliente': filteredContacts.filter(c => c.status === 'atencion-cliente')
   };
 
-  const loadMessages = async (contactId: string) => {
+  const loadMessages = useCallback(async (contactId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/messages/${contactId}`);
+      
+      // Llamar a la API interna de Next.js que se conecta al microservicio CRM
+      const response = await fetch(`/api/messages/${contactId}`);
+      
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
+        if (data.success && data.data) {
+          console.log(`Cargadas ${data.data.length} conversaciones para contacto ${contactId}`);
           setMessages(data.data);
+          setLoading(false);
           return;
         }
       }
+      
+      // Si no hay éxito en la respuesta, lanzar error para manejar el fallback
+      throw new Error('No se pudieron cargar las conversaciones de la base de datos');
+      
     } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-    
-    // Fallback: Mock messages based on contact
-    const contact = contacts.find(c => c.id === contactId);
-    if (contact) {
-      const mockMessages: Message[] = [
-        {
-          id: `${contactId}-1`,
-          senderId: contactId,
-          senderName: contact.nombre || contact.telefono,
-          content: contact.ultimoMensaje?.mensaje || "Hola, estoy interesado en sus servicios",
-          timestamp: contact.ultimoMensaje?.timestamp || contact.ultimaActividad,
-          type: 'incoming',
-          isRead: true
-        },
-        {
-          id: `${contactId}-2`,
-          senderId: 'agent',
-          senderName: 'Agente',
-          content: "¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?",
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          type: 'outgoing',
-          isRead: true
+      console.error('Error loading messages from database:', error);
+      
+      // Solo usar fallback si realmente no hay datos en la base de datos
+      console.log('Usando datos de fallback para contacto:', contactId);
+      
+      const contact = contacts.find(c => c.id === contactId);
+      if (contact) {
+        const mockMessages: Message[] = [
+          {
+            id: `${contactId}-1`,
+            senderId: contactId,
+            senderName: contact.nombre || contact.telefono,
+            content: contact.ultimoMensaje?.mensaje || "Hola, estoy interesado en sus servicios",
+            timestamp: contact.ultimoMensaje?.timestamp || contact.ultimaActividad,
+            type: 'incoming',
+            isRead: true
+          },
+          {
+            id: `${contactId}-2`,
+            senderId: 'agent',
+            senderName: 'Agente',
+            content: "¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?",
+            timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+            type: 'outgoing',
+            isRead: true
+          }
+        ];
+        
+        if (contact.status === 'en-contacto') {
+          mockMessages.push({
+            id: `${contactId}-3`,
+            senderId: contactId,
+            senderName: contact.nombre || contact.telefono,
+            content: "Me gustaría agendar una cita para una consulta",
+            timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+            type: 'incoming',
+            isRead: true
+          });
+          mockMessages.push({
+            id: `${contactId}-4`,
+            senderId: 'agent',
+            senderName: 'Agente',
+            content: "Perfecto, tenemos disponibilidad esta semana. ¿Qué día te conviene?",
+            timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+            type: 'outgoing',
+            isRead: true
+          });
         }
-      ];
-      
-      if (contact.status === 'en-contacto') {
-        mockMessages.push({
-          id: `${contactId}-3`,
-          senderId: contactId,
-          senderName: contact.nombre || contact.telefono,
-          content: "Me gustaría agendar una cita para una consulta",
-          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          type: 'incoming',
-          isRead: true
-        });
-        mockMessages.push({
-          id: `${contactId}-4`,
-          senderId: 'agent',
-          senderName: 'Agente',
-          content: "Perfecto, tenemos disponibilidad esta semana. ¿Qué día te conviene?",
-          timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-          type: 'outgoing',
-          isRead: true
-        });
+        
+        setMessages(mockMessages);
       }
-      
-      setMessages(mockMessages);
     }
     
     setLoading(false);
-  };
+  }, [contacts]);
+
+  // Effect to handle contact selection from Kanban
+  useEffect(() => {
+    if (selectedContactFromKanban) {
+      console.log('🎯 ChatSection: Received contact from Kanban:', selectedContactFromKanban);
+      setSelectedContact(selectedContactFromKanban);
+      loadMessages(selectedContactFromKanban.id);
+    }
+  }, [selectedContactFromKanban, loadMessages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact) return;
@@ -158,6 +170,40 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     loadMessages(contact.id);
   };
 
+  // Actualizar IA del contacto
+  const updateContactAI = async (contactId: string, isEnabled: boolean) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          estaAlHabilitado: isEnabled
+        }),
+      });
+
+      if (response.ok) {
+        // Actualizar el estado local
+        setSelectedContact(prev => prev ? {
+          ...prev,
+          estaAlHabilitado: isEnabled
+        } : null);
+        
+        // Llamar al callback del padre si existe
+        if (onContactUpdate) {
+          onContactUpdate(contactId, { estaAlHabilitado: isEnabled });
+        }
+        
+        console.log('🤖 AI updated successfully for contact:', contactId, 'to:', isEnabled);
+      } else {
+        console.error('❌ Failed to update AI status');
+      }
+    } catch (error) {
+      console.error('❌ Error updating AI status:', error);
+    }
+  };
+
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString('es-ES', {
       hour: '2-digit',
@@ -170,15 +216,24 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    
+    // Formatear la hora
+    const timeString = date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
     if (diffDays === 1) {
-      return 'Hoy';
+      return `Hoy - ${timeString}`;
     } else if (diffDays === 2) {
-      return 'Ayer';
+      return `Ayer - ${timeString}`;
     } else if (diffDays <= 7) {
-      return `${diffDays - 1} días`;
+      return `${diffDays - 1} días - ${timeString}`;
+    } else if (diffHours <= 24) {
+      return `${diffHours}h - ${timeString}`;
     } else {
-      return date.toLocaleDateString('es-ES');
+      return `${date.toLocaleDateString('es-ES')} - ${timeString}`;
     }
   };
 
@@ -187,7 +242,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'nuevo-lead': return 'bg-blue-100 text-blue-800';
       case 'en-contacto': return 'bg-yellow-100 text-yellow-800';
       case 'cita-agendada': return 'bg-green-100 text-green-800';
-      case 'cerrado': return 'bg-gray-100 text-gray-800';
+      case 'atencion-cliente': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -197,7 +252,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'nuevo-lead': return 'Nuevo Lead';
       case 'en-contacto': return 'En Contacto';
       case 'cita-agendada': return 'Cita Agendada';
-      case 'cerrado': return 'Cerrado';
+      case 'atencion-cliente': return 'Atención al Cliente';
       default: return status;
     }
   };
@@ -261,7 +316,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                             <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(contact.status)}`}>
                               {contact.status === 'nuevo-lead' ? 'Nuevo' : 
                                contact.status === 'en-contacto' ? 'Contacto' :
-                               contact.status === 'cita-agendada' ? 'Cita' : 'Cerrado'}
+                               contact.status === 'cita-agendada' ? 'Cita' : 
+                               contact.status === 'atencion-cliente' ? 'Atención' : 'Otro'}
                             </span>
                           </div>
                           
@@ -314,16 +370,43 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
-                      <Phone className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                    <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
-                      <Video className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                    <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
-                      <MoreVertical className="w-5 h-5 text-muted-foreground" />
-                    </button>
+                  {/* AI Toggle Switch */}
+                  <div className="flex items-center">
+                    <label 
+                      className="relative inline-flex items-center cursor-pointer group mr-2" 
+                      title={`IA ${selectedContact.estaAlHabilitado ? 'activada' : 'desactivada'} - Click para cambiar`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedContact.estaAlHabilitado}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          // Actualizar inmediatamente el estado visual
+                          setSelectedContact(prev => prev ? {
+                            ...prev,
+                            estaAlHabilitado: newValue
+                          } : null);
+                          
+                          // Actualizar en el backend
+                          updateContactAI(selectedContact.id, newValue);
+                        }}
+                        className="sr-only"
+                      />
+                      <div className={`w-9 h-5 rounded-full transition-all duration-300 shadow ${
+                        selectedContact.estaAlHabilitado 
+                          ? 'bg-green-500 shadow-green-200' 
+                          : 'bg-gray-300 shadow-gray-200'
+                      } group-hover:shadow-lg`}>
+                        <div className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300 ${
+                          selectedContact.estaAlHabilitado ? 'translate-x-4' : 'translate-x-0.5'
+                        } mt-0.5`}></div>
+                      </div>
+                    </label>
+                    <span className={`text-sm font-medium transition-colors duration-300 ${
+                      selectedContact.estaAlHabilitado ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                      IA {selectedContact.estaAlHabilitado ? 'ON' : 'OFF'}
+                    </span>
                   </div>
                 </div>
               </div>

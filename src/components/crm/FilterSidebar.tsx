@@ -221,10 +221,10 @@ export default function FilterSidebar({
                     : 'bg-gray-50 dark:bg-[hsl(240,10%,18%)] border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-[hsl(240,10%,22%)]'
                 }`}
               >
-                {/* Botón principal de la etiqueta */}
-                <button
+                {/* Contenedor de la etiqueta - sin button anidado */}
+                <div
                   onClick={() => onTagToggle(tag)}
-                  className="w-full text-left px-3 py-2 text-sm"
+                  className="w-full text-left px-3 py-2 text-sm cursor-pointer"
                   title={tag}
                 >
                   <div className="flex items-center justify-between pr-2">
@@ -266,7 +266,7 @@ export default function FilterSidebar({
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
               </div>
             );
           })}

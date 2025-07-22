@@ -70,13 +70,19 @@ const formatDate = (dateString: string) => {
   const diff = now.getTime() - date.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
+  
+  // Formatear la hora
+  const timeString = date.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   if (days > 0) {
-    return `${days}d`;
+    return `${days}d - ${timeString}`;
   } else if (hours > 0) {
-    return `${hours}h`;
+    return `${hours}h - ${timeString}`;
   } else {
-    return 'Ahora';
+    return timeString;
   }
 };
 
@@ -426,14 +432,56 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
           )}
 
           {/* Actions */}
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 grid grid-cols-3 items-center gap-2">
+            {/* AI Toggle Switch - Esquina izquierda */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={contact.estaAlHabilitado}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      if (onContactUpdate) {
+                        onContactUpdate(contact.id, {
+                          estaAlHabilitado: e.target.checked
+                        });
+                      }
+                    }}
+                    className="sr-only"
+                  />
+                  <div className={`w-9 h-5 rounded-full transition-all duration-300 shadow-inner ${
+                    contact.estaAlHabilitado 
+                      ? 'bg-gradient-to-r from-green-400 to-green-500 shadow-green-200' 
+                      : 'bg-gradient-to-r from-gray-300 to-gray-400 shadow-gray-200'
+                  } group-hover:shadow-lg`}>
+                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-all duration-300 flex items-center justify-center ${
+                      contact.estaAlHabilitado ? 'translate-x-4' : 'translate-x-0.5'
+                    } mt-0.5`}>
+                      {/* Icono de IA minimalista */}
+                      <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                        contact.estaAlHabilitado ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                    </div>
+                  </div>
+                </label>
+                <span className={`text-xs font-medium ml-2 transition-colors duration-300 ${
+                  contact.estaAlHabilitado ? 'text-green-600' : 'text-gray-500'
+                }`}>
+                  IA
+                </span>
+              </div>
+            </div>
+
+            {/* Chat Button - Centro */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center">
                 <button
-                  className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-lg shadow transition"
+                  className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-lg shadow transition cursor-pointer hover:scale-105 active:scale-95"
                   title="Ir al chat"
                   onClick={e => {
                     e.stopPropagation();
+                    console.log('🎯 Button clicked! onGotoChat:', !!onGotoChat);
                     if (onGotoChat) {
                       onGotoChat(contact);
                     } else if (onContactSelect) {
@@ -448,6 +496,10 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
                 <span className="text-xs text-muted-foreground mt-1">Ir a chat</span>
               </div>
             </div>
+
+            {/* Priority Dot - Esquina derecha (mantiene su posición absoluta) */}
+            <div className="w-6"></div> {/* Spacer para balance visual */}
+            
             {/* El puntico de estado va en la esquina inferior derecha */}
             <div className={`w-2 h-2 rounded-full absolute bottom-3 right-3 ${
               contact.prioridad === 'alta' ? 'bg-red-500' :
@@ -466,9 +518,10 @@ interface KanbanColumnProps {
   contacts: Contact[];
   onContactUpdate?: (contactId: string, updates: Partial<Contact>) => void;
   onContactSelect?: (contact: Contact) => void;
+  onGotoChat?: (contact: Contact) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContactUpdate, onContactSelect }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContactUpdate, onContactSelect, onGotoChat }) => {
   return (
     <div className={`rounded-lg border-2 border-dashed ${column.color} min-h-[600px]`}>
       {/* Column Header */}
@@ -498,6 +551,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContact
                 index={index} 
                 onContactUpdate={onContactUpdate}
                 onContactSelect={onContactSelect}
+                onGotoChat={onGotoChat}
               />
             ))}
             {provided.placeholder}
@@ -571,6 +625,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
               contacts={groupedContacts[column.id] || []}
               onContactUpdate={onContactUpdate}
               onContactSelect={onContactSelect}
+              onGotoChat={onGotoChat}
             />
           ))}
         </div>
