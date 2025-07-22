@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, MessageSquare, Clock, User, Send, Bot, Phone } from "lucide-react";
+import { Search, MessageSquare, Clock, User, Send, Bot } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 
 interface Message {
@@ -53,7 +53,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     'nuevo-lead': filteredContacts.filter(c => c.status === 'nuevo-lead'),
     'en-contacto': filteredContacts.filter(c => c.status === 'en-contacto'),
     'cita-agendada': filteredContacts.filter(c => c.status === 'cita-agendada'),
-    'atencion-cliente': filteredContacts.filter(c => c.status === 'atencion-cliente')
+    'atencion-cliente': filteredContacts.filter(c => c.status === 'atencion-cliente'),
+    'cerrado': filteredContacts.filter(c => c.status === 'cerrado') // Added 'cerrado' status
   };
 
   const loadMessages = useCallback(async (contactId: string) => {
@@ -292,6 +293,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'en-contacto': return 'bg-yellow-100 text-yellow-800';
       case 'cita-agendada': return 'bg-green-100 text-green-800';
       case 'atencion-cliente': return 'bg-orange-100 text-orange-800';
+      case 'cerrado': return 'bg-red-100 text-red-800'; // Color para cerrado
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -302,6 +304,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'en-contacto': return 'En Contacto';
       case 'cita-agendada': return 'Cita Agendada';
       case 'atencion-cliente': return 'Atención al Cliente';
+      case 'cerrado': return 'Cerrado'; // Etiqueta para cerrado
       default: return status;
     }
   };
@@ -366,7 +369,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                               {contact.status === 'nuevo-lead' ? 'Nuevo' : 
                                contact.status === 'en-contacto' ? 'Contacto' :
                                contact.status === 'cita-agendada' ? 'Cita' : 
-                               contact.status === 'atencion-cliente' ? 'Atención' : 'Otro'}
+                               contact.status === 'atencion-cliente' ? 'Atención' : 
+                               contact.status === 'cerrado' ? 'Cerrado' : 'Otro'}
                             </span>
                           </div>
                           
@@ -483,16 +487,16 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                         <div className={`
                           max-w-[70%] rounded-lg p-3 relative
                           ${isHumanAgent 
-                            ? 'bg-green-600 text-white' 
+                            ? 'bg-purple-500 text-white' 
                             : isBot
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800'
+                            ? 'bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100 border border-purple-200 dark:border-purple-800'
                             : 'bg-gray-100 dark:bg-gray-700 text-foreground'
                           }
                         `}>
                           {/* Etiqueta de tipo de remitente */}
                           {(isHumanAgent || isBot) && (
                             <div className={`text-xs font-medium mb-1 flex items-center space-x-1 ${
-                              isHumanAgent ? 'text-green-100' : 'text-blue-600 dark:text-blue-300'
+                              isHumanAgent ? 'text-purple-100' : 'text-purple-600 dark:text-purple-300'
                             }`}>
                               {isHumanAgent ? (
                                 <>
@@ -510,8 +514,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           
                           <p className="text-sm">{message.content}</p>
                           <p className={`text-xs mt-1 ${
-                            isHumanAgent ? 'text-green-100' : 
-                            isBot ? 'text-blue-500 dark:text-blue-400' : 
+                            isHumanAgent ? 'text-purple-100' : 
+                            isBot ? 'text-purple-500 dark:text-purple-400' : 
                             'text-muted-foreground'
                           }`}>
                             {formatTime(message.timestamp)}
@@ -537,8 +541,6 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4 text-green-600" />
-                    <span>WhatsApp</span>
                   </div>
                   <div className="flex-1 flex space-x-2">
                     <input

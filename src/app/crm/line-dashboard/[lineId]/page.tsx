@@ -381,7 +381,7 @@ export default function LineDashboard() {
       const mockData: LineDashboardData = {
         line: {
           id: lineId,
-          numero: "56666661779",
+          numero: "15556647179",
           proveedor: "META",
           estaActivo: true,
           creadoEn: "2025-07-18T06:04:22.007746+00:00",
