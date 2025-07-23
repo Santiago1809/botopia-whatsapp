@@ -544,6 +544,7 @@ export default function LineDashboard() {
           <AnalyticsSection
             contacts={allContacts}
             stats={analyticsStats}
+            lineId={lineId}
           />
         )}
       </div>
