@@ -21,6 +21,7 @@ export default function LineDashboard() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [lineTags, setLineTags] = useState<string[]>([]); // Etiquetas de la línea
+  const [selectedContactForChat, setSelectedContactForChat] = useState<Contact | null>(null); // Contacto seleccionado para chat
   const params = useParams();
   const router = useRouter();
   const lineId = params.lineId as string;
@@ -365,6 +366,13 @@ export default function LineDashboard() {
     }
   }, [BACKEND_URL, lineId, fetchLineTags]);
 
+  // Handle goto chat - Navegar al chat con contacto seleccionado
+  const handleGotoChat = useCallback((contact: Contact) => {
+    console.log('🎯 Navigating to chat with contact:', contact);
+    setSelectedContactForChat(contact);
+    setCurrentView('chat');
+  }, []);
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -373,7 +381,7 @@ export default function LineDashboard() {
       const mockData: LineDashboardData = {
         line: {
           id: lineId,
-          numero: "56666661779",
+          numero: "15556647179",
           proveedor: "META",
           estaActivo: true,
           creadoEn: "2025-07-18T06:04:22.007746+00:00",
@@ -516,6 +524,7 @@ export default function LineDashboard() {
             onClearFilters={clearFilters}
             onContactStatusChange={handleContactStatusChange}
             onContactUpdate={handleContactUpdate}
+            onGotoChat={handleGotoChat}
             onAddTag={handleAddTag}
             onEditTag={handleEditTag}
             onDeleteTag={handleDeleteTag}
@@ -525,7 +534,9 @@ export default function LineDashboard() {
         {currentView === 'chat' && (
           <ChatSection
             contacts={allContacts}
-            lineId={line.numero}
+            lineId={line.id}
+            selectedContactFromKanban={selectedContactForChat}
+            onContactUpdate={handleContactUpdate}
           />
         )}
 
@@ -533,6 +544,7 @@ export default function LineDashboard() {
           <AnalyticsSection
             contacts={allContacts}
             stats={analyticsStats}
+            lineId={lineId}
           />
         )}
       </div>

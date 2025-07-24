@@ -18,6 +18,7 @@ interface DashboardViewProps {
   onContactStatusChange: (contactId: string, newStatus: string) => void;
   onContactUpdate?: (contactId: string, updates: Partial<Contact>) => void;
   onContactSelect?: (contact: Contact) => void;
+  onGotoChat?: (contact: Contact) => void; // Nueva función para ir al chat
   onAddTag: (tag: string) => void;
   onEditTag?: (oldTag: string, newTag: string) => void;
   onDeleteTag?: (tag: string) => void;
@@ -36,6 +37,7 @@ export default function DashboardView({
   onContactStatusChange,
   onContactUpdate,
   onContactSelect,
+  onGotoChat, // Nueva función
   onAddTag,
   onEditTag,
   onDeleteTag
@@ -75,6 +77,7 @@ export default function DashboardView({
           onContactStatusChange={onContactStatusChange}
           onContactUpdate={onContactUpdate}
           onContactSelect={onContactSelect}
+          onGotoChat={onGotoChat}
         />
       </div>
     </div>

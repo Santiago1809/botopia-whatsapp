@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useAuth } from "@/lib/auth";
 import SidebarLayout from "@/components/SidebarLayout";
 
 interface Line {
@@ -10,7 +12,7 @@ interface Line {
   proveedor: string;
   estaActivo: boolean;
   creadoEn: string;
-  idDeUsuario: string;
+  idDeUsuario: string | number; // Puede ser string o number
   contactsCount: number;
   activeContacts: number;
   lastActivity: string;
@@ -21,17 +23,90 @@ export default function CrmPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { getToken } = useAuth();
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+  const AUTH_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
+  // Función para obtener información del usuario autenticado
+  const fetchAuthenticatedUser = useCallback(async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setError("No se encontró token de autenticación");
+        router.push("/login");
+        return null;
+      }
+
+      const response = await fetch(`${AUTH_BACKEND_URL}/api/auth/user-info`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        setError("Error al obtener información del usuario");
+        router.push("/login");
+        return null;
+      }
+
+      const userData = await response.json();
+      // console.log("🔍 [DEBUG] Usuario autenticado obtenido:", userData);
+      // console.log("🔍 [DEBUG] ID del usuario:", userData.id);
+      // console.log("🔍 [DEBUG] Tipo del ID:", typeof userData.id);
+      return userData;
+    } catch (error) {
+      setError("Error de conexión al obtener información del usuario");
+      console.error("Error:", error);
+      return null;
+    }
+  }, [AUTH_BACKEND_URL, getToken, router]);
 
   const fetchLines = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Primero obtener información del usuario autenticado
+      const user = await fetchAuthenticatedUser();
+      if (!user || !user.id) {
+        setError("No se pudo obtener información del usuario");
+        return;
+      }
+
+      // console.log("🔍 [DEBUG] Usuario para filtrar:", user);
+      // console.log("🔍 [DEBUG] ID del usuario para filtrar:", user.id);
+
       const response = await fetch(`${BACKEND_URL}/api/lines`);
       const data = await response.json();
 
+      // console.log("🔍 [DEBUG] Respuesta completa del API:", data);
+      // console.log("🔍 [DEBUG] Líneas obtenidas:", data.data);
+
       if (data.success) {
-        setLines(data.data);
+        // Filtrar las líneas por el user_id del usuario autenticado
+        // console.log("🔍 [DEBUG] Iniciando filtrado de líneas...");
+        
+        // data.data.forEach((line: Line, index: number) => {
+        //   console.log(`🔍 [DEBUG] Línea ${index + 1}:`, {
+        //     id: line.id,
+        //     numero: line.numero,
+        //     idDeUsuario: line.idDeUsuario,
+        //     tipoIdDeUsuario: typeof line.idDeUsuario,
+        //     userIdParaComparar: user.id,
+        //     tipoUserIdParaComparar: typeof user.id,
+        //     coincide: line.idDeUsuario == user.id // Cambiar a == para comparar valores
+        //   });
+        // });
+
+        const filteredLines = data.data.filter((line: Line) => 
+          line.idDeUsuario == user.id // Cambiar de === a == para comparar solo valores
+        );
+        
+        // console.log("🔍 [DEBUG] Líneas filtradas:", filteredLines);
+        // console.log("🔍 [DEBUG] Total líneas filtradas:", filteredLines.length);
+        
+        setLines(filteredLines);
       } else {
         setError(data.message || "Error al cargar líneas");
       }
@@ -41,7 +116,7 @@ export default function CrmPage() {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, fetchAuthenticatedUser]);
 
   useEffect(() => {
     fetchLines();
@@ -108,65 +183,51 @@ export default function CrmPage() {
           )}
 
           {/* Lines Grid */}
-          <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="flex justify-center items-start min-h-[60vh] mt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full justify-center">
               {lines.map((line) => (
                 <div
                   key={line.id}
                   onClick={() => handleLineClick(line.id)}
-                  className="flex flex-col justify-between items-center bg-gradient-to-br from-primary/10 via-white to-primary/5 dark:from-[hsl(240,10%,14%)] dark:via-[hsl(240,10%,8%)] dark:to-[hsl(240,10%,5%)] rounded-2xl shadow-lg border border-primary/30 hover:shadow-xl transition-all duration-200 cursor-pointer overflow-hidden h-[500px]"
+                  className="flex flex-col justify-between items-stretch 
+                    bg-white/90 dark:bg-[hsl(240,10%,16%)]/95 
+                    rounded-2xl shadow-lg border border-primary/30 dark:border-primary/50 
+                    hover:shadow-xl transition-all duration-200 cursor-pointer overflow-hidden 
+                    h-[240px] w-[370px] p-5 group"
                 >
-                  {/* Foto y nombre de Juanita arriba */}
-                  <div className="flex flex-col items-center mt-6 mb-2">
-                    <div className="relative">
-                      <img
-                        src="/Juanita.jpeg"
-                        alt="Juanita"
-                        className="w-28 h-28 rounded-full object-cover border-4 border-primary shadow-lg"
-                        style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
-                      />
-                      <span className="absolute bottom-0 right-0 bg-primary text-white text-xs px-2 py-1 rounded-full shadow">CRM</span>
+                  {/* Header: Foto, nombre, proveedor */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <Image
+                      src="/Juanita.jpeg"
+                      alt="Juanita"
+                      width={112}
+                      height={112}
+                      className="w-28 h-28 rounded-full object-cover border-2 border-primary shadow-sm"
+                    />
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="text-xl font-bold text-primary truncate">JUANITA</span>
+                      <span className="text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
                     </div>
-                    <span className="mt-2 text-xl font-extrabold text-primary drop-shadow">JUANITA</span>
+                    <span className={`ml-auto px-3 py-1 rounded text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
                   </div>
 
-                  <div className="flex-1 flex flex-col justify-center items-center w-full px-8 pt-2 pb-2">
-                    {/* Número y proveedor */}
-                    <div className="mb-2 text-center">
-                      <span className="block text-lg font-semibold text-foreground tracking-wide">Número: <span className="font-bold text-primary">56666661779</span></span>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getProviderColor(line.proveedor)} mt-2`}>{line.proveedor}</span>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex justify-center gap-8 mb-4">
-                      <div className="flex flex-col items-center">
-                        <span className="text-3xl font-bold text-primary drop-shadow">{line.contactsCount}</span>
-                        <span className="text-xs text-muted-foreground font-medium">Total Contactos</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <span className="text-3xl font-bold text-green-600 drop-shadow">{line.activeContacts}</span>
-                        <span className="text-xs text-muted-foreground font-medium">Activos</span>
-                      </div>
-                    </div>
-
-                    {/* Estado */}
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                      <span className={`inline-block w-3 h-3 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'} border border-white shadow`}></span>
-                      <span className={`text-base font-bold ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
+                  {/* Estado */}
+                  <div className="flex justify-center items-center w-full text-sm mb-4 mt-2">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-4 h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className={`font-bold text-lg ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="bg-gradient-to-r from-primary/5 via-white to-primary/10 dark:from-[hsl(240,10%,8%)] dark:via-[hsl(240,10%,14%)] dark:to-[hsl(240,10%,5%)] px-8 py-2 rounded-b-2xl flex items-center justify-between border-t border-primary/20 w-full">
-                    <span className="text-sm text-muted-foreground font-medium">
-                      Creada: {formatDate(line.creadoEn)}
-                    </span>
-                    <div className="flex items-center text-primary hover:text-primary/80 font-bold cursor-pointer">
-                      <span className="text-sm">Ver Dashboard</span>
-                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex justify-between items-center w-full text-xs text-muted-foreground border-t pt-2 mt-2 dark:text-gray-300/80">
+                    <span className="truncate">{formatDate(line.creadoEn)}</span>
+                    <span className="text-primary font-bold cursor-pointer flex items-center gap-1 group-hover:underline text-sm">
+                      Ver Dashboard
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </div>
+                    </span>
                   </div>
                 </div>
               ))}
@@ -182,13 +243,16 @@ export default function CrmPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-foreground mb-2">
-                No hay líneas registradas
+                No tienes líneas de WhatsApp asignadas
               </h3>
               <p className="text-muted-foreground">
-                Las líneas de WhatsApp aparecerán aquí cuando estén configuradas.
+                Las líneas de WhatsApp que tengas asignadas aparecerán aquí. Contacta al administrador si necesitas acceso a líneas específicas.
               </p>
             </div>
           )}
+
+          {/* Example usage of renderResponse */}
+
         </div>
       </div>
     </SidebarLayout>
