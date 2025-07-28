@@ -23,6 +23,7 @@ export interface ContactUpdate {
   tags?: string[];
   last_activity?: string;
   lineId?: string;
+  status?: string; // Agregar propiedad status
 }
 
 export interface DashboardUpdate {
@@ -121,7 +122,7 @@ export const useCRMWebSocket = ({
 
   // Inicializar conexión WebSocket
   useEffect(() => {
-    console.log('🔌 CRM WebSocket: Inicializando conexión...');
+    // console.log('🔌 CRM WebSocket: Inicializando conexión...');
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
@@ -135,7 +136,7 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE CONEXIÓN ===
     newSocket.on('connect', () => {
-      console.log('✅ CRM WebSocket conectado:', newSocket.id);
+      // console.log('✅ CRM WebSocket conectado:', newSocket.id);
       setIsConnected(true);
       setConnectionError(null);
       setConnectionStatus('connected');
@@ -144,12 +145,12 @@ export const useCRMWebSocket = ({
       newSocket.emit('authenticate', { lineId, userId });
     });
 
-    newSocket.on('authenticated', (data: { success: boolean; clientId: string; lineId: string }) => {
-      console.log('🔐 CRM WebSocket autenticado:', data);
+    newSocket.on('authenticated', () => {
+      // console.log('🔐 CRM WebSocket autenticado:', data);
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('🔌 CRM WebSocket desconectado:', reason);
+      // console.log('🔌 CRM WebSocket desconectado:', reason);
       setIsConnected(false);
       setConnectionStatus('disconnected');
       
@@ -167,12 +168,12 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE MENSAJES ===
     newSocket.on('new-message', (message: WebSocketMessage) => {
-      console.log('📨 CRM: Nuevo mensaje recibido:', message);
+      // console.log('📨 CRM: Nuevo mensaje recibido:', message);
       eventHandlers.current.onNewMessage?.(message);
     });
 
     newSocket.on('message-sent', (data: { success: boolean; messageId?: string; timestamp?: string }) => {
-      console.log('✅ CRM: Mensaje enviado confirmado:', data);
+      // console.log('✅ CRM: Mensaje enviado confirmado:', data);
       eventHandlers.current.onMessageSent?.(data);
     });
 
@@ -183,45 +184,45 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE CONTACTOS ===
     newSocket.on('contact-updated', (update: ContactUpdate) => {
-      console.log('🔄 CRM: Contacto actualizado:', update);
+      // console.log('🔄 CRM: Contacto actualizado:', update);
       eventHandlers.current.onContactUpdate?.(update);
     });
 
     newSocket.on('contact-deleted', (data: { id: string }) => {
-      console.log('🗑️ CRM: Contacto eliminado:', data);
+      // console.log('🗑️ CRM: Contacto eliminado:', data);
       eventHandlers.current.onContactDeleted?.(data);
     });
 
     // === EVENTOS DE DASHBOARD Y ANALYTICS ===
     newSocket.on('dashboard-updated', (data: DashboardUpdate) => {
-      console.log('📊 CRM: Dashboard actualizado:', data);
+      // console.log('📊 CRM: Dashboard actualizado:', data);
       eventHandlers.current.onDashboardUpdate?.(data);
     });
 
     newSocket.on('analytics-updated', (data: AnalyticsUpdate) => {
-      console.log('📈 CRM: Analytics actualizado:', data);
+      // console.log('📈 CRM: Analytics actualizado:', data);
       eventHandlers.current.onAnalyticsUpdate?.(data);
     });
 
     // === EVENTOS DE CONTACTOS NO SINCRONIZADOS ===
     newSocket.on('unsynced-contacts-updated', (data: { numberid: string | number; contact?: UnsyncedContact }) => {
-      console.log('🔄 CRM: Contactos no sincronizados actualizados:', data);
+      // console.log('🔄 CRM: Contactos no sincronizados actualizados:', data);
       eventHandlers.current.onUnsyncedContactsUpdate?.(data);
     });
 
     newSocket.on('unsynced-contact-deleted', (data: { numberid: string | number; contactId: string }) => {
-      console.log('🗑️ CRM: Contacto no sincronizado eliminado:', data);
+      // console.log('🗑️ CRM: Contacto no sincronizado eliminado:', data);
       eventHandlers.current.onUnsyncedContactDeleted?.(data);
     });
 
     // === EVENTOS DE CONTACTOS SINCRONIZADOS ===
     newSocket.on('synced-contact-updated', (data: { contact: SyncedContact }) => {
-      console.log('🔄 CRM: Contacto sincronizado actualizado:', data);
+      // console.log('🔄 CRM: Contacto sincronizado actualizado:', data);
       eventHandlers.current.onSyncedContactUpdate?.(data);
     });
 
     newSocket.on('synced-contact-deleted', (data: { contactId: string }) => {
-      console.log('🗑️ CRM: Contacto sincronizado eliminado:', data);
+      // console.log('🗑️ CRM: Contacto sincronizado eliminado:', data);
       eventHandlers.current.onSyncedContactDeleted?.(data);
     });
 
@@ -229,7 +230,7 @@ export const useCRMWebSocket = ({
 
     // Cleanup al desmontar
     return () => {
-      console.log('🧹 CRM WebSocket: Limpiando conexión...');
+      // console.log('🧹 CRM WebSocket: Limpiando conexión...');
       newSocket.disconnect();
       setConnectionStatus('disconnected');
     };
@@ -238,7 +239,7 @@ export const useCRMWebSocket = ({
   // === MÉTODOS DE SUSCRIPCIÓN ===
   const subscribeToContact = useCallback((contactId: string) => {
     if (socket && isConnected) {
-      console.log('📱 CRM: Suscribiéndose a contacto:', contactId);
+      // console.log('📱 CRM: Suscribiéndose a contacto:', contactId);
       socket.emit('subscribe-contact', { contactId, lineId });
       setCurrentContactId(contactId);
     } else {
@@ -248,7 +249,7 @@ export const useCRMWebSocket = ({
 
   const unsubscribeFromContact = useCallback((contactId: string) => {
     if (socket && isConnected) {
-      console.log('📱 CRM: Desuscribiéndose de contacto:', contactId);
+      // console.log('📱 CRM: Desuscribiéndose de contacto:', contactId);
       socket.emit('unsubscribe-contact', { contactId, lineId });
       setCurrentContactId(null);
     }
@@ -264,7 +265,7 @@ export const useCRMWebSocket = ({
     intent?: string;
   }) => {
     if (socket && isConnected) {
-      console.log('📤 CRM: Enviando mensaje:', data);
+      // console.log('📤 CRM: Enviando mensaje:', data);
       socket.emit('send-message', {
         ...data,
         lineId
@@ -345,7 +346,7 @@ export const useCRMWebSocket = ({
   // Forzar reconexión
   const reconnect = useCallback(() => {
     if (socket) {
-      console.log('🔄 CRM: Forzando reconexión...');
+      // console.log('🔄 CRM: Forzando reconexión...');
       socket.disconnect();
       socket.connect();
     }

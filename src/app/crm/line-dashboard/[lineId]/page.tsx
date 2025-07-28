@@ -7,7 +7,6 @@ import NavigationTabs from "../../../../components/crm/NavigationTabs";
 import DashboardView from "../../../../components/crm/DashboardView";
 import ChatSection from "../../../../components/crm/ChatSection";
 import AnalyticsSection from "../../../../components/crm/AnalyticsSection";
-import WebSocketIndicator from "../../../../components/WebSocketIndicator";
 import { useDashboardFilters } from "../../../../hooks/useDashboardFilters";
 import { useCRMWebSocket } from "../../../../hooks/useCRMWebSocket";
 import type { 
@@ -43,11 +42,56 @@ export default function LineDashboard() {
 
     // Handler para actualizaciones de contacto
     wsHook.registerContactUpdateHandler((update) => {
-      // console.log('🔥 CRM Dashboard: Contacto actualizado via WebSocket:', update);
+      console.log('🔥 [DEBUG] Contacto actualizado via WebSocket:', {
+        id: update.id,
+        funnel_stage: update.funnel_stage,
+        priority: update.priority,
+        name: update.name
+      });
       
       setAllContacts(prevContacts => {
         return prevContacts.map(contact => {
           if (contact.id === update.id) {
+            // Mapear funnel_stage al status correcto para el Kanban
+            let mappedStatus = contact.status;
+            if (update.funnel_stage) {
+              switch (update.funnel_stage) {
+                case 'nuevo':
+                case 'nuevo-lead':
+                  mappedStatus = 'nuevo-lead';
+                  break;
+                case 'contacto':
+                case 'en-contacto':
+                  mappedStatus = 'en-contacto';
+                  break;
+                case 'cita':
+                case 'cita-agendada':
+                  mappedStatus = 'cita-agendada';
+                  break;
+                case 'atencion_cliente':
+                case 'atencion-cliente':
+                  mappedStatus = 'atencion-cliente';
+                  break;
+                case 'completado':
+                case 'cerrado':
+                  mappedStatus = 'cerrado';
+                  break;
+                case 'pendiente-documentacion':
+                  mappedStatus = 'pendiente-documentacion';
+                  break;
+                default:
+                  // Si no coincide con ningún valor, mantener el status actual
+                  mappedStatus = contact.status;
+              }
+            }
+
+            console.log('🔄 [DEBUG] Status mapeado:', {
+              contactId: contact.id,
+              originalStatus: contact.status,
+              funnel_stage: update.funnel_stage,
+              mappedStatus: mappedStatus
+            });
+
             return {
               ...contact,
               nombre: update.name || contact.nombre,
@@ -57,6 +101,7 @@ export default function LineDashboard() {
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
+              status: mappedStatus, // Usar el status mapeado
             };
           }
           return contact;
@@ -117,25 +162,25 @@ export default function LineDashboard() {
   // Fetch all contacts for the line
   const fetchAllContacts = useCallback(async () => {
     try {
-      console.log('🔍 Fetching contacts for line:', lineId);
-      console.log('🌐 Backend URL:', BACKEND_URL);
+      // console.log('🔍 Fetching contacts for line:', lineId);
+      // console.log('🌐 Backend URL:', BACKEND_URL);
       
       const response = await fetch(`${BACKEND_URL}/api/lines/${lineId}/contacts`);
       const data = await response.json();
       
-      console.log('📡 Response status:', response.status);
-      console.log('📦 Response data:', data);
+      // console.log('📡 Response status:', response.status);
+      // console.log('📦 Response data:', data);
       
       if (data.success) {
-        console.log('✅ Contacts received:', data.data);
-        console.log('📊 Number of contacts:', data.data.length);
+        // console.log('✅ Contacts received:', data.data);
+        // console.log('📊 Number of contacts:', data.data.length);
         setAllContacts(data.data);
       } else {
-        console.log('❌ API response not successful:', data.message);
+        // console.log('❌ API response not successful:', data.message);
       }
     } catch (error) {
       console.error('❌ Error fetching contacts:', error);
-      console.log('🔄 Using mock data as fallback');
+      // console.log('🔄 Using mock data as fallback');
       
       // Use mock data if API fails
       const mockContacts: Contact[] = [
@@ -269,8 +314,8 @@ export default function LineDashboard() {
         }
       ];
       
-      console.log('📦 Mock contacts loaded:', mockContacts.length, 'contacts');
-      console.log('📝 Mock contacts details:', mockContacts);
+      // console.log('📦 Mock contacts loaded:', mockContacts.length, 'contacts');
+      // console.log('📝 Mock contacts details:', mockContacts);
       setAllContacts(mockContacts);
     }
   }, [lineId, BACKEND_URL]);
@@ -430,7 +475,7 @@ export default function LineDashboard() {
 
   // Handle goto chat - Navegar al chat con contacto seleccionado
   const handleGotoChat = useCallback((contact: Contact) => {
-    console.log('🎯 Navigating to chat with contact:', contact);
+    // console.log('🎯 Navigating to chat with contact:', contact);
     setSelectedContactForChat(contact);
     setCurrentView('chat');
   }, []);
@@ -515,7 +560,8 @@ export default function LineDashboard() {
       fetchAllContacts();
       fetchLineTags(); // Cargar las etiquetas de la línea
     }
-  }, [lineId, fetchDashboardData, fetchAllContacts, fetchLineTags]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineId]); // Solo ejecutar cuando cambie lineId
 
   if (loading) {
     return (
@@ -559,20 +605,11 @@ export default function LineDashboard() {
     <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
       {/* Header with navigation */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
-        <div className="flex justify-between items-center px-4 py-2">
-          <DashboardHeader 
-            line={line}
-            totalContacts={allContacts.length}
-            onBackClick={() => router.push('/crm')}
-          />
-          
-          {/* Indicador WebSocket */}
-          <WebSocketIndicator 
-            showText={true}
-            size="md"
-            className="text-white"
-          />
-        </div>
+        <DashboardHeader 
+          line={line}
+          totalContacts={allContacts.length}
+          onBackClick={() => router.push('/crm')}
+        />
         
         <NavigationTabs
           currentView={currentView}

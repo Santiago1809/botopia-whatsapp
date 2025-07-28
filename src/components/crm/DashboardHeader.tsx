@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import type { Line } from "../../types/dashboard";
 
 interface DashboardHeaderProps {
@@ -26,7 +27,7 @@ export default function DashboardHeader({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">
+              <h1 className="text-2xl font-bold">
                 CRM Dashboard - {line.proveedor}
               </h1>
               <p className="text-white/80 mt-1">
@@ -39,10 +40,12 @@ export default function DashboardHeader({
               {line.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
             {/* Foto de Juanita en la esquina superior derecha */}
-            <img
+            <Image
               src="/Juanita.jpeg"
               alt="Juanita"
-              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow ml-4"
+              width={48}
+              height={48}
+              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
               style={{ boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)' }}
             />
           </div>
