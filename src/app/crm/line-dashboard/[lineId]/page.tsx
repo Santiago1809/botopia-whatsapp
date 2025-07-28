@@ -7,7 +7,9 @@ import NavigationTabs from "../../../../components/crm/NavigationTabs";
 import DashboardView from "../../../../components/crm/DashboardView";
 import ChatSection from "../../../../components/crm/ChatSection";
 import AnalyticsSection from "../../../../components/crm/AnalyticsSection";
+import WebSocketIndicator from "../../../../components/WebSocketIndicator";
 import { useDashboardFilters } from "../../../../hooks/useDashboardFilters";
+import { useCRMWebSocket } from "../../../../hooks/useCRMWebSocket";
 import type { 
   Contact, 
   LineDashboardData, 
@@ -27,6 +29,64 @@ export default function LineDashboard() {
   const lineId = params.lineId as string;
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+
+  // 🔥 WEBSOCKET TIEMPO REAL - SIN POLLING
+  const wsHook = useCRMWebSocket({
+    lineId: lineId,
+    userId: 'agent-1',
+    backendUrl: BACKEND_URL
+  });
+
+  // Handler para actualizaciones de contacto en tiempo real
+  useEffect(() => {
+    console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
+
+    // Handler para actualizaciones de contacto
+    wsHook.registerContactUpdateHandler((update) => {
+      console.log('🔥 CRM Dashboard: Contacto actualizado via WebSocket:', update);
+      
+      setAllContacts(prevContacts => {
+        return prevContacts.map(contact => {
+          if (contact.id === update.id) {
+            return {
+              ...contact,
+              nombre: update.name || contact.nombre,
+              telefono: update.phone || contact.telefono,
+              etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+              prioridad: update.priority || contact.prioridad,
+              estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
+              etiquetas: update.tags || contact.etiquetas,
+              ultimaActividad: update.last_activity || contact.ultimaActividad,
+            };
+          }
+          return contact;
+        });
+      });
+    });
+
+    // Handler para contactos eliminados
+    wsHook.registerContactDeletedHandler((data) => {
+      console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
+      
+      setAllContacts(prevContacts => {
+        return prevContacts.filter(contact => contact.id !== data.id);
+      });
+    });
+
+    // Handler para actualizaciones de dashboard
+    wsHook.registerDashboardUpdateHandler((data) => {
+      console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket:', data);
+      // Aquí puedes actualizar dashboardData si es necesario
+    });
+
+    // Handler para actualizaciones de analytics
+    wsHook.registerAnalyticsUpdateHandler((data) => {
+      console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket:', data);
+      // Los analytics se actualizan automáticamente via el hook useDashboardFilters
+    });
+
+    console.log('✅ CRM Dashboard: Handlers de WebSocket configurados');
+  }, [wsHook]);
 
   // Fetch line tags from database
   const fetchLineTags = useCallback(async () => {
@@ -58,7 +118,7 @@ export default function LineDashboard() {
       console.log('🔍 Fetching contacts for line:', lineId);
       console.log('🌐 Backend URL:', BACKEND_URL);
       
-      const response = await fetch(`${BACKEND_URL}/api/contacts/line/${lineId}`);
+      const response = await fetch(`${BACKEND_URL}/api/lines/${lineId}/contacts`);
       const data = await response.json();
       
       console.log('📡 Response status:', response.status);
@@ -497,11 +557,20 @@ export default function LineDashboard() {
     <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
       {/* Header with navigation */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
-        <DashboardHeader 
-          line={line}
-          totalContacts={allContacts.length}
-          onBackClick={() => router.push('/crm')}
-        />
+        <div className="flex justify-between items-center px-4 py-2">
+          <DashboardHeader 
+            line={line}
+            totalContacts={allContacts.length}
+            onBackClick={() => router.push('/crm')}
+          />
+          
+          {/* Indicador WebSocket */}
+          <WebSocketIndicator 
+            showText={true}
+            size="md"
+            className="text-white"
+          />
+        </div>
         
         <NavigationTabs
           currentView={currentView}

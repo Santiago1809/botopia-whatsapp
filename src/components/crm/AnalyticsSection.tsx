@@ -3,6 +3,7 @@
 import { BarChart3, TrendingUp, Users, Clock, Target, MessageSquare, CheckCircle, Activity, Bot } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { Contact, AnalyticsStats } from "../../types/dashboard";
+import { useWebSocket, ContactUpdate } from "../../hooks/useWebSocket";
 
 interface AnalyticsSectionProps {
   contacts: Contact[];
@@ -34,6 +35,15 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+
+  // 🔥 WEBSOCKET HOOK - TIEMPO REAL PARA ANALYTICS
+  const {
+    registerContactUpdateHandler,
+  } = useWebSocket({ 
+    lineId, 
+    userId: 'analytics-agent', 
+    backendUrl: BACKEND_URL 
+  });
 
   // Fetch API metrics from backend
   const fetchApiMetrics = useCallback(async () => {
@@ -187,6 +197,23 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
       setWeeklyActivity([]);
     }
   }, [BACKEND_URL, lineId, contacts]);
+
+  // Handler para actualizaciones de contacto en tiempo real
+  const handleContactUpdate = useCallback((update: ContactUpdate) => {
+    console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', update);
+    
+    // Recargar métricas cuando se actualiza un contacto
+    fetchApiMetrics();
+    fetchWeeklyActivity();
+  }, [fetchApiMetrics, fetchWeeklyActivity]);
+
+  // Registrar handler de WebSocket
+  useEffect(() => {
+    if (registerContactUpdateHandler) {
+      console.log('🔌 ANALYTICS: Registrando handler de WebSocket...');
+      registerContactUpdateHandler(handleContactUpdate);
+    }
+  }, [registerContactUpdateHandler, handleContactUpdate]);
 
   // Load data on component mount
   useEffect(() => {
