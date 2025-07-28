@@ -67,6 +67,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   });
 
   // Configurar handlers de WebSocket
+
   useEffect(() => {
     // console.log('🔌 ChatSection: Configurando handlers de WebSocket...');
     
@@ -86,7 +87,18 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           sender: message.sender
         };
         
-        setMessages(prev => [...prev, newMsg]);
+        setMessages(prev => {
+          // Verificar que no esté duplicado
+          const exists = prev.some(msg => msg.id === message.id);
+          if (exists) {
+            console.log('⚠️ Mensaje ya existe, ignorando duplicado');
+            return prev;
+          }
+          
+          // Agregar nuevo mensaje real de la base de datos
+          console.log('✅ Agregando mensaje real de la base de datos');
+          return [...prev, newMsg];
+        });
       }
     });
 
@@ -189,6 +201,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         if (data.success && data.data) {
           console.log(`✅ MENSAJES CARGADOS: ${data.data.length} conversaciones para contacto ${contactId}`);
           console.log('📝 Mensajes:', data.data);
+          
           setMessages(data.data);
           // Verificar si han pasado más de 24 horas
           checkTimeGap(data.data);
@@ -266,7 +279,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           lineId: lineId,
           message: messageWithContactName,
           sender: 'bot',
-          timestamp: new Date().toUTCString()
+          timestamp: new Date().toISOString()
         });
         
         try {
@@ -280,7 +293,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               lineId: lineId,
               message: messageWithContactName,
               sender: 'bot',
-              timestamp: new Date().toUTCString(),
+              timestamp: new Date().toISOString(),
               messageId: result.data?.messageId || `template-${Date.now()}`
             }),
           });
@@ -309,10 +322,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           onContactUpdate(selectedContact.id, {
             ultimoMensaje: {
               mensaje: messageWithContactName,
-              timestamp: new Date().toUTCString(),
+              timestamp: new Date().toISOString(),
               remitente: 'bot'
             },
-            ultimaActividad: new Date().toUTCString(),
+            ultimaActividad: new Date().toISOString(),
           });
         }
 
@@ -387,9 +400,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact) return;
 
+    const messageContent = newMessage;
+    setNewMessage(""); // Limpiar inmediatamente el input
+    
+    // NO agregar mensaje temporal - solo esperar el WebSocket
+
     try {
-      setLoading(true);
-      
       console.log(`📱 Enviando mensaje WhatsApp a ${selectedContact.nombre} (${selectedContact.telefono})`);
       
       // Enviar directamente al backend CRM-API
@@ -400,7 +416,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         },
         body: JSON.stringify({
           to: selectedContact.telefono,
-          message: newMessage,
+          message: messageContent,
           lineId: lineId,
           messageType: 'text'
         }),
@@ -411,25 +427,35 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       if (response.ok && result.success) {
         console.log('✅ Mensaje enviado por WhatsApp:', result.data);
         
-        // Agregar mensaje al chat local
-        const newMsg: Message = {
-          id: result.data?.messageId || Date.now().toString(),
-          senderId: 'agent',
-          senderName: 'Agente',
-          content: newMessage,
-          timestamp: new Date().toISOString(), // Usar hora actual sin modificar para mostrar inmediatamente
-          type: 'outgoing',
-          isRead: true,
-          sender: 'agent' // Marcar como mensaje del agente humano
-        };
+        // 💾 GUARDAR MENSAJE EN BASE DE DATOS
+        try {
+          const saveResponse = await fetch(`${BACKEND_URL}/api/messages/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contactId: selectedContact.id,
+              lineId: lineId,
+              sender: 'agent',
+              message: messageContent,
+              timestamp: new Date().toISOString(),
+              messageId: result.data?.messageId || `agent-${Date.now()}`
+            }),
+          });
+
+          if (saveResponse.ok) {
+            console.log('� Mensaje guardado en base de datos');
+            // Recargar mensajes para mostrar el mensaje guardado
+            await loadMessages(selectedContact.id);
+          } else {
+            const errorText = await saveResponse.text();
+            console.error('❌ Error guardando mensaje en base de datos - Response:', saveResponse.status, errorText);
+          }
+        } catch (saveError) {
+          console.error('❌ Error de conexión guardando mensaje:', saveError);
+        }
         
-        setMessages(prev => [...prev, newMsg]);
-        setNewMessage("");
-        
-        // YA NO FORZAMOS RECARGA - WEBSOCKET MANEJA TODO EN TIEMPO REAL
-        console.log('� Mensaje enviado - WebSocket manejará la actualización en tiempo real');
-        
-        // Mostrar confirmación visual
         console.log(`✅ Mensaje WhatsApp enviado exitosamente a ${selectedContact.nombre}`);
       } else {
         console.error('❌ Error enviando mensaje WhatsApp:', result);
@@ -445,9 +471,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       }
     } catch (error) {
       console.error('❌ Error de conexión enviando mensaje:', error);
+      
       alert('Error de conexión. Verifica que el backend esté funcionando.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -491,41 +516,49 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   };
 
   const formatTime = (timestamp: string) => {
-    // Convertir el timestamp a hora de Colombia (UTC-5)
     const date = new Date(timestamp);
-    // Si el timestamp ya está en hora de Colombia, no necesitamos ajustar
-    // Solo formateamos directamente
-    return date.toLocaleTimeString('es-CO', {
+    return date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Bogota'  // Usar zona horaria de Colombia
+      minute: '2-digit'
     });
   };
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-    
-    // Formatear la hora en zona horaria de Colombia
-    const timeString = date.toLocaleTimeString('es-CO', {
+
+    // Comparar solo la parte de la fecha (año, mes, día)
+    const isToday = date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+
+    // Calcular si fue ayer
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.getFullYear() === yesterday.getFullYear() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getDate() === yesterday.getDate();
+
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    // Formatear la hora local
+    const timeString = date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Bogota'
+      minute: '2-digit'
     });
 
-    if (diffDays === 1) {
+    if (isToday) {
       return `Hoy - ${timeString}`;
-    } else if (diffDays === 2) {
+    } else if (isYesterday) {
       return `Ayer - ${timeString}`;
-    } else if (diffDays <= 7) {
-      return `${diffDays - 1} días - ${timeString}`;
-    } else if (diffHours <= 24) {
-      return `${diffHours}h - ${timeString}`;
+    } else if (days > 0) {
+      return `${days}d - ${timeString}`;
+    } else if (hours > 0) {
+      return `${hours}h - ${timeString}`;
     } else {
-      return `${date.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })} - ${timeString}`;
+      return timeString;
     }
   };
 
@@ -869,7 +902,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
       {/* Modal de plantillas */}
       {showTemplateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
             {/* Header del modal */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
