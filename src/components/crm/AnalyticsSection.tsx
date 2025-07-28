@@ -3,7 +3,7 @@
 import { BarChart3, TrendingUp, Users, Clock, Target, MessageSquare, CheckCircle, Activity, Bot } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { Contact, AnalyticsStats } from "../../types/dashboard";
-import { useWebSocket, ContactUpdate } from "../../hooks/useWebSocket";
+import { useWebSocket } from "../../hooks/useWebSocket";
 
 interface AnalyticsSectionProps {
   contacts: Contact[];
@@ -199,8 +199,8 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   }, [BACKEND_URL, lineId, contacts]);
 
   // Handler para actualizaciones de contacto en tiempo real
-  const handleContactUpdate = useCallback((update: ContactUpdate) => {
-    console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', update);
+  const handleContactUpdate = useCallback(() => {
+    // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', _update);
     
     // Recargar métricas cuando se actualiza un contacto
     fetchApiMetrics();
@@ -245,11 +245,11 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     return contactDateStr === todayStr;
   }).length;
 
-  console.log('📊 Frontend: Today contacts calculation:', {
-    todayStr,
-    newContactsToday,
-    totalContacts: contacts.length
-  });
+  // console.log('📊 Frontend: Today contacts calculation:', {
+  //   todayStr,
+  //   newContactsToday,
+  //   totalContacts: contacts.length
+  // });
 
   // Calculate conversion funnel based on real data
   const conversionFunnel = [
@@ -320,7 +320,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   };
 
   // Debug logging
-  console.log('🔢 Frontend: Response metrics calculated:', responseMetrics);
+  // console.log('🔢 Frontend: Response metrics calculated:', responseMetrics);
 
   // Priority distribution based on actual contacts
   const priorityDistribution = {

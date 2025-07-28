@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, MessageSquare, Clock, User, Send, Bot, File, FileText, X } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 import { useCRMWebSocket } from "../../hooks/useCRMWebSocket";
-import WebSocketIndicator from "../WebSocketIndicator";
 
 interface Message {
   id: string;
@@ -69,7 +68,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Configurar handlers de WebSocket
   useEffect(() => {
-    console.log('🔌 ChatSection: Configurando handlers de WebSocket...');
+    // console.log('🔌 ChatSection: Configurando handlers de WebSocket...');
     
     // Handler para nuevos mensajes
     wsHook.registerMessageHandler((message) => {
@@ -92,8 +91,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     });
 
     // Handler para confirmación de mensaje enviado
-    wsHook.registerMessageSentHandler((data) => {
-      console.log('✅ ChatSection: Mensaje enviado confirmado:', data);
+    wsHook.registerMessageSentHandler(() => {
+      // console.log('✅ ChatSection: Mensaje enviado confirmado:', _data);
       // Aquí puedes actualizar el estado del mensaje local si es necesario
     });
 
@@ -123,7 +122,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       }
     });
 
-    console.log('✅ ChatSection: Handlers de WebSocket configurados');
+    // console.log('✅ ChatSection: Handlers de WebSocket configurados');
   }, [wsHook, selectedContact, onContactUpdate]);
 
   // Función para verificar si han pasado más de 24 horas desde el último mensaje

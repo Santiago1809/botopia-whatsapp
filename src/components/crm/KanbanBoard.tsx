@@ -573,18 +573,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
   const [draggedContact, setDraggedContact] = useState<Contact | null>(null);
 
   // Debug logs
-  console.log('📋 KanbanBoard - Received contacts:', contacts);
-  console.log('📋 KanbanBoard - Contact count:', contacts.length);
-  console.log('📋 KanbanBoard - Contact details:', contacts.map(c => ({ id: c.id, name: c.nombre, status: c.status })));
+  // console.log('📋 KanbanBoard - Received contacts:', contacts);
+  // console.log('📋 KanbanBoard - Contact count:', contacts.length);
+  // console.log('📋 KanbanBoard - Contact details:', contacts.map(c => ({ id: c.id, name: c.nombre, status: c.status })));
   
   // Log contacts by status
-  statusColumns.forEach(column => {
-    const contactsInColumn = contacts.filter(contact => contact.status === column.id);
-    console.log(`📋 ${column.title} (${column.id}):`, contactsInColumn.length, 'contacts');
-    if (contactsInColumn.length > 0) {
-      console.log(`📋 ${column.title} details:`, contactsInColumn.map(c => ({ id: c.id, name: c.nombre })));
-    }
-  });
+  // statusColumns.forEach(column => {
+  //   const contactsInColumn = contacts.filter(contact => contact.status === column.id);
+  //   console.log(`📋 ${column.title} (${column.id}):`, contactsInColumn.length, 'contacts');
+  //   if (contactsInColumn.length > 0) {
+  //     console.log(`📋 ${column.title} details:`, contactsInColumn.map(c => ({ id: c.id, name: c.nombre })));
+  //   }
+  // });
 
   const handleDragStart = (start: { draggableId: string }) => {
     const contact = contacts.find(c => c.id === start.draggableId);

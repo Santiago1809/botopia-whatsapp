@@ -26,13 +26,49 @@ export interface ContactUpdate {
 }
 
 export interface DashboardUpdate {
-  // Estructura flexible para diferentes tipos de actualizaciones del dashboard
-  [key: string]: any;
+  // Estructura para actualizaciones del dashboard
+  contacts?: ContactUpdate[];
+  stats?: {
+    total: number;
+    nuevos: number;
+    enContacto: number;
+    citasAgendadas: number;
+    atencionCliente: number;
+    cerrados: number;
+  };
+  metrics?: Record<string, number | string>;
 }
 
 export interface AnalyticsUpdate {
-  // Estructura flexible para diferentes métricas
-  [key: string]: any;
+  // Estructura para métricas de analytics
+  weeklyActivity?: Array<{
+    date: string;
+    day: string;
+    newContacts: number;
+    botResponses: number;
+    humanResponses: number;
+    conversions: number;
+  }>;
+  metrics?: Record<string, number | string>;
+}
+
+export interface UnsyncedContact {
+  id: string;
+  numberid: string | number;
+  wa_id: string;
+  number: string;
+  name: string;
+  lastmessagetimestamp?: number;
+  lastmessagepreview?: string;
+  agentehabilitado: boolean;
+}
+
+export interface SyncedContact {
+  id: string;
+  wa_id: string;
+  name: string;
+  type: 'contact' | 'group';
+  agenteHabilitado: boolean;
 }
 
 interface UseCRMWebSocketProps {
@@ -72,11 +108,11 @@ export const useCRMWebSocket = ({
     onAnalyticsUpdate?: (data: AnalyticsUpdate) => void;
     
     // Contactos no sincronizados
-    onUnsyncedContactsUpdate?: (data: { numberid: string | number; contact?: any }) => void;
+    onUnsyncedContactsUpdate?: (data: { numberid: string | number; contact?: UnsyncedContact }) => void;
     onUnsyncedContactDeleted?: (data: { numberid: string | number; contactId: string }) => void;
     
     // Contactos sincronizados
-    onSyncedContactUpdate?: (data: { contact: any }) => void;
+    onSyncedContactUpdate?: (data: { contact: SyncedContact }) => void;
     onSyncedContactDeleted?: (data: { contactId: string }) => void;
   }>({});
 
@@ -168,7 +204,7 @@ export const useCRMWebSocket = ({
     });
 
     // === EVENTOS DE CONTACTOS NO SINCRONIZADOS ===
-    newSocket.on('unsynced-contacts-updated', (data: { numberid: string | number; contact?: any }) => {
+    newSocket.on('unsynced-contacts-updated', (data: { numberid: string | number; contact?: UnsyncedContact }) => {
       console.log('🔄 CRM: Contactos no sincronizados actualizados:', data);
       eventHandlers.current.onUnsyncedContactsUpdate?.(data);
     });
@@ -179,7 +215,7 @@ export const useCRMWebSocket = ({
     });
 
     // === EVENTOS DE CONTACTOS SINCRONIZADOS ===
-    newSocket.on('synced-contact-updated', (data: { contact: any }) => {
+    newSocket.on('synced-contact-updated', (data: { contact: SyncedContact }) => {
       console.log('🔄 CRM: Contacto sincronizado actualizado:', data);
       eventHandlers.current.onSyncedContactUpdate?.(data);
     });
@@ -276,7 +312,7 @@ export const useCRMWebSocket = ({
   }, []);
 
   // Contactos no sincronizados
-  const registerUnsyncedContactsUpdateHandler = useCallback((handler: (data: { numberid: string | number; contact?: any }) => void) => {
+  const registerUnsyncedContactsUpdateHandler = useCallback((handler: (data: { numberid: string | number; contact?: UnsyncedContact }) => void) => {
     eventHandlers.current.onUnsyncedContactsUpdate = handler;
   }, []);
 
@@ -285,7 +321,7 @@ export const useCRMWebSocket = ({
   }, []);
 
   // Contactos sincronizados
-  const registerSyncedContactUpdateHandler = useCallback((handler: (data: { contact: any }) => void) => {
+  const registerSyncedContactUpdateHandler = useCallback((handler: (data: { contact: SyncedContact }) => void) => {
     eventHandlers.current.onSyncedContactUpdate = handler;
   }, []);
 

@@ -44,11 +44,11 @@ export default function DashboardView({
 }: DashboardViewProps) {
   
   // Debug logs
-  console.log('🎯 DashboardView - All contacts:', allContacts);
-  console.log('🎯 DashboardView - Filtered contacts:', filteredContacts);
-  console.log('🎯 DashboardView - Analytics stats:', analyticsStats);
-  console.log('🎯 DashboardView - Selected tags:', selectedTags);
-  console.log('🎯 DashboardView - Search term:', searchTerm);
+  // console.log('🎯 DashboardView - All contacts:', allContacts);
+  // console.log('🎯 DashboardView - Filtered contacts:', filteredContacts);
+  // console.log('🎯 DashboardView - Analytics stats:', analyticsStats);
+  // console.log('🎯 DashboardView - Selected tags:', selectedTags);
+  // console.log('🎯 DashboardView - Search term:', searchTerm);
   return (
     <div className="flex gap-6">
       {/* Mini Sidebar */}

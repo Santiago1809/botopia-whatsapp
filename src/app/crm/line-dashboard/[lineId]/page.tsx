@@ -39,11 +39,11 @@ export default function LineDashboard() {
 
   // Handler para actualizaciones de contacto en tiempo real
   useEffect(() => {
-    console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
+    // console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
 
     // Handler para actualizaciones de contacto
     wsHook.registerContactUpdateHandler((update) => {
-      console.log('🔥 CRM Dashboard: Contacto actualizado via WebSocket:', update);
+      // console.log('🔥 CRM Dashboard: Contacto actualizado via WebSocket:', update);
       
       setAllContacts(prevContacts => {
         return prevContacts.map(contact => {
@@ -66,7 +66,7 @@ export default function LineDashboard() {
 
     // Handler para contactos eliminados
     wsHook.registerContactDeletedHandler((data) => {
-      console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
+      // console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
       
       setAllContacts(prevContacts => {
         return prevContacts.filter(contact => contact.id !== data.id);
@@ -74,18 +74,20 @@ export default function LineDashboard() {
     });
 
     // Handler para actualizaciones de dashboard
-    wsHook.registerDashboardUpdateHandler((data) => {
-      console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket:', data);
+    // Handler para actualizaciones de dashboard
+    wsHook.registerDashboardUpdateHandler(() => {
+      // console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket:', _data);
       // Aquí puedes actualizar dashboardData si es necesario
     });
 
     // Handler para actualizaciones de analytics
-    wsHook.registerAnalyticsUpdateHandler((data) => {
-      console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket:', data);
+    // Handler para actualizaciones de analytics
+    wsHook.registerAnalyticsUpdateHandler(() => {
+      // console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket:', _data);
       // Los analytics se actualizan automáticamente via el hook useDashboardFilters
     });
 
-    console.log('✅ CRM Dashboard: Handlers de WebSocket configurados');
+    // console.log('✅ CRM Dashboard: Handlers de WebSocket configurados');
   }, [wsHook]);
 
   // Fetch line tags from database
