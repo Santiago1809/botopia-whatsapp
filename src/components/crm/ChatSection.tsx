@@ -525,7 +525,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('es-ES', {
+    // Restar 5 horas (5 * 60 * 60 * 1000 milisegundos)
+    const localDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+    
+    return localDate.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -533,26 +536,31 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
+    // Restar 5 horas para convertir a hora local
+    const localDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+    
+    // También ajustar la hora actual para mantener coherencia en el cálculo
     const now = new Date();
+    const localNow = new Date(now.getTime() - (5 * 60 * 60 * 1000));
 
     // Comparar solo la parte de la fecha (año, mes, día)
-    const isToday = date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate();
+    const isToday = localDate.getFullYear() === localNow.getFullYear() &&
+      localDate.getMonth() === localNow.getMonth() &&
+      localDate.getDate() === localNow.getDate();
 
     // Calcular si fue ayer
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const isYesterday = date.getFullYear() === yesterday.getFullYear() &&
-      date.getMonth() === yesterday.getMonth() &&
-      date.getDate() === yesterday.getDate();
+    const yesterday = new Date(localNow);
+    yesterday.setDate(localNow.getDate() - 1);
+    const isYesterday = localDate.getFullYear() === yesterday.getFullYear() &&
+      localDate.getMonth() === yesterday.getMonth() &&
+      localDate.getDate() === yesterday.getDate();
 
-    const diff = now.getTime() - date.getTime();
+    const diff = localNow.getTime() - localDate.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
     // Formatear la hora local
-    const timeString = date.toLocaleTimeString('es-ES', {
+    const timeString = localDate.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });

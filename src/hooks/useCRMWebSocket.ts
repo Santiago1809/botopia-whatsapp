@@ -24,6 +24,14 @@ export interface ContactUpdate {
   last_activity?: string;
   lineId?: string;
   status?: string; // Agregar propiedad status
+  // Agregar propiedades para último mensaje
+  lastMessage?: {
+    message: string;
+    timestamp: string;
+    sender: 'user' | 'agent' | 'bot';
+    remitente?: string; // Para compatibilidad con el formato del contacto
+  };
+  contactId?: string; // Para el evento de mensaje
 }
 
 export interface DashboardUpdate {
