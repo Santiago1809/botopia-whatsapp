@@ -46,7 +46,9 @@ export default function LineDashboard() {
         id: update.id,
         funnel_stage: update.funnel_stage,
         priority: update.priority,
-        name: update.name
+        name: update.name,
+        lastMessage: update.lastMessage,
+        last_activity: update.last_activity
       });
       
       setAllContacts(prevContacts => {
@@ -89,10 +91,12 @@ export default function LineDashboard() {
               contactId: contact.id,
               originalStatus: contact.status,
               funnel_stage: update.funnel_stage,
-              mappedStatus: mappedStatus
+              mappedStatus: mappedStatus,
+              lastMessage: update.lastMessage,
+              updatingLastActivity: update.last_activity
             });
 
-            return {
+            const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
@@ -102,7 +106,21 @@ export default function LineDashboard() {
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
               status: mappedStatus, // Usar el status mapeado
+              // 🔥 ACTUALIZAR ÚLTIMO MENSAJE EN TIEMPO REAL
+              ultimoMensaje: update.lastMessage ? {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.remitente || update.lastMessage.sender
+              } : contact.ultimoMensaje,
             };
+
+            console.log('✅ [DEBUG] Contacto actualizado en Kanban:', {
+              id: updatedContact.id,
+              ultimaActividad: updatedContact.ultimaActividad,
+              ultimoMensaje: updatedContact.ultimoMensaje
+            });
+
+            return updatedContact;
           }
           return contact;
         });
