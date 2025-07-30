@@ -3,6 +3,7 @@
 import { BarChart3, TrendingUp, Users, Clock, Target, MessageSquare, CheckCircle, Activity, Bot } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { Contact, AnalyticsStats } from "../../types/dashboard";
+import { useWebSocket } from "../../hooks/useWebSocket";
 
 interface AnalyticsSectionProps {
   contacts: Contact[];
@@ -34,6 +35,15 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+
+  // 🔥 WEBSOCKET HOOK - TIEMPO REAL PARA ANALYTICS
+  const {
+    registerContactUpdateHandler,
+  } = useWebSocket({ 
+    lineId, 
+    userId: 'analytics-agent', 
+    backendUrl: BACKEND_URL 
+  });
 
   // Fetch API metrics from backend
   const fetchApiMetrics = useCallback(async () => {
@@ -188,6 +198,23 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     }
   }, [BACKEND_URL, lineId, contacts]);
 
+  // Handler para actualizaciones de contacto en tiempo real
+  const handleContactUpdate = useCallback(() => {
+    // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', _update);
+    
+    // Recargar métricas cuando se actualiza un contacto
+    fetchApiMetrics();
+    fetchWeeklyActivity();
+  }, [fetchApiMetrics, fetchWeeklyActivity]);
+
+  // Registrar handler de WebSocket
+  useEffect(() => {
+    if (registerContactUpdateHandler) {
+      console.log('🔌 ANALYTICS: Registrando handler de WebSocket...');
+      registerContactUpdateHandler(handleContactUpdate);
+    }
+  }, [registerContactUpdateHandler, handleContactUpdate]);
+
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
@@ -218,18 +245,18 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     return contactDateStr === todayStr;
   }).length;
 
-  console.log('📊 Frontend: Today contacts calculation:', {
-    todayStr,
-    newContactsToday,
-    totalContacts: contacts.length
-  });
+  // console.log('📊 Frontend: Today contacts calculation:', {
+  //   todayStr,
+  //   newContactsToday,
+  //   totalContacts: contacts.length
+  // });
 
   // Calculate conversion funnel based on real data
   const conversionFunnel = [
     {
-      stage: 'Nuevos Contactos Hoy',
-      count: newContactsToday,
-      percentage: contacts.length ? Math.round((newContactsToday / contacts.length) * 100) : 0,
+      stage: 'Nuevos Contactos',
+      count: stats?.nuevoLead || 0,
+      percentage: stats?.total ? Math.round(((stats?.nuevoLead || 0) / stats.total) * 100) : 0,
       color: 'bg-blue-500',
       icon: Users
     },
@@ -255,7 +282,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
       icon: Target
     },
     {
-      stage: 'Cerrados',
+      stage: 'Ticket de pago generado',
       count: stats?.cerrado || 0,
       percentage: stats?.conversion || 0,
       color: 'bg-green-500',
@@ -293,7 +320,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   };
 
   // Debug logging
-  console.log('🔢 Frontend: Response metrics calculated:', responseMetrics);
+  // console.log('🔢 Frontend: Response metrics calculated:', responseMetrics);
 
   // Priority distribution based on actual contacts
   const priorityDistribution = {

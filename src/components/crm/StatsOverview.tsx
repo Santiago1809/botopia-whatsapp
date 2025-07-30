@@ -35,7 +35,7 @@ export default function StatsOverview({ analyticsStats }: StatsOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
       <StatCard
-        title="Nuevos Leads"
+        title="Nuevos Contactos"
         value={analyticsStats.nuevoLead}
         icon={Table}
         gradient="bg-gradient-to-r from-blue-500 to-blue-600"
@@ -63,7 +63,7 @@ export default function StatsOverview({ analyticsStats }: StatsOverviewProps) {
       />
       
       <StatCard
-        title="Cerrados"
+        title="Ticket de pago generado"
         value={analyticsStats.cerrado}
         icon={BarChart3}
         gradient="bg-gradient-to-r from-green-500 to-green-600"

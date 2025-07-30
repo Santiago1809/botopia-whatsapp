@@ -57,16 +57,16 @@ export function useDashboardFilters({ allContacts }: UseDashboardFiltersProps) {
   };
 
   // Debug logs
-  console.log('📊 Analytics Debug - Total contacts:', allContacts.length);
-  console.log('📊 All contacts details:', allContacts);
-  console.log('📊 Analytics stats:', analyticsStats);
+  // console.log('📊 Analytics Debug - Total contacts:', allContacts.length);
+  // console.log('📊 All contacts details:', allContacts);
+  // console.log('📊 Analytics stats:', analyticsStats);
   
   // Log each status group
-  console.log('🔵 Nuevo lead:', allContacts.filter(c => c.status === 'nuevo-lead'));
-  console.log('🟡 En contacto:', allContacts.filter(c => c.status === 'en-contacto'));
-  console.log('🟣 Cita agendada:', allContacts.filter(c => c.status === 'cita-agendada'));
-  console.log('🟠 Atención cliente:', allContacts.filter(c => c.status === 'atencion-cliente'));
-  console.log('🟢 Cerrado:', allContacts.filter(c => c.status === 'cerrado'));
+  // console.log('🔵 Nuevo lead:', allContacts.filter(c => c.status === 'nuevo-lead'));
+  // console.log('🟡 En contacto:', allContacts.filter(c => c.status === 'en-contacto'));
+  // console.log('🟣 Cita agendada:', allContacts.filter(c => c.status === 'cita-agendada'));
+  // console.log('🟠 Atención cliente:', allContacts.filter(c => c.status === 'atencion-cliente'));
+  // console.log('🟢 Cerrado:', allContacts.filter(c => c.status === 'cerrado'));
 
   return {
     selectedTags,

@@ -91,7 +91,7 @@ export default function FilterSidebar({
   };
 
   return (
-    <div className="w-52 bg-card dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border h-fit">
+    <div className="w-64 bg-card dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border h-fit">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-foreground flex items-center mb-4">
           <Filter className="w-5 h-5 mr-2 text-primary" />
@@ -153,7 +153,7 @@ export default function FilterSidebar({
               <button
                 onClick={handleAddTag}
                 disabled={!newTagName.trim()}
-                className="flex-1 px-3 py-1 bg-primary text-white rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-2 py-1.5 bg-primary text-white rounded-md text-xs hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 Agregar
               </button>
@@ -162,7 +162,7 @@ export default function FilterSidebar({
                   setIsAddingTag(false);
                   setNewTagName("");
                 }}
-                className="flex-1 px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="flex-1 px-2 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-xs hover:bg-gray-400 dark:hover:bg-gray-500 font-medium"
               >
                 Cancelar
               </button>
@@ -174,8 +174,8 @@ export default function FilterSidebar({
         {editingTag && (
           <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-2 mb-2">
-              <Edit2 className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              <Edit2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200 truncate">
                 Editando: &quot;{editingTag}&quot;
               </span>
             </div>
@@ -192,13 +192,13 @@ export default function FilterSidebar({
               <button
                 onClick={handleEditTag}
                 disabled={!editTagName.trim()}
-                className="flex-1 px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-2 py-1.5 bg-blue-600 text-white rounded-md text-xs hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 Guardar
               </button>
               <button
                 onClick={cancelEditing}
-                className="flex-1 px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="flex-1 px-2 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-xs hover:bg-gray-400 dark:hover:bg-gray-500 font-medium"
               >
                 Cancelar
               </button>
@@ -304,7 +304,7 @@ export default function FilterSidebar({
             <span className="font-medium text-orange-600">{filteredContacts.filter(c => c.status === 'atencion-cliente').length}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Cerrados:</span>
+            <span className="text-muted-foreground">Ticket de pago generado:</span>
             <span className="font-medium text-green-600">{filteredContacts.filter(c => c.status === 'cerrado').length}</span>
           </div>
         </div>

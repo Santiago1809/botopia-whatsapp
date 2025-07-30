@@ -8,6 +8,7 @@ import DashboardView from "../../../../components/crm/DashboardView";
 import ChatSection from "../../../../components/crm/ChatSection";
 import AnalyticsSection from "../../../../components/crm/AnalyticsSection";
 import { useDashboardFilters } from "../../../../hooks/useDashboardFilters";
+import { useCRMWebSocket } from "../../../../hooks/useCRMWebSocket";
 import type { 
   Contact, 
   LineDashboardData, 
@@ -27,6 +28,112 @@ export default function LineDashboard() {
   const lineId = params.lineId as string;
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+
+  // 🔥 WEBSOCKET TIEMPO REAL - SIN POLLING
+  const wsHook = useCRMWebSocket({
+    lineId: lineId,
+    userId: 'agent-1',
+    backendUrl: BACKEND_URL
+  });
+
+  // Handler para actualizaciones de contacto en tiempo real
+  useEffect(() => {
+    // console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
+
+    // Handler para actualizaciones de contacto
+    wsHook.registerContactUpdateHandler((update) => {
+      console.log('🔥 [DEBUG] Contacto actualizado via WebSocket:', {
+        id: update.id,
+        funnel_stage: update.funnel_stage,
+        priority: update.priority,
+        name: update.name
+      });
+      
+      setAllContacts(prevContacts => {
+        return prevContacts.map(contact => {
+          if (contact.id === update.id) {
+            // Mapear funnel_stage al status correcto para el Kanban
+            let mappedStatus = contact.status;
+            if (update.funnel_stage) {
+              switch (update.funnel_stage) {
+                case 'nuevo':
+                case 'nuevo-lead':
+                  mappedStatus = 'nuevo-lead';
+                  break;
+                case 'contacto':
+                case 'en-contacto':
+                  mappedStatus = 'en-contacto';
+                  break;
+                case 'cita':
+                case 'cita-agendada':
+                  mappedStatus = 'cita-agendada';
+                  break;
+                case 'atencion_cliente':
+                case 'atencion-cliente':
+                  mappedStatus = 'atencion-cliente';
+                  break;
+                case 'completado':
+                case 'cerrado':
+                  mappedStatus = 'cerrado';
+                  break;
+                case 'pendiente-documentacion':
+                  mappedStatus = 'pendiente-documentacion';
+                  break;
+                default:
+                  // Si no coincide con ningún valor, mantener el status actual
+                  mappedStatus = contact.status;
+              }
+            }
+
+            console.log('🔄 [DEBUG] Status mapeado:', {
+              contactId: contact.id,
+              originalStatus: contact.status,
+              funnel_stage: update.funnel_stage,
+              mappedStatus: mappedStatus
+            });
+
+            return {
+              ...contact,
+              nombre: update.name || contact.nombre,
+              telefono: update.phone || contact.telefono,
+              etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+              prioridad: update.priority || contact.prioridad,
+              estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
+              etiquetas: update.tags || contact.etiquetas,
+              ultimaActividad: update.last_activity || contact.ultimaActividad,
+              status: mappedStatus, // Usar el status mapeado
+            };
+          }
+          return contact;
+        });
+      });
+    });
+
+    // Handler para contactos eliminados
+    wsHook.registerContactDeletedHandler((data) => {
+      // console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
+      
+      setAllContacts(prevContacts => {
+        return prevContacts.filter(contact => contact.id !== data.id);
+      });
+    });
+
+    // Handler para actualizaciones de dashboard
+    // Handler para actualizaciones de dashboard
+    wsHook.registerDashboardUpdateHandler(() => {
+      // console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket:', _data);
+      // Aquí puedes actualizar dashboardData si es necesario
+    });
+
+    // Handler para actualizaciones de analytics
+    // Handler para actualizaciones de analytics
+    wsHook.registerAnalyticsUpdateHandler(() => {
+      // console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket:', _data);
+      // Los analytics se actualizan automáticamente via el hook useDashboardFilters
+    });
+
+    // console.log('✅ CRM Dashboard: Handlers de WebSocket configurados');
+  }, [wsHook]);
 
   // Fetch line tags from database
   const fetchLineTags = useCallback(async () => {
@@ -55,25 +162,25 @@ export default function LineDashboard() {
   // Fetch all contacts for the line
   const fetchAllContacts = useCallback(async () => {
     try {
-      console.log('🔍 Fetching contacts for line:', lineId);
-      console.log('🌐 Backend URL:', BACKEND_URL);
+      // console.log('🔍 Fetching contacts for line:', lineId);
+      // console.log('🌐 Backend URL:', BACKEND_URL);
       
-      const response = await fetch(`${BACKEND_URL}/api/contacts/line/${lineId}`);
+      const response = await fetch(`${BACKEND_URL}/api/lines/${lineId}/contacts`);
       const data = await response.json();
       
-      console.log('📡 Response status:', response.status);
-      console.log('📦 Response data:', data);
+      // console.log('📡 Response status:', response.status);
+      // console.log('📦 Response data:', data);
       
       if (data.success) {
-        console.log('✅ Contacts received:', data.data);
-        console.log('📊 Number of contacts:', data.data.length);
+        // console.log('✅ Contacts received:', data.data);
+        // console.log('📊 Number of contacts:', data.data.length);
         setAllContacts(data.data);
       } else {
-        console.log('❌ API response not successful:', data.message);
+        // console.log('❌ API response not successful:', data.message);
       }
     } catch (error) {
       console.error('❌ Error fetching contacts:', error);
-      console.log('🔄 Using mock data as fallback');
+      // console.log('🔄 Using mock data as fallback');
       
       // Use mock data if API fails
       const mockContacts: Contact[] = [
@@ -207,8 +314,8 @@ export default function LineDashboard() {
         }
       ];
       
-      console.log('📦 Mock contacts loaded:', mockContacts.length, 'contacts');
-      console.log('📝 Mock contacts details:', mockContacts);
+      // console.log('📦 Mock contacts loaded:', mockContacts.length, 'contacts');
+      // console.log('📝 Mock contacts details:', mockContacts);
       setAllContacts(mockContacts);
     }
   }, [lineId, BACKEND_URL]);
@@ -368,7 +475,7 @@ export default function LineDashboard() {
 
   // Handle goto chat - Navegar al chat con contacto seleccionado
   const handleGotoChat = useCallback((contact: Contact) => {
-    console.log('🎯 Navigating to chat with contact:', contact);
+    // console.log('🎯 Navigating to chat with contact:', contact);
     setSelectedContactForChat(contact);
     setCurrentView('chat');
   }, []);
@@ -453,7 +560,8 @@ export default function LineDashboard() {
       fetchAllContacts();
       fetchLineTags(); // Cargar las etiquetas de la línea
     }
-  }, [lineId, fetchDashboardData, fetchAllContacts, fetchLineTags]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineId]); // Solo ejecutar cuando cambie lineId
 
   if (loading) {
     return (

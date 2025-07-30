@@ -66,18 +66,40 @@ const getPriorityColor = (priority: string) => {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
+  // Restar 5 horas para convertir a hora local
+  const localDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+
+  // También ajustar la hora actual para mantener coherencia en el cálculo
   const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const localNow = new Date(now.getTime() - (5 * 60 * 60 * 1000));
+
+  // Comparar solo la parte de la fecha (año, mes, día)
+  const isToday = localDate.getFullYear() === localNow.getFullYear() &&
+    localDate.getMonth() === localNow.getMonth() &&
+    localDate.getDate() === localNow.getDate();
+
+  // Calcular si fue ayer
+  const yesterday = new Date(localNow);
+  yesterday.setDate(localNow.getDate() - 1);
+  const isYesterday = localDate.getFullYear() === yesterday.getFullYear() &&
+    localDate.getMonth() === yesterday.getMonth() &&
+    localDate.getDate() === yesterday.getDate();
+
+  const diff = localNow.getTime() - localDate.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
-  
-  // Formatear la hora
-  const timeString = date.toLocaleTimeString('es-ES', {
+
+  // Formatear la hora local
+  const timeString = localDate.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit'
   });
 
-  if (days > 0) {
+  if (isToday) {
+    return `Hoy - ${timeString}`;
+  } else if (isYesterday) {
+    return `Ayer - ${timeString}`;
+  } else if (days > 0) {
     return `${days}d - ${timeString}`;
   } else if (hours > 0) {
     return `${hours}h - ${timeString}`;
@@ -253,7 +275,11 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
                     />
                   </div>
                 ) : (
-                  <h3 className="font-semibold text-foreground text-base">
+                  <h3
+                    className="font-semibold text-foreground text-base leading-snug line-clamp-2 min-h-[2.7em] max-h-[2.7em]"
+                    style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: '2.7em', maxHeight: '2.7em' }}
+                    title={contact.nombre && contact.nombre.trim() !== '' ? contact.nombre : 'Sin nombre'}
+                  >
                     {contact.nombre && contact.nombre.trim() !== '' ? contact.nombre : 'Sin nombre'}
                   </h3>
                 )}
@@ -573,18 +599,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
   const [draggedContact, setDraggedContact] = useState<Contact | null>(null);
 
   // Debug logs
-  console.log('📋 KanbanBoard - Received contacts:', contacts);
-  console.log('📋 KanbanBoard - Contact count:', contacts.length);
-  console.log('📋 KanbanBoard - Contact details:', contacts.map(c => ({ id: c.id, name: c.nombre, status: c.status })));
+  // console.log('📋 KanbanBoard - Received contacts:', contacts);
+  // console.log('📋 KanbanBoard - Contact count:', contacts.length);
+  // console.log('📋 KanbanBoard - Contact details:', contacts.map(c => ({ id: c.id, name: c.nombre, status: c.status })));
   
   // Log contacts by status
-  statusColumns.forEach(column => {
-    const contactsInColumn = contacts.filter(contact => contact.status === column.id);
-    console.log(`📋 ${column.title} (${column.id}):`, contactsInColumn.length, 'contacts');
-    if (contactsInColumn.length > 0) {
-      console.log(`📋 ${column.title} details:`, contactsInColumn.map(c => ({ id: c.id, name: c.nombre })));
-    }
-  });
+  // statusColumns.forEach(column => {
+  //   const contactsInColumn = contacts.filter(contact => contact.status === column.id);
+  //   console.log(`📋 ${column.title} (${column.id}):`, contactsInColumn.length, 'contacts');
+  //   if (contactsInColumn.length > 0) {
+  //     console.log(`📋 ${column.title} details:`, contactsInColumn.map(c => ({ id: c.id, name: c.nombre })));
+  //   }
+  // });
 
   const handleDragStart = (start: { draggableId: string }) => {
     const contact = contacts.find(c => c.id === start.draggableId);
