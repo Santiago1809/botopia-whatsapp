@@ -186,13 +186,22 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   }, []);
 
   const loadMessages = useCallback(async (contactId: string) => {
+    console.log('🔄 LOAD MESSAGES - INICIO:', {
+      contactId,
+      backendUrl: BACKEND_URL
+    });
+    
+    setLoading(true);
+    console.log('🔄 CARGANDO MENSAJES para contacto:', contactId);
+    
     try {
-      setLoading(true);
-      console.log('🔄 CARGANDO MENSAJES para contacto:', contactId);
-      
       // Llamar directamente al backend CRM-API
-      const response = await fetch(`${BACKEND_URL}/api/messages/${contactId}`);
+      const url = `${BACKEND_URL}/api/messages/${contactId}`;
+      console.log('🌐 Haciendo fetch a:', url);
+      
+      const response = await fetch(url);
       console.log('🔄 Response status:', response.status);
+      console.log('🔄 Response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
@@ -205,20 +214,16 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           setMessages(data.data);
           // Verificar si han pasado más de 24 horas
           checkTimeGap(data.data);
-          setLoading(false);
-          return;
         } else {
           console.log('⚠️ No se encontraron mensajes en la base de datos');
           // Si no hay mensajes, simplemente mostrar array vacío
           setMessages([]);
           setIsOver24Hours(true);
-          setLoading(false);
-          return;
         }
       } else {
         const errorText = await response.text();
         console.error('❌ Error en response:', response.status, errorText);
-        throw new Error(`API Error: ${response.status}`);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
       
     } catch (error) {
@@ -228,9 +233,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       console.log('🔧 Usando mensajes vacío por error de conexión');
       setMessages([]);
       setIsOver24Hours(true);
+    } finally {
+      // SIEMPRE resetear loading, sin importar qué pase
+      console.log('✅ LOAD MESSAGES - FINALIZANDO, setting loading to false');
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, [checkTimeGap, BACKEND_URL]);
 
   // 🔥 WEBSOCKET EVENT HANDLERS - TIEMPO REAL
@@ -370,20 +377,20 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Effect to handle contact selection from Kanban
   useEffect(() => {
+    console.log('🎯 USEEFFECT - selectedContactFromKanban changed:', {
+      hasContact: !!selectedContactFromKanban,
+      contactId: selectedContactFromKanban?.id,
+      contactName: selectedContactFromKanban?.nombre
+    });
+    
     if (selectedContactFromKanban) {
       console.log('🎯 ChatSection: Received contact from Kanban:', selectedContactFromKanban);
       setSelectedContact(selectedContactFromKanban);
       loadMessages(selectedContactFromKanban.id);
-      
-      // 🔥 SUSCRIBIRSE AL CONTACTO VIA WEBSOCKET PARA TIEMPO REAL
-      if (wsHook.isConnected) {
-        console.log('🔌 Suscribiéndose a contacto via WebSocket:', selectedContactFromKanban.id);
-        wsHook.subscribeToContact(selectedContactFromKanban.id);
-      }
     }
-  }, [selectedContactFromKanban, loadMessages, wsHook]);
+  }, [selectedContactFromKanban, loadMessages]);
 
-  // Effect para manejar cambios de contacto seleccionado y WebSocket
+  // Effect separado para manejar suscripción WebSocket cuando cambia el contacto seleccionado
   useEffect(() => {
     if (selectedContact && wsHook.isConnected) {
       console.log('🔌 WebSocket conectado - suscribiéndose a contacto:', selectedContact.id);
@@ -395,7 +402,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         wsHook.unsubscribeFromContact(selectedContact.id);
       };
     }
-  }, [selectedContact, wsHook]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedContact, wsHook.isConnected]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact) return;

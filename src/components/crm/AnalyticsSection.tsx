@@ -254,9 +254,9 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   // Calculate conversion funnel based on real data
   const conversionFunnel = [
     {
-      stage: 'Nuevos Contactos Hoy',
-      count: newContactsToday,
-      percentage: contacts.length ? Math.round((newContactsToday / contacts.length) * 100) : 0,
+      stage: 'Nuevos Contactos',
+      count: stats?.nuevoLead || 0,
+      percentage: stats?.total ? Math.round(((stats?.nuevoLead || 0) / stats.total) * 100) : 0,
       color: 'bg-blue-500',
       icon: Users
     },
@@ -282,7 +282,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
       icon: Target
     },
     {
-      stage: 'Cerrados',
+      stage: 'Ticket de pago generado',
       count: stats?.cerrado || 0,
       percentage: stats?.conversion || 0,
       color: 'bg-green-500',
