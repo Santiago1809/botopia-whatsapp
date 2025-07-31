@@ -507,7 +507,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
                   title="Ir al chat"
                   onClick={e => {
                     e.stopPropagation();
-                    console.log('🎯 Button clicked! onGotoChat:', !!onGotoChat);
+                    // console.log('🎯 Button clicked! onGotoChat:', !!onGotoChat);
                     if (onGotoChat) {
                       onGotoChat(contact);
                     } else if (onContactSelect) {

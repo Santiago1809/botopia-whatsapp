@@ -25,8 +25,15 @@ export default function CrmPage() {
   const router = useRouter();
   const { getToken } = useAuth();
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
-  const AUTH_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+  const AUTH_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://botopia-whatsapp-api-black.vercel.app' 
+      : 'http://localhost:3001');
+  
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://crm-api-black.vercel.app' 
+      : 'http://localhost:5005');
 
   // Función para obtener información del usuario autenticado
   const fetchAuthenticatedUser = useCallback(async () => {

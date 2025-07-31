@@ -27,7 +27,10 @@ export default function LineDashboard() {
   const router = useRouter();
   const lineId = params.lineId as string;
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://crm-api-black.vercel.app' 
+      : 'http://localhost:5005');
 
   // 🔥 WEBSOCKET TIEMPO REAL - SIN POLLING
   const wsHook = useCRMWebSocket({
@@ -42,88 +45,86 @@ export default function LineDashboard() {
 
     // Handler para actualizaciones de contacto
     wsHook.registerContactUpdateHandler((update) => {
-      console.log('🔥 [DEBUG] Contacto actualizado via WebSocket:', {
-        id: update.id,
-        funnel_stage: update.funnel_stage,
-        priority: update.priority,
-        name: update.name,
-        lastMessage: update.lastMessage,
-        last_activity: update.last_activity
-      });
-      
+      // console.log('🔥 [DEBUG] Contacto actualizado via WebSocket:', {
+      //   id: update.id,
+      //   name: update.name,
+      //   phone: update.phone,
+      //   funnel_stage: update.funnel_stage,
+      //   priority: update.priority,
+      //   lastMessage: update.lastMessage
+      // });
+
+      // Mapear el status del backend al formato del frontend
+      const mapStatus = (funnelStage: string): Contact['status'] => {
+        // console.log('🔄 [DEBUG] Status mapeado:', {
+        //   contactId: update.id,
+        //   originalStatus: `${funnelStage}-${priority}`,
+        //   funnel_stage: funnelStage,
+        //   mappedStatus: `${funnelStage}-${priority}`
+        // });
+        
+        // Mapear a los tipos válidos de Contact
+        switch (funnelStage) {
+          case 'nuevo':
+          case 'nuevo-lead':
+            return 'nuevo-lead';
+          case 'contacto':
+          case 'en-contacto':
+            return 'en-contacto';
+          case 'cita':
+          case 'cita-agendada':
+            return 'cita-agendada';
+          case 'atencion_cliente':
+          case 'atencion-cliente':
+            return 'atencion-cliente';
+          case 'completado':
+          case 'cerrado':
+            return 'cerrado';
+          case 'pendiente-documentacion':
+            return 'pendiente-documentacion';
+          default:
+            return 'nuevo-lead'; // Valor por defecto
+        }
+      };
+
+      // Actualizar el contacto en el estado local
       setAllContacts(prevContacts => {
-        return prevContacts.map(contact => {
+        const updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
-            // Mapear funnel_stage al status correcto para el Kanban
-            let mappedStatus = contact.status;
-            if (update.funnel_stage) {
-              switch (update.funnel_stage) {
-                case 'nuevo':
-                case 'nuevo-lead':
-                  mappedStatus = 'nuevo-lead';
-                  break;
-                case 'contacto':
-                case 'en-contacto':
-                  mappedStatus = 'en-contacto';
-                  break;
-                case 'cita':
-                case 'cita-agendada':
-                  mappedStatus = 'cita-agendada';
-                  break;
-                case 'atencion_cliente':
-                case 'atencion-cliente':
-                  mappedStatus = 'atencion-cliente';
-                  break;
-                case 'completado':
-                case 'cerrado':
-                  mappedStatus = 'cerrado';
-                  break;
-                case 'pendiente-documentacion':
-                  mappedStatus = 'pendiente-documentacion';
-                  break;
-                default:
-                  // Si no coincide con ningún valor, mantener el status actual
-                  mappedStatus = contact.status;
-              }
-            }
-
-            console.log('🔄 [DEBUG] Status mapeado:', {
-              contactId: contact.id,
-              originalStatus: contact.status,
-              funnel_stage: update.funnel_stage,
-              mappedStatus: mappedStatus,
-              lastMessage: update.lastMessage,
-              updatingLastActivity: update.last_activity
-            });
-
             const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
+              status: mapStatus(update.funnel_stage || 'nuevo'),
               etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
-              status: mappedStatus, // Usar el status mapeado
-              // 🔥 ACTUALIZAR ÚLTIMO MENSAJE EN TIEMPO REAL
-              ultimoMensaje: update.lastMessage ? {
-                mensaje: update.lastMessage.message,
-                timestamp: update.lastMessage.timestamp,
-                remitente: update.lastMessage.remitente || update.lastMessage.sender
-              } : contact.ultimoMensaje,
             };
 
-            console.log('✅ [DEBUG] Contacto actualizado en Kanban:', {
-              id: updatedContact.id,
-              ultimaActividad: updatedContact.ultimaActividad,
-              ultimoMensaje: updatedContact.ultimoMensaje
-            });
+            // Actualizar último mensaje si está disponible
+            if (update.lastMessage) {
+              updatedContact.ultimoMensaje = {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
+                          update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+              };
+            }
+
+            // console.log('✅ [DEBUG] Contacto actualizado en Kanban:', {
+            //   id: updatedContact.id,
+            //   ultimaActividad: updatedContact.ultimaActividad,
+            //   ultimoMensaje: updatedContact.ultimoMensaje
+            // });
 
             return updatedContact;
           }
           return contact;
         });
+
+        return updatedContacts;
       });
     });
 

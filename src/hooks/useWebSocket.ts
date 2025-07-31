@@ -31,7 +31,6 @@ interface UseWebSocketProps {
 export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:5005' }: UseWebSocketProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [currentContactId, setCurrentContactId] = useState<string | null>(null);
   
   const messageHandlers = useRef<{
@@ -43,97 +42,80 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
 
   // Inicializar conexión WebSocket
   useEffect(() => {
-    console.log('🔌 Inicializando conexión WebSocket...');
+    // console.log('🔌 Inicializando conexión WebSocket...');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      timeout: 5000,
+      forceNew: true
     });
 
-    // Manejar conexión exitosa
     newSocket.on('connect', () => {
-      console.log('✅ WebSocket conectado:', newSocket.id);
-      setIsConnected(true);
-      setConnectionError(null);
+      // console.log('✅ WebSocket conectado:', newSocket.id);
       
-      // Autenticar con el servidor
+      // Autenticar inmediatamente después de conectar
       newSocket.emit('authenticate', { lineId, userId });
     });
 
-    // Manejar autenticación exitosa
-    newSocket.on('authenticated', (data: { success: boolean; clientId: string; lineId: string }) => {
-      console.log('🔐 WebSocket autenticado:', data);
+    newSocket.on('authenticated', () => {
+      // console.log('🔐 WebSocket autenticado');
+      setIsConnected(true);
     });
 
-    // Manejar nuevos mensajes
-    newSocket.on('new-message', (message: WebSocketMessage) => {
-      console.log('📨 Nuevo mensaje recibido via WebSocket:', message);
+    newSocket.on('new-message', (message) => {
+      // console.log('📨 Nuevo mensaje recibido via WebSocket:', message);
       messageHandlers.current.onNewMessage?.(message);
     });
 
-    // Manejar actualizaciones de contacto
-    newSocket.on('contact-updated', (update: ContactUpdate) => {
-      console.log('🔄 Contacto actualizado via WebSocket:', update);
+    newSocket.on('contact-updated', (update) => {
+      // console.log('🔄 Contacto actualizado via WebSocket:', update);
       messageHandlers.current.onContactUpdate?.(update);
     });
 
-    // Manejar confirmación de mensaje enviado
-    newSocket.on('message-sent', (data: { success: boolean; messageId?: string; timestamp?: string }) => {
-      console.log('✅ Mensaje enviado confirmado via WebSocket:', data);
+    newSocket.on('message-sent', (data) => {
+      // console.log('✅ Mensaje enviado confirmado via WebSocket:', data);
       messageHandlers.current.onMessageSent?.(data);
     });
 
-    // Manejar errores de mensaje
-    newSocket.on('message-error', (error: { success: boolean; error: string }) => {
+    newSocket.on('message-error', (error) => {
       console.error('❌ Error de mensaje via WebSocket:', error);
       messageHandlers.current.onMessageError?.(error);
     });
 
-    // Manejar desconexión
-    newSocket.on('disconnect', (reason) => {
-      console.log('🔌 WebSocket desconectado:', reason);
-      setIsConnected(false);
-      
-      if (reason === 'io server disconnect') {
-        // El servidor desconectó el cliente, intentar reconectar
-        newSocket.connect();
-      }
-    });
-
-    // Manejar errores de conexión
-    newSocket.on('connect_error', (error) => {
-      console.error('❌ Error de conexión WebSocket:', error);
-      setConnectionError(error.message);
+    newSocket.on('disconnect', () => {
+      // console.log('🔌 WebSocket desconectado');
       setIsConnected(false);
     });
 
     setSocket(newSocket);
 
-    // Cleanup al desmontar
     return () => {
-      console.log('🧹 Limpiando conexión WebSocket...');
-      newSocket.disconnect();
+      // console.log('🧹 Limpiando conexión WebSocket...');
+      if (newSocket) {
+        newSocket.disconnect();
+      }
     };
-  }, [lineId, userId, backendUrl]);
+  }, [backendUrl, lineId, userId]);
 
   // Suscribirse a un contacto específico
   const subscribeToContact = useCallback((contactId: string) => {
     if (socket && isConnected) {
-      console.log('📱 Suscribiéndose a contacto:', contactId);
+      // console.log('📱 Suscribiéndose a contacto:', contactId);
       socket.emit('subscribe-contact', { contactId, lineId });
       setCurrentContactId(contactId);
     } else {
-      console.warn('⚠️ No se puede suscribir a contacto: socket no conectado');
+      // console.warn('⚠️ No se puede suscribir a contacto: socket no conectado');
     }
   }, [socket, isConnected, lineId]);
 
   // Desuscribirse de un contacto
   const unsubscribeFromContact = useCallback((contactId: string) => {
     if (socket && isConnected) {
-      console.log('📱 Desuscribiéndose de contacto:', contactId);
+      // console.log('📱 Desuscribiéndose de contacto:', contactId);
       socket.emit('unsubscribe-contact', { contactId, lineId });
       setCurrentContactId(null);
     }
@@ -149,13 +131,13 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
     intent?: string;
   }) => {
     if (socket && isConnected) {
-      console.log('📤 Enviando mensaje via WebSocket:', data);
+      // console.log('📤 Enviando mensaje via WebSocket:', data);
       socket.emit('send-message', {
         ...data,
         lineId
       });
     } else {
-      console.error('❌ No se puede enviar mensaje: socket no conectado');
+      // console.error('❌ No se puede enviar mensaje: socket no conectado');
       messageHandlers.current.onMessageError?.({
         success: false,
         error: 'WebSocket no conectado'
@@ -185,16 +167,14 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
     return {
       isConnected,
       socketId: socket?.id,
-      connectionError,
       currentContactId,
       lineId
     };
-  }, [isConnected, socket?.id, connectionError, currentContactId, lineId]);
+  }, [isConnected, socket?.id, currentContactId, lineId]);
 
   return {
     socket,
     isConnected,
-    connectionError,
     subscribeToContact,
     unsubscribeFromContact,
     sendMessage,

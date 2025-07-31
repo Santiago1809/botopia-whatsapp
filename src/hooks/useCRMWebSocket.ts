@@ -88,12 +88,15 @@ interface UseCRMWebSocketProps {
 
 /**
  * Hook especializado para el CRM que maneja tiempo real completo
- * Sin polling, todo via WebSockets
+ * Solo WebSockets, sin polling
  */
 export const useCRMWebSocket = ({ 
   lineId = 'general', 
   userId = 'agent-1', 
-  backendUrl = 'http://localhost:5005' 
+  backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://crm-api-black.vercel.app' 
+      : 'http://localhost:5005')
 }: UseCRMWebSocketProps = {}) => {
   
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -134,12 +137,13 @@ export const useCRMWebSocket = ({
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       timeout: 5000,
+      forceNew: true
     });
 
     // === EVENTOS DE CONEXIÓN ===
