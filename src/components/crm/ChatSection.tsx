@@ -310,8 +310,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           // console.log('💾 Response status:', saveResponse.status);
           
           if (saveResponse.ok) {
-            const saveResult = await saveResponse.json();
-            // console.log('✅ MENSAJE GUARDADO EXITOSAMENTE EN BD:', saveResult);
+            await saveResponse.json();
+            // console.log('✅ MENSAJE GUARDADO EXITOSAMENTE EN BD');
           } else {
             const errorText = await saveResponse.text();
             console.error('❌ ERROR GUARDANDO EN BD - Response:', saveResponse.status, errorText);

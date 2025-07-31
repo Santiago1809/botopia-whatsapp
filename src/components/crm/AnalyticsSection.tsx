@@ -105,8 +105,6 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
           adjustedDate.setDate(adjustedDate.getDate() + 1); // Mover un día hacia adelante
           
           const newDateStr = adjustedDate.toISOString().split('T')[0];
-          const today = new Date();
-          const todayStr = today.toISOString().split('T')[0];
           
           // console.log(`🔧 Frontend: Adjusting ${day.date} → ${newDateStr}`, {
           //   originalDate: day.date,
@@ -150,8 +148,6 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
       } else {
         // console.log('⚠️ Frontend: Weekly activity API call not successful, using fallback data');
         // Generate activity based on contact creation dates with realistic bot/agent data
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
         
         const last7Days = Array.from({ length: 7 }, (_, i) => {
           const date = new Date();
@@ -201,21 +197,12 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     }
   }, [BACKEND_URL, lineId, contacts]);
 
-  // Handler para actualizaciones de contacto en tiempo real
-  const handleContactUpdate = useCallback(() => {
-    // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', _update);
-    
-    // Recargar métricas cuando se actualiza un contacto
-    fetchApiMetrics();
-    fetchWeeklyActivity();
-  }, [fetchApiMetrics, fetchWeeklyActivity]);
-
   // Registrar handler para actualizaciones de contacto
   useEffect(() => {
     // console.log('🔌 ANALYTICS: Registrando handler de WebSocket...');
     
-    registerContactUpdateHandler((_update) => {
-      // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', _update);
+    registerContactUpdateHandler(() => {
+      // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket');
       // Recargar datos cuando se actualice un contacto
       fetchApiMetrics();
       fetchWeeklyActivity();

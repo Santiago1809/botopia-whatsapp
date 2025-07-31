@@ -55,7 +55,7 @@ export default function LineDashboard() {
       // });
 
       // Mapear el status del backend al formato del frontend
-      const mapStatus = (funnelStage: string, priority: string): Contact['status'] => {
+      const mapStatus = (funnelStage: string): Contact['status'] => {
         // console.log('🔄 [DEBUG] Status mapeado:', {
         //   contactId: update.id,
         //   originalStatus: `${funnelStage}-${priority}`,
@@ -95,7 +95,7 @@ export default function LineDashboard() {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              status: mapStatus(update.funnel_stage || 'nuevo', update.priority || 'Lead'),
+              status: mapStatus(update.funnel_stage || 'nuevo'),
               etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,

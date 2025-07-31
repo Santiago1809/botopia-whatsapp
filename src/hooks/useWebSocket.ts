@@ -31,9 +31,7 @@ interface UseWebSocketProps {
 export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:5005' }: UseWebSocketProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [currentContactId, setCurrentContactId] = useState<string | null>(null);
-  const [clientId, setClientId] = useState<string | null>(null);
   
   const messageHandlers = useRef<{
     onNewMessage?: (message: WebSocketMessage) => void;
@@ -63,10 +61,9 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
       newSocket.emit('authenticate', { lineId, userId });
     });
 
-    newSocket.on('authenticated', (data) => {
-      // console.log('🔐 WebSocket autenticado:', data);
+    newSocket.on('authenticated', () => {
+      // console.log('🔐 WebSocket autenticado');
       setIsConnected(true);
-      setClientId(data.clientId);
     });
 
     newSocket.on('new-message', (message) => {
@@ -89,10 +86,9 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
       messageHandlers.current.onMessageError?.(error);
     });
 
-    newSocket.on('disconnect', (reason) => {
-      // console.log('🔌 WebSocket desconectado:', reason);
+    newSocket.on('disconnect', () => {
+      // console.log('🔌 WebSocket desconectado');
       setIsConnected(false);
-      setClientId(null);
     });
 
     setSocket(newSocket);
@@ -171,16 +167,14 @@ export const useWebSocket = ({ lineId, userId, backendUrl = 'http://localhost:50
     return {
       isConnected,
       socketId: socket?.id,
-      connectionError,
       currentContactId,
       lineId
     };
-  }, [isConnected, socket?.id, connectionError, currentContactId, lineId]);
+  }, [isConnected, socket?.id, currentContactId, lineId]);
 
   return {
     socket,
     isConnected,
-    connectionError,
     subscribeToContact,
     unsubscribeFromContact,
     sendMessage,
