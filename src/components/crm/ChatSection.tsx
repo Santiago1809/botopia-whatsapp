@@ -57,7 +57,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Variables de configuración
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://crm-api-black.vercel.app' 
+      : 'http://localhost:5005');
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL SIN POLLING
   const wsHook = useCRMWebSocket({ 
@@ -73,7 +76,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     
     // Handler para nuevos mensajes
     wsHook.registerMessageHandler((message) => {
-      console.log('📨 ChatSection: Nuevo mensaje recibido:', message);
+      // console.log('📨 ChatSection: Nuevo mensaje recibido:', message);
       
       if (selectedContact && message.contactId === selectedContact.id) {
         const newMsg: Message = {
@@ -91,12 +94,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           // Verificar que no esté duplicado
           const exists = prev.some(msg => msg.id === message.id);
           if (exists) {
-            console.log('⚠️ Mensaje ya existe, ignorando duplicado');
+            // console.log('⚠️ Mensaje ya existe, ignorando duplicado');
             return prev;
           }
           
-          // Agregar nuevo mensaje real de la base de datos
-          console.log('✅ Agregando mensaje real de la base de datos');
+          // console.log('✅ Agregando mensaje real de la base de datos');
           return [...prev, newMsg];
         });
       }
@@ -117,7 +119,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
     // Handler para actualizaciones de contacto
     wsHook.registerContactUpdateHandler((update) => {
-      console.log('🔄 ChatSection: Contacto actualizado:', update);
+      // console.log('🔄 ChatSection: Contacto actualizado:', update);
       
       if (selectedContact && update.id === selectedContact.id && onContactUpdate) {
         const updatedFields: Partial<Contact> = {
@@ -186,36 +188,36 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   }, []);
 
   const loadMessages = useCallback(async (contactId: string) => {
-    console.log('🔄 LOAD MESSAGES - INICIO:', {
-      contactId,
-      backendUrl: BACKEND_URL
-    });
+    // console.log('🔄 LOAD MESSAGES - INICIO:', {
+    //   contactId,
+    //   backendUrl: BACKEND_URL
+    // });
     
     setLoading(true);
-    console.log('🔄 CARGANDO MENSAJES para contacto:', contactId);
+    // console.log('🔄 CARGANDO MENSAJES para contacto:', contactId);
     
     try {
       // Llamar directamente al backend CRM-API
       const url = `${BACKEND_URL}/api/messages/${contactId}`;
-      console.log('🌐 Haciendo fetch a:', url);
+      // console.log('🌐 Haciendo fetch a:', url);
       
       const response = await fetch(url);
-      console.log('🔄 Response status:', response.status);
-      console.log('🔄 Response ok:', response.ok);
+      // console.log('🔄 Response status:', response.status);
+      // console.log('🔄 Response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🔄 Response data:', data);
+        // console.log('🔄 Response data:', data);
         
         if (data.success && data.data) {
-          console.log(`✅ MENSAJES CARGADOS: ${data.data.length} conversaciones para contacto ${contactId}`);
-          console.log('📝 Mensajes:', data.data);
+          // console.log(`✅ MENSAJES CARGADOS: ${data.data.length} conversaciones para contacto ${contactId}`);
+          // console.log('📝 Mensajes:', data.data);
           
           setMessages(data.data);
           // Verificar si han pasado más de 24 horas
           checkTimeGap(data.data);
         } else {
-          console.log('⚠️ No se encontraron mensajes en la base de datos');
+          // console.log('⚠️ No se encontraron mensajes en la base de datos');
           // Si no hay mensajes, simplemente mostrar array vacío
           setMessages([]);
           setIsOver24Hours(true);
@@ -230,12 +232,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       console.error('❌ ERROR CARGANDO MENSAJES:', error);
       
       // SOLO en caso de error real, usar datos de fallback básicos
-      console.log('🔧 Usando mensajes vacío por error de conexión');
+      // console.log('🔧 Usando mensajes vacío por error de conexión');
       setMessages([]);
       setIsOver24Hours(true);
     } finally {
       // SIEMPRE resetear loading, sin importar qué pase
-      console.log('✅ LOAD MESSAGES - FINALIZANDO, setting loading to false');
+      // console.log('✅ LOAD MESSAGES - FINALIZANDO, setting loading to false');
       setLoading(false);
     }
   }, [checkTimeGap, BACKEND_URL]);
@@ -280,14 +282,14 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           .replace(/\{1\}/g, selectedContact.nombre || selectedContact.telefono || 'Cliente');
         
         // PRIMERO: Guardar SIEMPRE en la base de datos
-        console.log('💾 GUARDANDO MENSAJE EN BD - INICIANDO...');
-        console.log('💾 Datos a enviar:', {
-          contactId: selectedContact.id,
-          lineId: lineId,
-          message: messageWithContactName,
-          sender: 'bot',
-          timestamp: new Date().toISOString()
-        });
+        // console.log('💾 GUARDANDO MENSAJE EN BD - INICIANDO...');
+        // console.log('💾 Datos a enviar:', {
+        //   contactId: selectedContact.id,
+        //   lineId: lineId,
+        //   message: messageWithContactName,
+        //   sender: 'bot',
+        //   timestamp: new Date().toISOString()
+        // });
         
         try {
           const saveResponse = await fetch(`${BACKEND_URL}/api/messages/save`, {
@@ -305,11 +307,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             }),
           });
 
-          console.log('💾 Response status:', saveResponse.status);
+          // console.log('💾 Response status:', saveResponse.status);
           
           if (saveResponse.ok) {
             const saveResult = await saveResponse.json();
-            console.log('✅ MENSAJE GUARDADO EXITOSAMENTE EN BD:', saveResult);
+            // console.log('✅ MENSAJE GUARDADO EXITOSAMENTE EN BD:', saveResult);
           } else {
             const errorText = await saveResponse.text();
             console.error('❌ ERROR GUARDANDO EN BD - Response:', saveResponse.status, errorText);
@@ -321,7 +323,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         }
         
         // SEGUNDO: YA NO AGREGAMOS MANUALMENTE - WEBSOCKET LO HACE EN TIEMPO REAL
-        console.log('� Template enviada - WebSocket manejará la actualización en tiempo real');
+        // console.log('✅ Template enviada - WebSocket manejará la actualización en tiempo real');
         setShowTemplateModal(false);
         
         // TERCERO: Actualizar el contacto
@@ -336,12 +338,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           });
         }
 
-        console.log('✅ Plantilla enviada exitosamente - WebSocket actualización pendiente:', result);
+        // console.log('✅ Plantilla enviada exitosamente - WebSocket actualización pendiente:', result);
         
         // CUARTO: Forzar recarga de mensajes para asegurar que se vea inmediatamente
-        console.log('🔄 FORZANDO RECARGA DE MENSAJES...');
+        // console.log('🔄 FORZANDO RECARGA DE MENSAJES...');
         await loadMessages(selectedContact.id);
-        console.log('✅ MENSAJES RECARGADOS DESPUÉS DE ENVIAR PLANTILLA');
+        // console.log('✅ MENSAJES RECARGADOS DESPUÉS DE ENVIAR PLANTILLA');
       } else {
         const errorData = await response.json();
         console.error('❌ Error enviando plantilla:', errorData);
@@ -377,14 +379,14 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Effect to handle contact selection from Kanban
   useEffect(() => {
-    console.log('🎯 USEEFFECT - selectedContactFromKanban changed:', {
-      hasContact: !!selectedContactFromKanban,
-      contactId: selectedContactFromKanban?.id,
-      contactName: selectedContactFromKanban?.nombre
-    });
+    // console.log('🎯 USEEFFECT - selectedContactFromKanban changed:', {
+    //   hasContact: !!selectedContactFromKanban,
+    //   contactId: selectedContactFromKanban?.id,
+    //   contactName: selectedContactFromKanban?.nombre
+    // });
     
     if (selectedContactFromKanban) {
-      console.log('🎯 ChatSection: Received contact from Kanban:', selectedContactFromKanban);
+      // console.log('🎯 ChatSection: Received contact from Kanban:', selectedContactFromKanban);
       setSelectedContact(selectedContactFromKanban);
       loadMessages(selectedContactFromKanban.id);
     }
@@ -393,12 +395,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   // Effect separado para manejar suscripción WebSocket cuando cambia el contacto seleccionado
   useEffect(() => {
     if (selectedContact && wsHook.isConnected) {
-      console.log('🔌 WebSocket conectado - suscribiéndose a contacto:', selectedContact.id);
+      // console.log('🔌 WebSocket conectado - suscribiéndose a contacto:', selectedContact.id);
       wsHook.subscribeToContact(selectedContact.id);
       
       // Cleanup: desuscribirse del contacto anterior
       return () => {
-        console.log('🧹 Desuscribiéndose de contacto:', selectedContact.id);
+        // console.log('🧹 Desuscribiéndose de contacto:', selectedContact.id);
         wsHook.unsubscribeFromContact(selectedContact.id);
       };
     }
@@ -414,7 +416,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     // NO agregar mensaje temporal - solo esperar el WebSocket
 
     try {
-      console.log(`📱 Enviando mensaje WhatsApp a ${selectedContact.nombre} (${selectedContact.telefono})`);
+      // console.log(`📱 Enviando mensaje WhatsApp a ${selectedContact.nombre} (${selectedContact.telefono})`);
       
       // Enviar directamente al backend CRM-API
       const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
@@ -433,7 +435,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log('✅ Mensaje enviado por WhatsApp:', result.data);
+        // console.log('✅ Mensaje enviado por WhatsApp:', result.data);
         
         // 💾 GUARDAR MENSAJE EN BASE DE DATOS
         try {
@@ -453,7 +455,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           });
 
           if (saveResponse.ok) {
-            console.log('� Mensaje guardado en base de datos');
+            // console.log(' Mensaje guardado en base de datos');
             // Recargar mensajes para mostrar el mensaje guardado
             await loadMessages(selectedContact.id);
           } else {
@@ -464,7 +466,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           console.error('❌ Error de conexión guardando mensaje:', saveError);
         }
         
-        console.log(`✅ Mensaje WhatsApp enviado exitosamente a ${selectedContact.nombre}`);
+        // console.log(`✅ Mensaje WhatsApp enviado exitosamente a ${selectedContact.nombre}`);
       } else {
         console.error('❌ Error enviando mensaje WhatsApp:', result);
         
@@ -514,7 +516,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           onContactUpdate(contactId, { estaAlHabilitado: isEnabled });
         }
         
-        console.log('🤖 AI updated successfully for contact:', contactId, 'to:', isEnabled);
+        // console.log('🤖 AI updated successfully for contact:', contactId, 'to:', isEnabled);
       } else {
         console.error('❌ Failed to update AI status');
       }
@@ -772,15 +774,15 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                   </div>
                 ) : messages.length > 0 ? (
                   <>
-                    {console.log('🎨 RENDERIZANDO MENSAJES - Total:', messages.length)}
-                    {console.log('🎨 MENSAJES A RENDERIZAR:', messages)}
+                    {/* console.log('🎨 RENDERIZANDO MENSAJES - Total:', messages.length) */}
+                    {/* console.log('🎨 MENSAJES A RENDERIZAR:', messages) */}
                     {messages.map(message => {
-                      console.log('🎨 RENDERIZANDO MENSAJE INDIVIDUAL:', message);
+                      // console.log('🎨 RENDERIZANDO MENSAJE INDIVIDUAL:', message);
                       // Determinar si es mensaje del agente humano o bot
                       const isHumanAgent = message.sender === 'agent';
                       const isBot = message.sender === 'bot';
                       
-                      console.log('🎨 isHumanAgent:', isHumanAgent, 'isBot:', isBot, 'sender:', message.sender);
+                      // console.log('🎨 isHumanAgent:', isHumanAgent, 'isBot:', isBot, 'sender:', message.sender);
                       
                       // Determinar la alineación: agentes humanos y bots van a la derecha, usuarios a la izquierda
                       const alignRight = isHumanAgent || isBot;

@@ -34,7 +34,10 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   const [weeklyActivity, setWeeklyActivity] = useState<DailyActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || "http://localhost:5005";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://crm-api-black.vercel.app' 
+      : 'http://localhost:5005');
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL PARA ANALYTICS
   const {
@@ -48,17 +51,17 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   // Fetch API metrics from backend
   const fetchApiMetrics = useCallback(async () => {
     try {
-      console.log('🔍 Frontend: Fetching API metrics for lineId:', lineId);
+      // console.log('🔍 Frontend: Fetching API metrics for lineId:', lineId);
       const response = await fetch(`${BACKEND_URL}/api/analytics/api-metrics/${lineId}`);
       const data = await response.json();
       
-      console.log('📡 Frontend: API response:', data);
+      // console.log('📡 Frontend: API response:', data);
       
       if (data.success) {
-        console.log('✅ Frontend: Setting API metrics:', data.data);
+        // console.log('✅ Frontend: Setting API metrics:', data.data);
         setApiMetrics(data.data);
       } else {
-        console.log('⚠️ Frontend: API call not successful, using fallback data');
+        // console.log('⚠️ Frontend: API call not successful, using fallback data');
         // Fallback: usar datos simulados
         setApiMetrics({
           tokensUsed: contacts.length * 120,
@@ -86,14 +89,14 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   // Fetch weekly activity from conversations table
   const fetchWeeklyActivity = useCallback(async () => {
     try {
-      console.log('🔍 Frontend: Fetching weekly activity for lineId:', lineId);
+      // console.log('🔍 Frontend: Fetching weekly activity for lineId:', lineId);
       const response = await fetch(`${BACKEND_URL}/api/analytics/weekly-activity/${lineId}`);
       const data = await response.json();
       
-      console.log('📡 Frontend: Weekly activity response:', data);
+      // console.log('📡 Frontend: Weekly activity response:', data);
       
       if (data.success) {
-        console.log('✅ Frontend: Setting weekly activity data:', data.data);
+        // console.log('✅ Frontend: Setting weekly activity data:', data.data);
         
         // Procesar y ajustar las fechas para corregir el desfase
         const adjustedData = data.data.map((day: DailyActivity) => {
@@ -105,12 +108,12 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
           const today = new Date();
           const todayStr = today.toISOString().split('T')[0];
           
-          console.log(`🔧 Frontend: Adjusting ${day.date} → ${newDateStr}`, {
-            originalDate: day.date,
-            adjustedDate: newDateStr,
-            isToday: newDateStr === todayStr,
-            dayName: adjustedDate.toLocaleDateString('es-ES', { weekday: 'short' })
-          });
+          // console.log(`🔧 Frontend: Adjusting ${day.date} → ${newDateStr}`, {
+          //   originalDate: day.date,
+          //   adjustedDate: newDateStr,
+          //   isToday: newDateStr === todayStr,
+          //   dayName: adjustedDate.toLocaleDateString('es-ES', { weekday: 'short' })
+          // });
           
           return {
             ...day,
@@ -126,7 +129,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
         // Si no tenemos datos para hoy, agregarlo
         const hasToday = adjustedData.some((day: DailyActivity) => day.date === todayStr);
         if (!hasToday) {
-          console.log('🔧 Frontend: Adding today to weekly data');
+          // console.log('🔧 Frontend: Adding today to weekly data');
           adjustedData.push({
             date: todayStr,
             day: today.toLocaleDateString('es-ES', { weekday: 'short' }),
@@ -142,10 +145,10 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
           .sort((a: DailyActivity, b: DailyActivity) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(-7);
         
-        console.log('✅ Frontend: Final adjusted weekly activity:', finalData);
+        // console.log('✅ Frontend: Final adjusted weekly activity:', finalData);
         setWeeklyActivity(finalData);
       } else {
-        console.log('⚠️ Frontend: Weekly activity API call not successful, using fallback data');
+        // console.log('⚠️ Frontend: Weekly activity API call not successful, using fallback data');
         // Generate activity based on contact creation dates with realistic bot/agent data
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
@@ -163,15 +166,15 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
             return contactDateStr === dateStr;
           });
 
-          console.log(`📊 Frontend fallback ${dateStr} (${date.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit' })}):`, {
-            dayContacts: dayContacts.length,
-            isToday: dateStr === todayStr,
-            contactsForDay: dayContacts.map(c => ({ 
-              id: c.id, 
-              originalDate: c.creadoEn,
-              parsedDate: new Date(c.creadoEn).toISOString().split('T')[0]
-            }))
-          });
+          // console.log(`📊 Frontend fallback ${dateStr} (${date.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit' })}):`, {
+          //   dayContacts: dayContacts.length,
+          //   isToday: dateStr === todayStr,
+          //   contactsForDay: dayContacts.map(c => ({ 
+          //     id: c.id, 
+          //     originalDate: c.creadoEn,
+          //     parsedDate: new Date(c.creadoEn).toISOString().split('T')[0]
+          //   }))
+          // });
 
           // Usar estimaciones más realistas basadas en contactos reales
           const newContactsCount = dayContacts.length;
@@ -189,7 +192,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
           };
         });
 
-        console.log('📊 Frontend: Generated fallback weekly activity (including today):', last7Days);
+        // console.log('📊 Frontend: Generated fallback weekly activity (including today):', last7Days);
         setWeeklyActivity(last7Days);
       }
     } catch (error) {
@@ -207,13 +210,17 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     fetchWeeklyActivity();
   }, [fetchApiMetrics, fetchWeeklyActivity]);
 
-  // Registrar handler de WebSocket
+  // Registrar handler para actualizaciones de contacto
   useEffect(() => {
-    if (registerContactUpdateHandler) {
-      console.log('🔌 ANALYTICS: Registrando handler de WebSocket...');
-      registerContactUpdateHandler(handleContactUpdate);
-    }
-  }, [registerContactUpdateHandler, handleContactUpdate]);
+    // console.log('🔌 ANALYTICS: Registrando handler de WebSocket...');
+    
+    registerContactUpdateHandler((_update) => {
+      // console.log('🔥 ANALYTICS: Contacto actualizado via WebSocket:', _update);
+      // Recargar datos cuando se actualice un contacto
+      fetchApiMetrics();
+      fetchWeeklyActivity();
+    });
+  }, [registerContactUpdateHandler, fetchApiMetrics, fetchWeeklyActivity]);
 
   // Load data on component mount
   useEffect(() => {
@@ -235,13 +242,13 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   const newContactsToday = contacts.filter(contact => {
     const contactDate = new Date(contact.creadoEn);
     const contactDateStr = contactDate.toISOString().split('T')[0];
-    console.log('🔍 Frontend: Checking contact date:', {
-      contactId: contact.id,
-      originalDate: contact.creadoEn,
-      contactDateStr,
-      todayStr,
-      matches: contactDateStr === todayStr
-    });
+    // console.log('🔍 Frontend: Checking contact date:', {
+    //   contactId: contact.id,
+    //   originalDate: contact.creadoEn,
+    //   contactDateStr,
+    //   todayStr,
+    //   matches: contactDateStr === todayStr
+    // });
     return contactDateStr === todayStr;
   }).length;
 
