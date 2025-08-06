@@ -523,7 +523,21 @@ export default function LineDashboard() {
   }, [BACKEND_URL]);
 
   // Handle contact update (name, tags, etc.)
-  const handleContactUpdate = useCallback(async (contactId: string, updates: Partial<Contact>) => {
+  const handleContactUpdate = useCallback(async (contactId: string, updates: Partial<Contact>, isWebSocketUpdate = false) => {
+    // 🔥 ACTUALIZACIÓN INMEDIATA PARA WEBSOCKET - NO ESPERAR API
+    if (isWebSocketUpdate) {
+      console.log('📨 [WEBSOCKET] Actualizando contacto inmediatamente:', contactId, updates);
+      setAllContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact.id === contactId 
+            ? { ...contact, ...updates, _lastUpdate: Date.now() }
+            : contact
+        )
+      );
+      return;
+    }
+
+    // Actualización normal via API
     try {
       const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
         method: 'PUT',

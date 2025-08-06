@@ -191,8 +191,18 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE MENSAJES ===
     newSocket.on('new-message', (message: WebSocketMessage) => {
-      console.log('📨 CRM: Nuevo mensaje recibido:', message);
-      eventHandlers.current.onNewMessage?.(message);
+      console.log('📨 CRM: Nuevo mensaje recibido:', {
+        message,
+        handlerExists: !!eventHandlers.current.onNewMessage,
+        handlerFunction: eventHandlers.current.onNewMessage ? 'REGISTERED' : 'NOT_REGISTERED'
+      });
+      
+      if (eventHandlers.current.onNewMessage) {
+        console.log('🔗 CRM: Ejecutando handler de mensaje...');
+        eventHandlers.current.onNewMessage(message);
+      } else {
+        console.warn('⚠️ CRM: Handler onNewMessage no está registrado');
+      }
     });
 
     newSocket.on('message-sent', (data: { success: boolean; messageId?: string; timestamp?: string }) => {
@@ -317,7 +327,9 @@ export const useCRMWebSocket = ({
   
   // Mensajes
   const registerMessageHandler = useCallback((handler: (message: WebSocketMessage) => void) => {
+    console.log('🔗 [DEBUG] CRM: Registrando handler para new-message');
     eventHandlers.current.onNewMessage = handler;
+    console.log('✅ [DEBUG] CRM: Handler onNewMessage registrado:', !!eventHandlers.current.onNewMessage);
   }, []);
 
   const registerMessageSentHandler = useCallback((handler: (data: { success: boolean; messageId?: string; timestamp?: string }) => void) => {
