@@ -130,6 +130,20 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
   const messageRef = useRef<HTMLParagraphElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
 
+  // 🔍 DEBUG: Detectar cuando el contacto se actualiza
+  useEffect(() => {
+    console.log('🎯 [KANBAN CARD] Contacto actualizado en carta:', {
+      id: contact.id,
+      nombre: contact.nombre,
+      ultimaActividad: contact.ultimaActividad,
+      ultimoMensaje: contact.ultimoMensaje ? {
+        mensaje: contact.ultimoMensaje.mensaje.substring(0, 50) + '...',
+        timestamp: contact.ultimoMensaje.timestamp,
+        remitente: contact.ultimoMensaje.remitente
+      } : 'Sin mensaje'
+    });
+  }, [contact]);
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -598,19 +612,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContact
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChange, onContactUpdate, onContactSelect, onGotoChat }) => {
   const [draggedContact, setDraggedContact] = useState<Contact | null>(null);
 
-  // Debug logs
-  // console.log('📋 KanbanBoard - Received contacts:', contacts);
-  // console.log('📋 KanbanBoard - Contact count:', contacts.length);
-  // console.log('📋 KanbanBoard - Contact details:', contacts.map(c => ({ id: c.id, name: c.nombre, status: c.status })));
-  
-  // Log contacts by status
-  // statusColumns.forEach(column => {
-  //   const contactsInColumn = contacts.filter(contact => contact.status === column.id);
-  //   console.log(`📋 ${column.title} (${column.id}):`, contactsInColumn.length, 'contacts');
-  //   if (contactsInColumn.length > 0) {
-  //     console.log(`📋 ${column.title} details:`, contactsInColumn.map(c => ({ id: c.id, name: c.nombre })));
-  //   }
-  // });
+  // 🔍 DEBUG: Monitorear actualizaciones de contactos en KanbanBoard
+  useEffect(() => {
+    console.log('🏠 [KANBAN BOARD] Contactos actualizados:', {
+      total: contacts.length,
+      contactsWithLastMessage: contacts.filter(c => c.ultimoMensaje).length,
+      lastActivityDates: contacts.map(c => ({ id: c.id, ultimaActividad: c.ultimaActividad }))
+    });
+  }, [contacts]);
 
   const handleDragStart = (start: { draggableId: string }) => {
     const contact = contacts.find(c => c.id === start.draggableId);

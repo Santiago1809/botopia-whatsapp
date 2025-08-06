@@ -133,40 +133,43 @@ export const useCRMWebSocket = ({
 
   // Inicializar conexión WebSocket
   useEffect(() => {
-    // console.log('🔌 CRM WebSocket: Inicializando conexión...');
+    console.log('🔌 CRM WebSocket: Inicializando conexión...', { lineId, backendUrl });
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'], // Permitir ambos transports
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      timeout: 5000,
-      forceNew: true
+      timeout: 20000, // Aumentar timeout
+      forceNew: true,
+      withCredentials: true
     });
 
     // === EVENTOS DE CONEXIÓN ===
     newSocket.on('connect', () => {
-      // console.log('✅ CRM WebSocket conectado:', newSocket.id);
+      console.log('✅ CRM WebSocket conectado:', newSocket.id);
       setIsConnected(true);
       setConnectionError(null);
       setConnectionStatus('connected');
       
       // Autenticar con el servidor
+      console.log('🔐 Autenticando con lineId:', lineId, 'userId:', userId);
       newSocket.emit('authenticate', { lineId, userId });
     });
 
-    newSocket.on('authenticated', () => {
-      // console.log('🔐 CRM WebSocket autenticado:', data);
+    newSocket.on('authenticated', (data) => {
+      console.log('🔐 CRM WebSocket autenticado:', data);
     });
 
     newSocket.on('disconnect', (reason) => {
-      // console.log('🔌 CRM WebSocket desconectado:', reason);
+      console.log('🔌 CRM WebSocket desconectado:', reason);
       setIsConnected(false);
       setConnectionStatus('disconnected');
       
       if (reason === 'io server disconnect') {
+        console.log('🔄 Reconectando...');
         newSocket.connect();
       }
     });
@@ -178,14 +181,22 @@ export const useCRMWebSocket = ({
       setConnectionStatus('error');
     });
 
+    newSocket.on('reconnect', () => {
+      console.log('🔄 CRM WebSocket reconectado');
+      setIsConnected(true);
+      setConnectionStatus('connected');
+      // Re-autenticar después de reconectar
+      newSocket.emit('authenticate', { lineId, userId });
+    });
+
     // === EVENTOS DE MENSAJES ===
     newSocket.on('new-message', (message: WebSocketMessage) => {
-      // console.log('📨 CRM: Nuevo mensaje recibido:', message);
+      console.log('📨 CRM: Nuevo mensaje recibido:', message);
       eventHandlers.current.onNewMessage?.(message);
     });
 
     newSocket.on('message-sent', (data: { success: boolean; messageId?: string; timestamp?: string }) => {
-      // console.log('✅ CRM: Mensaje enviado confirmado:', data);
+      console.log('✅ CRM: Mensaje enviado confirmado:', data);
       eventHandlers.current.onMessageSent?.(data);
     });
 
@@ -196,12 +207,23 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE CONTACTOS ===
     newSocket.on('contact-updated', (update: ContactUpdate) => {
-      // console.log('🔄 CRM: Contacto actualizado:', update);
-      eventHandlers.current.onContactUpdate?.(update);
+      console.log('🔄 [DEBUG] CRM: Contacto actualizado recibido via WebSocket:', {
+        id: update.id,
+        lineId: update.lineId,
+        funnel_stage: update.funnel_stage,
+        last_activity: update.last_activity,
+        handlerRegistrado: !!eventHandlers.current.onContactUpdate
+      });
+      
+      if (eventHandlers.current.onContactUpdate) {
+        eventHandlers.current.onContactUpdate(update);
+      } else {
+        console.warn('⚠️ [DEBUG] CRM: Handler onContactUpdate no está registrado');
+      }
     });
 
     newSocket.on('contact-deleted', (data: { id: string }) => {
-      // console.log('🗑️ CRM: Contacto eliminado:', data);
+      console.log('🗑️ CRM: Contacto eliminado:', data);
       eventHandlers.current.onContactDeleted?.(data);
     });
 
@@ -308,6 +330,7 @@ export const useCRMWebSocket = ({
 
   // Contactos
   const registerContactUpdateHandler = useCallback((handler: (update: ContactUpdate) => void) => {
+    console.log('🔗 [DEBUG] CRM: Registrando handler para contact-updated');
     eventHandlers.current.onContactUpdate = handler;
   }, []);
 
