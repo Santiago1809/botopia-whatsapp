@@ -39,31 +39,39 @@ export default function LineDashboard() {
     backendUrl: BACKEND_URL
   });
 
+  // Debug logs para verificar conexión
+  useEffect(() => {
+    console.log('🔍 [DEBUG] Dashboard montado con lineId:', lineId);
+    console.log('🔍 [DEBUG] Backend URL:', BACKEND_URL);
+    console.log('🔍 [DEBUG] WebSocket status:', {
+      isConnected: wsHook.isConnected,
+      connectionStatus: wsHook.connectionStatus
+    });
+  }, [lineId, BACKEND_URL, wsHook.isConnected, wsHook.connectionStatus]);
+
   // Handler para actualizaciones de contacto en tiempo real
   useEffect(() => {
-    // console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
-
-    // Handler para actualizaciones de contacto
+    console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
+    console.log('🔍 [DEBUG] WebSocket conectado:', wsHook.isConnected);
+    console.log('🔍 [DEBUG] LineId para WebSocket:', lineId);
+    
+    // Handler para actualizaciones de contacto - FORZAR ACTUALIZACIÓN
     wsHook.registerContactUpdateHandler((update) => {
-      // console.log('🔥 [DEBUG] Contacto actualizado via WebSocket:', {
-      //   id: update.id,
-      //   name: update.name,
-      //   phone: update.phone,
-      //   funnel_stage: update.funnel_stage,
-      //   priority: update.priority,
-      //   lastMessage: update.lastMessage
-      // });
+      console.log('🔥 [DEBUG] Dashboard recibió contacto actualizado via WebSocket:', {
+        id: update.id,
+        name: update.name,
+        phone: update.phone,
+        funnel_stage: update.funnel_stage,
+        priority: update.priority,
+        lastMessage: update.lastMessage,
+        last_activity: update.last_activity
+      });
+
+      // 🚀 FORZAR ACTUALIZACIÓN INMEDIATA - NO IMPORTA QUE PASE
+      console.log('🚨 [FORCE] Forzando actualización de contacto via WebSocket');
 
       // Mapear el status del backend al formato del frontend
       const mapStatus = (funnelStage: string): Contact['status'] => {
-        // console.log('🔄 [DEBUG] Status mapeado:', {
-        //   contactId: update.id,
-        //   originalStatus: `${funnelStage}-${priority}`,
-        //   funnel_stage: funnelStage,
-        //   mappedStatus: `${funnelStage}-${priority}`
-        // });
-        
-        // Mapear a los tipos válidos de Contact
         switch (funnelStage) {
           case 'nuevo':
           case 'nuevo-lead':
@@ -83,24 +91,33 @@ export default function LineDashboard() {
           case 'pendiente-documentacion':
             return 'pendiente-documentacion';
           default:
-            return 'nuevo-lead'; // Valor por defecto
+            return 'nuevo-lead';
         }
       };
 
-      // Actualizar el contacto en el estado local
+      // 🔥 ACTUALIZACIÓN FORZADA - SE EJECUTA SIEMPRE
       setAllContacts(prevContacts => {
-        const updatedContacts = prevContacts.map(contact => {
+        console.log('🔍 [DEBUG] Contactos actuales:', prevContacts.length);
+        console.log('🔍 [DEBUG] Buscando contacto con ID:', update.id);
+        
+        let contactFound = false;
+        let updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
+            contactFound = true;
+            console.log('✅ [DEBUG] Contacto encontrado! Actualizando:', contact.id);
+            
             const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              status: mapStatus(update.funnel_stage || 'nuevo'),
+              status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
               etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
+              // 🚀 Forzar cambio para trigger re-render en cartas Kanban
+              _lastUpdate: Date.now()
             };
 
             // Actualizar último mensaje si está disponible
@@ -111,48 +128,178 @@ export default function LineDashboard() {
                 remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
                           update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
               };
+              console.log('📨 [DEBUG] Último mensaje actualizado en contacto:', updatedContact.ultimoMensaje);
+              console.log('🎯 [KANBAN] Mensaje y última actividad DEBEN actualizarse en carta del Kanban');
             }
 
-            // console.log('✅ [DEBUG] Contacto actualizado en Kanban:', {
-            //   id: updatedContact.id,
-            //   ultimaActividad: updatedContact.ultimaActividad,
-            //   ultimoMensaje: updatedContact.ultimoMensaje
-            // });
+            console.log('🎯 [DEBUG] Contacto actualizado exitosamente:', {
+              id: updatedContact.id,
+              status: updatedContact.status,
+              ultimaActividad: updatedContact.ultimaActividad,
+              nombre: updatedContact.nombre,
+              ultimoMensaje: updatedContact.ultimoMensaje ? 'Sí tiene mensaje' : 'Sin mensaje'
+            });
 
             return updatedContact;
           }
           return contact;
         });
 
-        return updatedContacts;
+        // Si no se encontró el contacto, buscar por teléfono o agregar si es nuevo
+        if (!contactFound) {
+          console.log('⚠️ [DEBUG] Contacto no encontrado con ID:', update.id);
+          
+          // Buscar por teléfono como fallback
+          const contactByPhone = prevContacts.find(c => c.telefono === update.phone);
+          if (contactByPhone) {
+            console.log('📞 [DEBUG] Encontrado contacto por teléfono:', contactByPhone.id);
+            updatedContacts = prevContacts.map(contact => {
+              if (contact.telefono === update.phone) {
+                return {
+                  ...contact,
+                  nombre: update.name || contact.nombre,
+                  status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
+                  ultimaActividad: update.last_activity || contact.ultimaActividad,
+                };
+              }
+              return contact;
+            });
+          } else {
+            console.log('➕ [DEBUG] Agregando nuevo contacto desde WebSocket');
+            // Crear nuevo contacto si no existe
+            const newContact: Contact = {
+              id: update.id,
+              identificacion: update.phone || '',
+              telefono: update.phone || '',
+              nombre: update.name || 'Contacto Nuevo',
+              etapaDelEmbudo: update.funnel_stage || 'nuevo',
+              prioridad: update.priority || 'media',
+              estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : true,
+              etiquetas: update.tags || [],
+              ultimaActividad: update.last_activity || new Date().toISOString(),
+              creadoEn: new Date().toISOString(),
+              idDeUsuario: "2",
+              proveedor: "META",
+              numeroLinea: lineId,
+              status: mapStatus(update.funnel_stage || 'nuevo'),
+              ultimoMensaje: update.lastMessage ? {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
+                          update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+              } : undefined
+            };
+            updatedContacts = [...prevContacts, newContact];
+          }
+        }
+
+        console.log('✅ [FORCE] Estado de contactos actualizado FORZOSAMENTE');
+        console.log('📊 [DEBUG] Total contactos después de actualización:', updatedContacts.length);
+        console.log('🎯 [KANBAN] Las cartas del Kanban DEBEN mostrar datos actualizados ahora');
+        
+        // Retornar SIEMPRE un nuevo array para forzar re-render
+        return [...updatedContacts];
       });
     });
 
     // Handler para contactos eliminados
     wsHook.registerContactDeletedHandler((data) => {
-      // console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
+      console.log('🗑️ CRM Dashboard: Contacto eliminado via WebSocket:', data);
       
       setAllContacts(prevContacts => {
         return prevContacts.filter(contact => contact.id !== data.id);
       });
     });
 
-    // Handler para actualizaciones de dashboard
+    // 🚨 HANDLER DE FUERZA BRUTA - ESCUCHA CUALQUIER CAMBIO EN CONVERSACIONES
+    wsHook.registerMessageHandler((message) => {
+      console.log('📨 [FORCE] Nuevo mensaje detectado via WebSocket - Forzando actualización de contacto:', {
+        contactId: message.contactId,
+        message: message.message,
+        sender: message.sender,
+        timestamp: message.timestamp
+      });
+
+      // Actualizar el último mensaje del contacto correspondiente
+      setAllContacts(prevContacts => {
+        let contactUpdated = false;
+        const updatedContacts = prevContacts.map(contact => {
+          if (contact.id === message.contactId) {
+            contactUpdated = true;
+            console.log('📨 [FORCE] Actualizando último mensaje para contacto:', contact.id);
+            console.log('📨 [BEFORE] Contacto antes de actualizar:', {
+              ultimoMensaje: contact.ultimoMensaje,
+              ultimaActividad: contact.ultimaActividad
+            });
+            
+            const updatedContact = {
+              ...contact,
+              // 🔥 FORZAR COPIA PROFUNDA DEL ÚLTIMO MENSAJE
+              ultimoMensaje: {
+                mensaje: message.message,
+                timestamp: message.timestamp,
+                remitente: message.sender === 'user' ? 'usuario' : 
+                          message.sender === 'bot' ? 'bot' : 'agente'
+              },
+              ultimaActividad: message.timestamp,
+              // 🚀 Agregar timestamp único para forzar re-render
+              _lastUpdate: Date.now()
+            };
+            
+            console.log('📨 [AFTER] Contacto después de actualizar:', {
+              ultimoMensaje: updatedContact.ultimoMensaje,
+              ultimaActividad: updatedContact.ultimaActividad,
+              _lastUpdate: updatedContact._lastUpdate
+            });
+            
+            return updatedContact;
+          }
+          return contact;
+        });
+        
+        if (contactUpdated) {
+          console.log('✅ [FORCE] Último mensaje actualizado por WebSocket - CARTAS KANBAN DEBERÍAN ACTUALIZARSE AHORA');
+          console.log('📊 [DEBUG] Total contactos en estado:', updatedContacts.length);
+          console.log('🎯 [DEBUG] Contacto actualizado en array:', 
+            updatedContacts.find(c => c.id === message.contactId)?.ultimoMensaje
+          );
+        } else {
+          console.log('⚠️ [WARNING] No se encontró contacto con ID:', message.contactId);
+          console.log('📋 [DEBUG] IDs de contactos disponibles:', prevContacts.map(c => c.id));
+        }
+        
+        // 🚀 RETORNAR SIEMPRE NUEVO ARRAY PARA FORZAR RE-RENDER
+        return [...updatedContacts];
+      });
+    });
+
     // Handler para actualizaciones de dashboard
     wsHook.registerDashboardUpdateHandler(() => {
-      // console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket:', _data);
-      // Aquí puedes actualizar dashboardData si es necesario
+      console.log('📊 CRM Dashboard: Dashboard actualizado via WebSocket');
+      // Forzar actualización requerida desde el backend
     });
 
     // Handler para actualizaciones de analytics
-    // Handler para actualizaciones de analytics
     wsHook.registerAnalyticsUpdateHandler(() => {
-      // console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket:', _data);
+      console.log('📈 CRM Dashboard: Analytics actualizado via WebSocket');
       // Los analytics se actualizan automáticamente via el hook useDashboardFilters
     });
 
-    // console.log('✅ CRM Dashboard: Handlers de WebSocket configurados');
-  }, [wsHook]);
+    // 🚨 ÚLTIMO RECURSO - Escuchar CUALQUIER evento de contacto actualizado globalmente
+    if (wsHook.socket) {
+      wsHook.socket.on('contact-updated', (update: unknown) => {
+        console.log('🌍 [GLOBAL] Evento contact-updated capturado directamente del socket:', update);
+        // Este evento se manejará por el handler registrado arriba
+      });
+
+      wsHook.socket.on('new-message', (message: unknown) => {
+        console.log('🌍 [GLOBAL] Evento new-message capturado directamente del socket:', message);
+        // Este evento se manejará por el handler registrado arriba
+      });
+    }
+
+    console.log('✅ CRM Dashboard: Handlers de WebSocket configurados correctamente');
+  }, [wsHook, lineId]);
 
   // Fetch line tags from database
   const fetchLineTags = useCallback(async () => {
@@ -181,21 +328,11 @@ export default function LineDashboard() {
   // Fetch all contacts for the line
   const fetchAllContacts = useCallback(async () => {
     try {
-      // console.log('🔍 Fetching contacts for line:', lineId);
-      // console.log('🌐 Backend URL:', BACKEND_URL);
-      
       const response = await fetch(`${BACKEND_URL}/api/lines/${lineId}/contacts`);
       const data = await response.json();
       
-      // console.log('📡 Response status:', response.status);
-      // console.log('📦 Response data:', data);
-      
       if (data.success) {
-        // console.log('✅ Contacts received:', data.data);
-        // console.log('📊 Number of contacts:', data.data.length);
         setAllContacts(data.data);
-      } else {
-        // console.log('❌ API response not successful:', data.message);
       }
     } catch (error) {
       console.error('❌ Error fetching contacts:', error);
