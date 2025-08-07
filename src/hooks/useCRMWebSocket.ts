@@ -104,6 +104,10 @@ export const useCRMWebSocket = ({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [currentContactId, setCurrentContactId] = useState<string | null>(null);
   
+  // Referencias para mantener la conexión viva
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttempts = useRef(0);
+  
   // Referencias para los handlers de eventos
   const eventHandlers = useRef<{
     // Mensajes
@@ -126,6 +130,9 @@ export const useCRMWebSocket = ({
     // Contactos sincronizados
     onSyncedContactUpdate?: (data: { contact: SyncedContact }) => void;
     onSyncedContactDeleted?: (data: { contactId: string }) => void;
+    
+    // Estado guardado para reconexión
+    savedContactId?: string;
   }>({});
 
   // Estado para indicadores visuales
@@ -140,10 +147,11 @@ export const useCRMWebSocket = ({
       transports: ['websocket', 'polling'], // Permitir ambos transports
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity, // Intentar reconectar siempre
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       timeout: 20000, // Aumentar timeout
-      forceNew: true,
+      forceNew: false, // No forzar nueva conexión cada vez
       withCredentials: true
     });
 
@@ -153,14 +161,32 @@ export const useCRMWebSocket = ({
       setIsConnected(true);
       setConnectionError(null);
       setConnectionStatus('connected');
+      reconnectAttempts.current = 0; // Reset intentos de reconexión
       
       // Autenticar con el servidor
       console.log('🔐 Autenticando con lineId:', lineId, 'userId:', userId);
       newSocket.emit('authenticate', { lineId, userId });
+      
+      // Iniciar heartbeat para mantener la conexión viva
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+      }
+      heartbeatInterval.current = setInterval(() => {
+        if (newSocket.connected) {
+          newSocket.emit('ping');
+        }
+      }, 25000); // Ping cada 25 segundos
     });
 
     newSocket.on('authenticated', (data) => {
       console.log('🔐 CRM WebSocket autenticado:', data);
+      // Re-suscribirse al contacto actual si existe
+      const contactToSubscribe = currentContactId || eventHandlers.current.savedContactId;
+      if (contactToSubscribe) {
+        console.log('🔄 Re-suscribiendo a contacto después de autenticación:', contactToSubscribe);
+        newSocket.emit('subscribe-contact', { contactId: contactToSubscribe, lineId });
+        setCurrentContactId(contactToSubscribe);
+      }
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -168,25 +194,42 @@ export const useCRMWebSocket = ({
       setIsConnected(false);
       setConnectionStatus('disconnected');
       
+      // Limpiar heartbeat
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+      
       if (reason === 'io server disconnect') {
-        console.log('🔄 Reconectando...');
-        newSocket.connect();
+        console.log('🔄 Servidor desconectó, reconectando...');
+        setTimeout(() => newSocket.connect(), 1000);
       }
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('❌ CRM WebSocket error de conexión:', error);
+      reconnectAttempts.current++;
+      console.error(`❌ CRM WebSocket error de conexión (intento ${reconnectAttempts.current}):`, error.message);
       setConnectionError(error.message);
       setIsConnected(false);
       setConnectionStatus('error');
+      
+      // Reintentar con backoff exponencial
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+      console.log(`🔄 Reintentando en ${delay/1000} segundos...`);
     });
 
-    newSocket.on('reconnect', () => {
-      console.log('🔄 CRM WebSocket reconectado');
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log(`🔄 CRM WebSocket reconectado después de ${attemptNumber} intentos`);
       setIsConnected(true);
       setConnectionStatus('connected');
+      reconnectAttempts.current = 0;
       // Re-autenticar después de reconectar
       newSocket.emit('authenticate', { lineId, userId });
+    });
+    
+    // Manejar pong del servidor
+    newSocket.on('pong', () => {
+      // El servidor respondió al ping, la conexión está viva
     });
 
     // === EVENTOS DE MENSAJES ===
@@ -274,7 +317,15 @@ export const useCRMWebSocket = ({
 
     // Cleanup al desmontar
     return () => {
-      // console.log('🧹 CRM WebSocket: Limpiando conexión...');
+      console.log('🧹 CRM WebSocket: Limpiando conexión...');
+      
+      // Limpiar heartbeat
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+      
+      // Desconectar socket
       newSocket.disconnect();
       setConnectionStatus('disconnected');
     };
@@ -282,21 +333,25 @@ export const useCRMWebSocket = ({
 
   // === MÉTODOS DE SUSCRIPCIÓN ===
   const subscribeToContact = useCallback((contactId: string) => {
+    // Siempre guardar el contacto actual
+    setCurrentContactId(contactId);
+    eventHandlers.current.savedContactId = contactId;
+    
     if (socket && isConnected) {
-      // console.log('📱 CRM: Suscribiéndose a contacto:', contactId);
+      console.log('📱 CRM: Suscribiéndose a contacto:', contactId);
       socket.emit('subscribe-contact', { contactId, lineId });
-      setCurrentContactId(contactId);
     } else {
-      console.warn('⚠️ CRM: No se puede suscribir a contacto: socket no conectado');
+      console.warn('⚠️ CRM: No se puede suscribir a contacto ahora, se suscribirá cuando se reconecte:', contactId);
     }
   }, [socket, isConnected, lineId]);
 
   const unsubscribeFromContact = useCallback((contactId: string) => {
     if (socket && isConnected) {
-      // console.log('📱 CRM: Desuscribiéndose de contacto:', contactId);
+      console.log('📱 CRM: Desuscribiéndose de contacto:', contactId);
       socket.emit('unsubscribe-contact', { contactId, lineId });
-      setCurrentContactId(null);
     }
+    setCurrentContactId(null);
+    eventHandlers.current.savedContactId = undefined;
   }, [socket, isConnected, lineId]);
 
   // === MÉTODOS DE ENVÍO ===

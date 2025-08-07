@@ -70,7 +70,17 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Configurar handlers de WebSocket
   useEffect(() => {
-    console.log('🔌 ChatSection: Configurando handlers de WebSocket...');
+    console.log('🔌 ChatSection: Configurando handlers de WebSocket...', {
+      isConnected: wsHook.isConnected,
+      connectionStatus: wsHook.connectionStatus,
+      selectedContactId: selectedContact?.id
+    });
+    
+    // Si no está conectado, intentar reconectar
+    if (!wsHook.isConnected && wsHook.reconnect) {
+      console.log('🔄 ChatSection: WebSocket no conectado, intentando reconectar...');
+      wsHook.reconnect();
+    }
     
     // Handler para nuevos mensajes
     wsHook.registerMessageHandler((message) => {
@@ -176,7 +186,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     });
 
     console.log('✅ ChatSection: Handlers de WebSocket configurados');
-  }, [wsHook, selectedContact?.id, onContactUpdate]);
+  }, [wsHook, selectedContact?.id, onContactUpdate, wsHook.isConnected, wsHook.reconnect]);
 
   // Función para verificar si han pasado más de 24 horas desde el último mensaje
   const checkTimeGap = useCallback((messages: Message[]) => {
@@ -405,8 +415,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         console.log('🧹 Desuscribiéndose de contacto:', selectedContact.id);
         wsHook.unsubscribeFromContact(selectedContact.id);
       };
+    } else if (selectedContact && !wsHook.isConnected) {
+      console.log('⏳ WebSocket no conectado, esperando conexión para suscribirse a:', selectedContact.id);
+      // El hook automáticamente se re-suscribirá cuando se reconecte
     }
-  }, [selectedContact?.id, wsHook.isConnected]); // Solo depender del ID del contacto, no del objeto completo
+  }, [selectedContact?.id, wsHook.isConnected, wsHook]); // Incluir wsHook para acceder a métodos
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact) return;
@@ -644,12 +657,16 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                             <p className="text-xs text-muted-foreground">
                               {contact.telefono}
                             </p>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {formatDate(contact.ultimaActividad)}
-                              </span>
-                            </div>
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(
+                                    (selectedContact?.id === contact.id && messages.length > 0)
+                                      ? messages[messages.length - 1].timestamp
+                                      : (contact.ultimoMensaje?.timestamp || contact.ultimaActividad)
+                                  )}
+                                </span>
+                              </div>
                           </div>
                           
                           {/* 🔥 ÚLTIMO MENSAJE PREVIEW - ACTUALIZADO VIA WEBSOCKET */}
