@@ -58,7 +58,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   // Variables de configuración
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
     (process.env.NODE_ENV === 'production' 
-      ? 'https://crm-api-black.vercel.app' 
+      ? 'https://web-production-b5fb9.up.railway.app' 
       : 'http://localhost:5005');
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL SIN POLLING

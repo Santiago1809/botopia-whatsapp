@@ -304,7 +304,7 @@ export default function FilterSidebar({
             <span className="font-medium text-orange-600">{filteredContacts.filter(c => c.status === 'atencion-cliente').length}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Ticket de pago generado:</span>
+            <span className="text-muted-foreground">Cita Cancelada:</span>
             <span className="font-medium text-green-600">{filteredContacts.filter(c => c.status === 'cerrado').length}</span>
           </div>
         </div>

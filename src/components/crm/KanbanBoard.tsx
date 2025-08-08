@@ -244,13 +244,13 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`
+                className={`
             relative bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border-l-4 p-4 mb-2 w-full max-w-[320px] ${isEditingName ? 'min-h-[300px]' : 'min-h-[260px]'}
-            hover:shadow-md transition-all cursor-pointer
-            ${statusColumns.find(col => col.id === contact.status)?.cardColor}
-            ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
+                  hover:shadow-md transition-all cursor-pointer
+                  ${statusColumns.find(col => col.id === contact.status)?.cardColor}
+                  ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
             ${isEditingName ? 'ring-2 ring-primary/60 border-primary/80 shadow-lg' : ''}
-          `}
+                `}
           onClick={handleContactClick}
         >
           {/* Header */}
@@ -305,16 +305,16 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
             <div className="flex items-center space-x-1">
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(contact.prioridad)}`}>{contact.prioridad}</span>
             </div>
-            <div className="relative" ref={menuRef}>
-              <button 
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-              </button>
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[150px]">
+              <div className="relative" ref={menuRef}>
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                >
+                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                </button>
+                {/* Dropdown Menu */}
+                {showMenu && (
+                  <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[150px]">
                   <div className="border-b border-gray-200 dark:border-gray-700">
                     {priorityOptions.map(opt => (
                       <button
@@ -332,28 +332,28 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
                       </button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => {
-                      setIsEditingName(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Editar nombre
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsAddingTag(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Agregar etiqueta
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => {
+                        setIsEditingName(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Editar nombre
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAddingTag(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Agregar etiqueta
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
 
@@ -435,8 +435,8 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
                   className={`text-sm text-foreground ${!expanded ? 'line-clamp-2' : ''}`}
                   style={{ minHeight: '3.3em', maxWidth: '100%', wordBreak: 'break-word' }}
                 >
-                  {contact.ultimoMensaje.mensaje}
-                </p>
+                {contact.ultimoMensaje.mensaje}
+              </p>
                 {/* Medidor oculto para saber si hay truncamiento visual */}
                 {!expanded && (
                   <span
@@ -472,73 +472,65 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
           )}
 
           {/* Actions */}
-          <div className="mt-3 grid grid-cols-3 items-center gap-2">
-            {/* AI Toggle Switch - Esquina izquierda */}
+          <div className="mt-3 flex items-center justify-between">
+            {/* AI Toggle Switch - Izquierda */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                <label className="relative inline-flex items-center cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={contact.estaAlHabilitado}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      if (onContactUpdate) {
-                        onContactUpdate(contact.id, {
-                          estaAlHabilitado: e.target.checked
-                        });
-                      }
-                    }}
-                    className="sr-only"
-                  />
-                  <div className={`w-9 h-5 rounded-full transition-all duration-300 shadow-inner ${
-                    contact.estaAlHabilitado 
-                      ? 'bg-gradient-to-r from-green-400 to-green-500 shadow-green-200' 
-                      : 'bg-gradient-to-r from-gray-300 to-gray-400 shadow-gray-200'
-                  } group-hover:shadow-lg`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-all duration-300 flex items-center justify-center ${
-                      contact.estaAlHabilitado ? 'translate-x-4' : 'translate-x-0.5'
-                    } mt-0.5`}>
-                      {/* Icono de IA minimalista */}
-                      <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                        contact.estaAlHabilitado ? 'bg-green-500' : 'bg-gray-400'
-                      }`}></div>
-                    </div>
-                  </div>
-                </label>
-                <span className={`text-xs font-medium ml-2 transition-colors duration-300 ${
-                  contact.estaAlHabilitado ? 'text-green-600' : 'text-gray-500'
-                }`}>
-                  IA
-                </span>
-              </div>
-            </div>
-
-            {/* Chat Button - Centro */}
-            <div className="flex-1 flex justify-center">
-              <div className="flex flex-col items-center">
-                <button
-                  className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-lg shadow transition cursor-pointer hover:scale-105 active:scale-95"
-                  title="Ir al chat"
-                  onClick={e => {
+              <label className="relative inline-flex items-center cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={contact.estaAlHabilitado}
+                  onChange={(e) => {
                     e.stopPropagation();
-                    // console.log('🎯 Button clicked! onGotoChat:', !!onGotoChat);
-                    if (onGotoChat) {
-                      onGotoChat(contact);
-                    } else if (onContactSelect) {
-                      onContactSelect(contact);
+                    if (onContactUpdate) {
+                      onContactUpdate(contact.id, {
+                        estaAlHabilitado: e.target.checked
+                      });
                     }
                   }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8l-4 1 1-3.2A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </button>
-                <span className="text-xs text-muted-foreground mt-1">Ir a chat</span>
-              </div>
+                  className="sr-only"
+                />
+                <div className={`w-9 h-5 rounded-full transition-all duration-300 shadow-inner ${
+                  contact.estaAlHabilitado 
+                    ? 'bg-gradient-to-r from-green-400 to-green-500 shadow-green-200' 
+                    : 'bg-gradient-to-r from-gray-300 to-gray-400 shadow-gray-200'
+                } group-hover:shadow-lg`}>
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-all duration-300 flex items-center justify-center ${
+                    contact.estaAlHabilitado ? 'translate-x-4' : 'translate-x-0.5'
+                  } mt-0.5`}>
+                    {/* Icono de IA minimalista */}
+                    <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                      contact.estaAlHabilitado ? 'bg-green-500' : 'bg-gray-400'
+                    }`}></div>
+                  </div>
+                </div>
+              </label>
+              <span className={`text-xs font-medium ml-2 transition-colors duration-300 ${
+                contact.estaAlHabilitado ? 'text-green-600' : 'text-gray-500'
+              }`}>
+                IA
+              </span>
             </div>
 
-            {/* Priority Dot - Esquina derecha (mantiene su posición absoluta) */}
-            <div className="w-6"></div> {/* Spacer para balance visual */}
+            {/* Chat Button - Derecha */}
+            <div className="flex flex-col items-center">
+              <button
+                className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-lg shadow transition cursor-pointer hover:scale-105 active:scale-95"
+                title="Ir al chat"
+                onClick={e => {
+                  e.stopPropagation();
+                  if (onGotoChat) {
+                    onGotoChat(contact);
+                  } else if (onContactSelect) {
+                    onContactSelect(contact);
+                  }
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8l-4 1 1-3.2A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </button>
+              <span className="text-xs text-muted-foreground mt-1">Ir a chat</span>
+            </div>
             
             {/* El puntico de estado va en la esquina inferior derecha */}
             <div className={`w-2 h-2 rounded-full absolute bottom-3 right-3 ${
@@ -643,9 +635,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
     }
   };
 
-  // Group contacts by status
+  // Group contacts by status with special logic for "cerrado"
   const groupedContacts = statusColumns.reduce((acc, column) => {
-    acc[column.id] = contacts.filter(contact => contact.status === column.id);
+    if (column.id === 'cerrado') {
+      // Para la columna "Cerrado", mostrar contactos que tengan etapaDelEmbudo = 'cita_cancelada'
+      acc[column.id] = contacts.filter(contact => contact.etapaDelEmbudo === 'cita_cancelada');
+    } else {
+      // Para las demás columnas, usar el status normal
+      acc[column.id] = contacts.filter(contact => contact.status === column.id);
+    }
     return acc;
   }, {} as Record<string, Contact[]>);
 
