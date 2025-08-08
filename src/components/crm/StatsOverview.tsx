@@ -63,7 +63,7 @@ export default function StatsOverview({ analyticsStats }: StatsOverviewProps) {
       />
       
       <StatCard
-        title="Ticket de pago generado"
+        title="Cita Cancelada"
         value={analyticsStats.cerrado}
         icon={BarChart3}
         gradient="bg-gradient-to-r from-green-500 to-green-600"
