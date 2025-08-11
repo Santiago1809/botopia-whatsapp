@@ -34,10 +34,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
   const [weeklyActivity, setWeeklyActivity] = useState<DailyActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
-    (process.env.NODE_ENV === 'production' 
-      ? 'https://web-production-b5fb9.up.railway.app' 
-      : 'http://localhost:5005');
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL PARA ANALYTICS
   const {
