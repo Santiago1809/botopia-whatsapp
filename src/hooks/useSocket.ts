@@ -16,11 +16,13 @@ export const useSocket = () => {
     }
 
     const newSocket = io(BACKEND_URL, {
-      transports: ["websocket"],
+      transports: ["websocket"], // SOLO WEBSOCKET
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 20000,
+      withCredentials: false
     });
 
     newSocket.on("connect", () => {

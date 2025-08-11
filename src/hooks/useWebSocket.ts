@@ -45,13 +45,14 @@ export const useWebSocket = ({ lineId, userId, backendUrl = process.env.NEXT_PUB
     // console.log('🔌 Inicializando conexión WebSocket...');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket'],
+      transports: ['websocket'], // SOLO WEBSOCKET
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      timeout: 5000,
-      forceNew: true
+      timeout: 20000,
+      forceNew: false,
+      withCredentials: false
     });
 
     newSocket.on('connect', () => {
