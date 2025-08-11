@@ -146,7 +146,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         onContactUpdate(selectedContact.id, updatedFields, true);
       }
     });
-  }, [wsHook, selectedContact?.id, onContactUpdate, wsHook.isConnected, wsHook.reconnect]);
+  }, [wsHook, selectedContact, onContactUpdate, wsHook.isConnected, wsHook.reconnect]);
 
   // Función para verificar si han pasado más de 24 horas desde el último mensaje
   const checkTimeGap = useCallback((messages: Message[]) => {
@@ -216,7 +216,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         throw new Error(`API Error: ${response.status}`);
       }
       
-    } catch (error) {
+    } catch {
       setMessages([]);
       setIsOver24Hours(true);
     } finally {
@@ -245,7 +245,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json(); // Solo verificar que la respuesta sea válida
         
         // Formatear contenido del template
         let formattedContent = template.content;
@@ -299,7 +299,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     } finally {
       setLoading(false);
     }
-  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL, loadMessages]);
+  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL, checkTimeGap]);
 
   // Hacer scroll cuando cambien los mensajes y recalcular 24 horas
   useEffect(() => {
