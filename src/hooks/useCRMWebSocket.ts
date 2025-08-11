@@ -137,19 +137,27 @@ export const useCRMWebSocket = ({
 
   // Inicializar conexión WebSocket
   useEffect(() => {
-    console.log('🔌 CRM WebSocket: Inicializando conexión...', { lineId, backendUrl });
+    console.log('🔌 [PRODUCCIÓN] CRM WebSocket: Inicializando conexión SOLO WEBSOCKET...', { 
+      lineId, 
+      backendUrl,
+      env: process.env.NODE_ENV,
+      envVar: process.env.NEXT_PUBLIC_BACKEND_URL2,
+      isLocalhost: backendUrl.includes('localhost'),
+      isHttps: backendUrl.startsWith('https'),
+      finalUrl: backendUrl
+    });
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket', 'polling'], // Permitir ambos transports
+      transports: ['websocket'], // SOLO WEBSOCKET
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: Infinity, // Intentar reconectar siempre
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000, // Aumentar timeout
-      forceNew: false, // No forzar nueva conexión cada vez
-      withCredentials: true
+      timeout: 20000,
+      forceNew: false,
+      withCredentials: false
     });
 
     // === EVENTOS DE CONEXIÓN ===
@@ -161,8 +169,11 @@ export const useCRMWebSocket = ({
       reconnectAttempts.current = 0; // Reset intentos de reconexión
       
       // Autenticar con el servidor
-      console.log('🔐 Autenticando con lineId:', lineId, 'userId:', userId);
+      console.log('🔐 [PRODUCCIÓN] Autenticando con lineId:', lineId, 'userId:', userId);
       newSocket.emit('authenticate', { lineId, userId });
+      
+      // ✅ El authenticate ya suscribe automáticamente al room
+      console.log('📡 [PRODUCCIÓN] La autenticación suscribirá automáticamente a line-' + lineId);
       
       // Iniciar heartbeat para mantener la conexión viva
       if (heartbeatInterval.current) {
@@ -177,6 +188,10 @@ export const useCRMWebSocket = ({
 
     newSocket.on('authenticated', (data) => {
       console.log('🔐 CRM WebSocket autenticado:', data);
+      
+      // ✅ El backend ya suscribe automáticamente al room line-{lineId} en authenticate
+      console.log('📡 [PRODUCCIÓN] Cliente ya suscrito automáticamente a line-' + lineId);
+      
       // Re-suscribirse al contacto actual si existe
       const contactToSubscribe = currentContactId || eventHandlers.current.savedContactId;
       if (contactToSubscribe) {
@@ -231,17 +246,20 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE MENSAJES ===
     newSocket.on('new-message', (message: WebSocketMessage) => {
-      console.log('📨 CRM: Nuevo mensaje recibido:', {
+      console.log('📨 [PRODUCCIÓN] CRM: Nuevo mensaje recibido:', {
         message,
+        backendUrl,
+        lineId,
+        messageLineId: message.lineId,
         handlerExists: !!eventHandlers.current.onNewMessage,
         handlerFunction: eventHandlers.current.onNewMessage ? 'REGISTERED' : 'NOT_REGISTERED'
       });
       
       if (eventHandlers.current.onNewMessage) {
-        console.log('🔗 CRM: Ejecutando handler de mensaje...');
+        console.log('🔗 [PRODUCCIÓN] CRM: Ejecutando handler de mensaje...');
         eventHandlers.current.onNewMessage(message);
       } else {
-        console.warn('⚠️ CRM: Handler onNewMessage no está registrado');
+        console.warn('⚠️ [PRODUCCIÓN] CRM: Handler onNewMessage no está registrado');
       }
     });
 
@@ -257,18 +275,21 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE CONTACTOS ===
     newSocket.on('contact-updated', (update: ContactUpdate) => {
-      console.log('🔄 [DEBUG] CRM: Contacto actualizado recibido via WebSocket:', {
+      console.log('🔄 [PRODUCCIÓN] CRM: Contacto actualizado recibido via WebSocket:', {
         id: update.id,
         lineId: update.lineId,
+        currentLineId: lineId,
+        backendUrl,
         funnel_stage: update.funnel_stage,
         last_activity: update.last_activity,
         handlerRegistrado: !!eventHandlers.current.onContactUpdate
       });
       
       if (eventHandlers.current.onContactUpdate) {
+        console.log('✅ [PRODUCCIÓN] CRM: Ejecutando handler de contacto actualizado');
         eventHandlers.current.onContactUpdate(update);
       } else {
-        console.warn('⚠️ [DEBUG] CRM: Handler onContactUpdate no está registrado');
+        console.warn('⚠️ [PRODUCCIÓN] CRM: Handler onContactUpdate no está registrado');
       }
     });
 
@@ -308,6 +329,31 @@ export const useCRMWebSocket = ({
     newSocket.on('synced-contact-deleted', (data: { contactId: string }) => {
       // console.log('🗑️ CRM: Contacto sincronizado eliminado:', data);
       eventHandlers.current.onSyncedContactDeleted?.(data);
+    });
+
+    // 🔥 ESCUCHAR TODOS LOS EVENTOS PARA DEBUG EN PRODUCCIÓN
+    newSocket.onAny((eventName, ...args) => {
+      console.log(`🌍 [PRODUCCIÓN] Evento WebSocket recibido: ${eventName}`, {
+        eventName,
+        args,
+        backendUrl,
+        lineId,
+        socketId: newSocket.id
+      });
+    });
+
+    // 🔥 EVENTOS ADICIONALES PARA FORZAR RECEPCIÓN
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ [PRODUCCIÓN] Error de conexión WebSocket:', {
+        error: error.message,
+        backendUrl,
+        lineId
+      });
+    });
+
+    newSocket.on('reconnect', () => {
+      console.log('🔄 [PRODUCCIÓN] WebSocket reconectado, forzando autenticación');
+      newSocket.emit('authenticate', { lineId, userId });
     });
 
     setSocket(newSocket);
