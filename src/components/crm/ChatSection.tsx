@@ -178,8 +178,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       } else {
         console.error('Error fetching templates:', await response.text());
       }
-    } catch (error) {
-      console.error('Error fetching templates:', error);
+    } catch {
+      console.error('Error fetching templates');
     } finally {
       setLoadingTemplates(false);
     }
@@ -294,7 +294,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         const errorData = await response.json();
         alert(`Error enviando plantilla: ${errorData.message}`);
       }
-    } catch (error) {
+    } catch {
       alert('Error de conexión al enviar plantilla');
     } finally {
       setLoading(false);
@@ -341,7 +341,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         wsHook.unsubscribeFromContact(selectedContact.id);
       };
     }
-  }, [selectedContact?.id, wsHook.isConnected, wsHook]);
+  }, [selectedContact, wsHook.isConnected, wsHook]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact) return;
@@ -403,7 +403,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         }
         alert(`Error enviando mensaje: ${errorMessage}`);
       }
-    } catch (error) {
+    } catch {
       alert('Error de conexión. Verifica que el backend esté funcionando.');
     }
   };
@@ -439,7 +439,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         }
 
       }
-    } catch (error) {
+    } catch {
       alert('Error actualizando estado de IA');
     }
   };

@@ -372,7 +372,7 @@ export const useCRMWebSocket = ({
       newSocket.disconnect();
       setConnectionStatus('disconnected');
     };
-  }, [lineId, userId, backendUrl]);
+  }, [lineId, userId, backendUrl, currentContactId]);
 
   // === MÉTODOS DE SUSCRIPCIÓN ===
   const subscribeToContact = useCallback((contactId: string) => {
