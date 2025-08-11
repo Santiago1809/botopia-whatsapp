@@ -130,18 +130,9 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, index, onContactUpda
   const messageRef = useRef<HTMLParagraphElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
 
-  // 🔍 DEBUG: Detectar cuando el contacto se actualiza
+  // Effect para detectar actualizaciones de contacto (sin logs)
   useEffect(() => {
-    console.log('🎯 [KANBAN CARD] Contacto actualizado en carta:', {
-      id: contact.id,
-      nombre: contact.nombre,
-      ultimaActividad: contact.ultimaActividad,
-      ultimoMensaje: contact.ultimoMensaje ? {
-        mensaje: contact.ultimoMensaje.mensaje.substring(0, 50) + '...',
-        timestamp: contact.ultimoMensaje.timestamp,
-        remitente: contact.ultimoMensaje.remitente
-      } : 'Sin mensaje'
-    });
+    // Contacto actualizado
   }, [contact]);
 
   // Close menu when clicking outside
