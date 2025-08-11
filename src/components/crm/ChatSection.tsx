@@ -56,10 +56,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Variables de configuración
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
-    (process.env.NODE_ENV === 'production' 
-      ? 'https://web-production-b5fb9.up.railway.app' 
-      : 'http://localhost:5005');
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL SIN POLLING
   const wsHook = useCRMWebSocket({ 
