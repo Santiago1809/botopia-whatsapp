@@ -49,6 +49,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const [searchTerm, setSearchTerm] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -88,13 +89,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       }
       
       if (selectedContact && message.contactId === selectedContact.id) {
-        // 🔥 EVITAR DUPLICACIÓN: No procesar mensajes que ya fueron agregados manualmente
-        const isManualMessage = message.id?.startsWith('manual-') || message.id?.startsWith('template-');
-        
-        if (isManualMessage) {
-          console.log('Mensaje manual/template detectado, saltando procesamiento WebSocket:', message.id);
-          return;
-        }
+        // 🔥 PROCESAR TODOS LOS MENSAJES QUE LLEGAN POR WEBSOCKET
+        // Ya no se agregan localmente, solo por WebSocket
 
         const newMsg: Message = {
           id: message.id || `ws-${Date.now()}`,
@@ -259,24 +255,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           .replace(/\{1\}/g, selectedContact.nombre || selectedContact.telefono || 'Cliente');
         
         // 🔥 NO GUARDAR EN BD AQUÍ - EL BACKEND SE ENCARGA DE GUARDAR TEMPLATES
-        // Solo agregar al estado local para respuesta instantánea
-        const templateMsg: Message = {
-          id: `template-${Date.now()}`,
-          senderId: 'bot',
-          senderName: 'Bot',
-          content: messageWithContactName,
-          timestamp: new Date().toISOString(),
-          type: 'outgoing',
-          isRead: true,
-          sender: 'bot'
-        };
-
-        setMessages(prev => {
-          const newMessages = [...prev, templateMsg];
-          checkTimeGap(newMessages);
-          return newMessages;
-        });
-
+        // NO AGREGAR LOCALMENTE - SOLO ESPERAR WEBSOCKET
+        
         // Actualizar último mensaje del contacto
         if (onContactUpdate) {
           onContactUpdate(selectedContact.id, {
@@ -348,27 +328,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
     const messageContent = newMessage;
     setNewMessage("");
+    setSendingMessage(true);
 
     try {
-      // 🔥 AGREGAR MENSAJE INMEDIATAMENTE AL ESTADO LOCAL PARA RESPUESTA INSTANTÁNEA
-      const messageId = `manual-${Date.now()}`;
-      const newMsg: Message = {
-        id: messageId,
-        senderId: 'agent',
-        senderName: 'Respuesta Humana',
-        content: messageContent,
-        timestamp: new Date().toISOString(),
-        type: 'outgoing',
-        isRead: true,
-        sender: 'agent'
-      };
-
-      setMessages(prev => {
-        const newMessages = [...prev, newMsg];
-        checkTimeGap(newMessages);
-        return newMessages;
-      });
-
+      // 🔥 NO AGREGAR MENSAJE LOCALMENTE - SOLO ENVIAR Y ESPERAR WEBSOCKET
       // 🔥 ACTUALIZAR ÚLTIMO MENSAJE DEL CONTACTO INMEDIATAMENTE
       if (onContactUpdate) {
         onContactUpdate(selectedContact.id, {
@@ -405,6 +368,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       }
     } catch {
       alert('Error de conexión. Verifica que el backend esté funcionando.');
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -800,9 +765,9 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       type="text"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                      onKeyPress={(e) => e.key === 'Enter' && !sendingMessage && sendMessage()}
                       placeholder="Escribe un mensaje para WhatsApp..."
-                      disabled={loading}
+                      disabled={sendingMessage}
                       className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-background text-foreground disabled:opacity-50"
                     />
                     
@@ -816,13 +781,13 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       <File className="w-4 h-4" />
                     </button>
 
-                    {/* Botón enviar */}
+                                        {/* Botón enviar */}
                     <button
                       onClick={sendMessage}
-                      disabled={!newMessage.trim() || loading}
+                      disabled={!newMessage.trim() || sendingMessage}
                       className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                     >
-                      {loading ? (
+                      {sendingMessage ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           <span>Enviando...</span>
