@@ -28,10 +28,7 @@ interface UseWebSocketProps {
   backendUrl?: string;
 }
 
-export const useWebSocket = ({ lineId, userId, backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL2 || 
-    (process.env.NODE_ENV === 'production' 
-      ? 'https://web-production-b5fb9.up.railway.app' 
-      : 'http://localhost:5005') }: UseWebSocketProps) => {
+export const useWebSocket = ({ lineId, userId, backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005' }: UseWebSocketProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentContactId, setCurrentContactId] = useState<string | null>(null);
