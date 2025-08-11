@@ -36,36 +36,15 @@ export default function LineDashboard() {
     backendUrl: BACKEND_URL
   });
 
-  // Debug logs para verificar conexión
+  // Effect para monitorear conexión WebSocket
   useEffect(() => {
-    console.log('🔍 [DEBUG] Dashboard montado con lineId:', lineId);
-    console.log('🔍 [DEBUG] Backend URL:', BACKEND_URL);
-    console.log('🔍 [DEBUG] WebSocket status:', {
-      isConnected: wsHook.isConnected,
-      connectionStatus: wsHook.connectionStatus
-    });
+    // WebSocket status monitoring
   }, [lineId, BACKEND_URL, wsHook.isConnected, wsHook.connectionStatus]);
 
   // Handler para actualizaciones de contacto en tiempo real
   useEffect(() => {
-    console.log('🔌 CRM Dashboard: Configurando handlers de WebSocket...');
-    console.log('🔍 [DEBUG] WebSocket conectado:', wsHook.isConnected);
-    console.log('🔍 [DEBUG] LineId para WebSocket:', lineId);
-    
-    // Handler para actualizaciones de contacto - FORZAR ACTUALIZACIÓN
     wsHook.registerContactUpdateHandler((update) => {
-      console.log('🔥 [DEBUG] Dashboard recibió contacto actualizado via WebSocket:', {
-        id: update.id,
-        name: update.name,
-        phone: update.phone,
-        funnel_stage: update.funnel_stage,
-        priority: update.priority,
-        lastMessage: update.lastMessage,
-        last_activity: update.last_activity
-      });
-
       // 🚀 FORZAR ACTUALIZACIÓN INMEDIATA - NO IMPORTA QUE PASE
-      console.log('🚨 [FORCE] Forzando actualización de contacto via WebSocket');
 
       // Mapear el status del backend al formato del frontend
       const mapStatus = (funnelStage: string): Contact['status'] => {
@@ -94,14 +73,12 @@ export default function LineDashboard() {
 
       // 🔥 ACTUALIZACIÓN FORZADA - SE EJECUTA SIEMPRE
       setAllContacts(prevContacts => {
-        console.log('🔍 [DEBUG] Contactos actuales:', prevContacts.length);
-        console.log('🔍 [DEBUG] Buscando contacto con ID:', update.id);
+
         
         let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
             contactFound = true;
-            console.log('✅ [DEBUG] Contacto encontrado! Actualizando:', contact.id);
             
             const updatedContact = {
               ...contact,
@@ -113,7 +90,6 @@ export default function LineDashboard() {
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
-              // 🚀 Forzar cambio para trigger re-render en cartas Kanban
               _lastUpdate: Date.now()
             };
 
@@ -125,31 +101,22 @@ export default function LineDashboard() {
                 remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
                           update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
               };
-              console.log('📨 [DEBUG] Último mensaje actualizado en contacto:', updatedContact.ultimoMensaje);
-              console.log('🎯 [KANBAN] Mensaje y última actividad DEBEN actualizarse en carta del Kanban');
+
             }
 
-            console.log('🎯 [DEBUG] Contacto actualizado exitosamente:', {
-              id: updatedContact.id,
-              status: updatedContact.status,
-              ultimaActividad: updatedContact.ultimaActividad,
-              nombre: updatedContact.nombre,
-              ultimoMensaje: updatedContact.ultimoMensaje ? 'Sí tiene mensaje' : 'Sin mensaje'
-            });
+
 
             return updatedContact;
           }
           return contact;
         });
 
-        // Si no se encontró el contacto, buscar por teléfono o agregar si es nuevo
+        // Si no se encontró el contacto, buscar por teléfono como fallback
         if (!contactFound) {
-          console.log('⚠️ [DEBUG] Contacto no encontrado con ID:', update.id);
           
           // Buscar por teléfono como fallback
           const contactByPhone = prevContacts.find(c => c.telefono === update.phone);
           if (contactByPhone) {
-            console.log('📞 [DEBUG] Encontrado contacto por teléfono:', contactByPhone.id);
             updatedContacts = prevContacts.map(contact => {
               if (contact.telefono === update.phone) {
                 return {
@@ -162,31 +129,13 @@ export default function LineDashboard() {
               return contact;
             });
           } else {
-            console.log('➕ [DEBUG] Agregando nuevo contacto desde WebSocket');
-            // Crear nuevo contacto si no existe
-            const newContact: Contact = {
-              id: update.id,
-              identificacion: update.phone || '',
-              telefono: update.phone || '',
-              nombre: update.name || 'Contacto Nuevo',
-              etapaDelEmbudo: update.funnel_stage || 'nuevo',
-              prioridad: update.priority || 'media',
-              estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : true,
-              etiquetas: update.tags || [],
-              ultimaActividad: update.last_activity || new Date().toISOString(),
-              creadoEn: new Date().toISOString(),
-              idDeUsuario: "2",
-              proveedor: "META",
-              numeroLinea: lineId,
-              status: mapStatus(update.funnel_stage || 'nuevo'),
-              ultimoMensaje: update.lastMessage ? {
-                mensaje: update.lastMessage.message,
-                timestamp: update.lastMessage.timestamp,
-                remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
-                          update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
-              } : undefined
-            };
-            updatedContacts = [...prevContacts, newContact];
+            // 🔥 NO CREAR CONTACTOS AUTOMÁTICAMENTE - SOLO ACTUALIZAR EXISTENTES
+            console.log('⚠️ [DEBUG] Contacto no encontrado, pero NO se creará automáticamente para evitar contactos falsos');
+            console.log('📱 [DEBUG] Teléfono no encontrado:', update.phone);
+            console.log('🆔 [DEBUG] ID de actualización:', update.id);
+            
+            // Retornar contactos sin cambios para evitar crear contactos falsos
+            return prevContacts;
           }
         }
 
@@ -523,14 +472,22 @@ export default function LineDashboard() {
   const handleContactUpdate = useCallback(async (contactId: string, updates: Partial<Contact>, isWebSocketUpdate = false) => {
     // 🔥 ACTUALIZACIÓN INMEDIATA PARA WEBSOCKET - NO ESPERAR API
     if (isWebSocketUpdate) {
-      console.log('📨 [WEBSOCKET] Actualizando contacto inmediatamente:', contactId, updates);
-      setAllContacts(prevContacts => 
-        prevContacts.map(contact => 
+      setAllContacts(prevContacts => {
+        // 🔥 VERIFICAR SI EL CONTACTO EXISTE ANTES DE ACTUALIZAR
+        const existingContact = prevContacts.find(contact => contact.id === contactId);
+        if (!existingContact) {
+          // Si el contacto no existe en la lista, NO LO AGREGUES
+          // Esto evita crear "contactos nuevos" fantasma
+          return prevContacts;
+        }
+        
+        // Solo actualizar contactos existentes
+        return prevContacts.map(contact => 
           contact.id === contactId 
             ? { ...contact, ...updates, _lastUpdate: Date.now() }
             : contact
-        )
-      );
+        );
+      });
       return;
     }
 
