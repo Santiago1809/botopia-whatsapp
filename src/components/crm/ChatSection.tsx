@@ -144,6 +144,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           console.log('✅ Agregando mensaje real de la base de datos');
           const newMessages = [...prev, newMsg];
           console.log('📊 Total de mensajes después de agregar:', newMessages.length);
+          
+          // 🔥 RECALCULAR 24 HORAS DESPUÉS DE AGREGAR MENSAJE
+          checkTimeGap(newMessages);
+          
           return newMessages;
         });
       } else {
@@ -369,10 +373,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     }
   }, [selectedContact, lineId, onContactUpdate, BACKEND_URL, loadMessages]);
 
-  // Hacer scroll cuando cambien los mensajes
+  // Hacer scroll cuando cambien los mensajes y recalcular 24 horas
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+    // 🔥 RECALCULAR AUTOMÁTICAMENTE LAS 24 HORAS CUANDO CAMBIEN LOS MENSAJES
+    checkTimeGap(messages);
+  }, [messages, scrollToBottom, checkTimeGap]);
 
   // Filter contacts for chat view
   const filteredContacts = contacts.filter(contact =>
