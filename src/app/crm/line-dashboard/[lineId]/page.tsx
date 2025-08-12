@@ -776,7 +776,7 @@ export default function LineDashboard() {
       </div>
       
       {/* WebSocket Debugger - Solo en desarrollo o cuando hay problemas */}
-      <WebSocketDebugger lineId={lineId} />
+      {/*<WebSocketDebugger lineId={lineId} />*/}
     </div>
   );
 }
