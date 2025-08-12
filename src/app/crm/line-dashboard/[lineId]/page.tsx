@@ -101,7 +101,6 @@ export default function LineDashboard() {
                 remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
                           update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
               };
-
             }
 
 
@@ -123,7 +122,12 @@ export default function LineDashboard() {
                   ...contact,
                   nombre: update.name || contact.nombre,
                   status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
+                  etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+                  prioridad: update.priority || contact.prioridad,
+                  estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
+                  etiquetas: update.tags || contact.etiquetas,
                   ultimaActividad: update.last_activity || contact.ultimaActividad,
+                  _lastUpdate: Date.now()
                 };
               }
               return contact;
@@ -139,9 +143,7 @@ export default function LineDashboard() {
           }
         }
 
-        console.log('✅ [FORCE] Estado de contactos actualizado FORZOSAMENTE');
-        console.log('📊 [DEBUG] Total contactos después de actualización:', updatedContacts.length);
-        console.log('🎯 [KANBAN] Las cartas del Kanban DEBEN mostrar datos actualizados ahora');
+
         
         // Retornar SIEMPRE un nuevo array para forzar re-render
         return [...updatedContacts];
