@@ -146,6 +146,13 @@ export const useCRMWebSocket = ({
       isHttps: backendUrl.startsWith('https'),
       finalUrl: backendUrl
     });
+    
+    // 🔥 DEBUG: Agregar logs detallados para producción
+    console.log('🔍 [DEBUG] Variables de entorno:', {
+      NEXT_PUBLIC_BACKEND_URL2: process.env.NEXT_PUBLIC_BACKEND_URL2,
+      NODE_ENV: process.env.NODE_ENV,
+      calculatedBackendUrl: backendUrl
+    });
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
@@ -162,7 +169,9 @@ export const useCRMWebSocket = ({
 
     // === EVENTOS DE CONEXIÓN ===
     newSocket.on('connect', () => {
-      console.log('✅ CRM WebSocket conectado:', newSocket.id);
+      console.log('✅ [PRODUCCIÓN] CRM WebSocket conectado:', newSocket.id);
+      console.log('🔗 [PRODUCCIÓN] URL de conexión:', backendUrl);
+      console.log('🎯 [PRODUCCIÓN] Línea ID:', lineId);
       setIsConnected(true);
       setConnectionError(null);
       setConnectionStatus('connected');
