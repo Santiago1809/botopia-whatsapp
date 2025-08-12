@@ -7,7 +7,6 @@ import NavigationTabs from "../../../../components/crm/NavigationTabs";
 import DashboardView from "../../../../components/crm/DashboardView";
 import ChatSection from "../../../../components/crm/ChatSection";
 import AnalyticsSection from "../../../../components/crm/AnalyticsSection";
-import WebSocketDebugger from "../../../../components/crm/WebSocketDebugger";
 import { useDashboardFilters } from "../../../../hooks/useDashboardFilters";
 import { useCRMWebSocket } from "../../../../hooks/useCRMWebSocket";
 import type { 
@@ -776,7 +775,7 @@ export default function LineDashboard() {
       </div>
       
       {/* WebSocket Debugger - Solo en desarrollo o cuando hay problemas */}
-      <WebSocketDebugger lineId={lineId} />
+      {/*<WebSocketDebugger lineId={lineId} />*/}
     </div>
   );
 }
