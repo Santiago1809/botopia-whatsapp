@@ -44,7 +44,7 @@ export default function LineDashboard() {
   // Handler para actualizaciones de contacto en tiempo real
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
-      // 🚀 FORZAR ACTUALIZACIÓN INMEDIATA - NO IMPORTA QUE PASE
+      console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
 
       // Mapear el status del backend al formato del frontend
       const mapStatus = (funnelStage: string): Contact['status'] => {
@@ -73,7 +73,7 @@ export default function LineDashboard() {
 
       // 🔥 ACTUALIZACIÓN FORZADA - SE EJECUTA SIEMPRE
       setAllContacts(prevContacts => {
-
+        console.log('🔍 [WEBSOCKET] Buscando contacto ID:', update.id, 'en', prevContacts.length, 'contactos');
         
         let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
@@ -132,20 +132,11 @@ export default function LineDashboard() {
               }
               return contact;
             });
-          } else {
-            // 🔥 NO CREAR CONTACTOS AUTOMÁTICAMENTE - SOLO ACTUALIZAR EXISTENTES
-            console.log('⚠️ [DEBUG] Contacto no encontrado, pero NO se creará automáticamente para evitar contactos falsos');
-            console.log('📱 [DEBUG] Teléfono no encontrado:', update.phone);
-            console.log('🆔 [DEBUG] ID de actualización:', update.id);
-            
-            // Retornar contactos sin cambios para evitar crear contactos falsos
-            return prevContacts;
           }
         }
 
-
-        
         // Retornar SIEMPRE un nuevo array para forzar re-render
+        console.log('✅ [WEBSOCKET] Contactos actualizados, devolviendo:', updatedContacts.length);
         return [...updatedContacts];
       });
     });
