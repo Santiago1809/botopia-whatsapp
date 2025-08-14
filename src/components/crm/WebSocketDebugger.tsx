@@ -118,3 +118,4 @@ export const WebSocketDebugger: React.FC<WebSocketDebuggerProps> = ({ lineId }) 
 };
 
 export default WebSocketDebugger;
+

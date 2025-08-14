@@ -40,6 +40,12 @@ export default function NavigationTabs({ currentView, onViewChange }: Navigation
             isActive={currentView === 'dashboard'}
             onClick={() => onViewChange('dashboard')}
             icon={Table}
+            label="Dashboard"
+          />
+          <TabButton
+            isActive={currentView === 'kanban'}
+            onClick={() => onViewChange('kanban')}
+            icon={Table}
             label="Tablero Kanban"
           />
           <TabButton
