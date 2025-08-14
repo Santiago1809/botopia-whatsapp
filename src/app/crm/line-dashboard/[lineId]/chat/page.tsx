@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import DashboardHeader from "../../../../../components/crm/DashboardHeader";
-import NavigationTabs from "../../../../../components/crm/NavigationTabs";
+import { useParams, useSearchParams } from "next/navigation";
+
 import ChatSection from "../../../../../components/crm/ChatSection";
 import { useCRMWebSocket } from "../../../../../hooks/useCRMWebSocket";
 import { Contact } from "../../../../../types/dashboard";
@@ -14,7 +13,6 @@ export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const lineId = params.lineId as string;
   const contactId = searchParams.get('contact');
@@ -63,22 +61,66 @@ export default function ChatPage() {
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
+
+      const mapStatus = (funnelStage: string): Contact['status'] => {
+        if (!funnelStage || funnelStage === 'null') return 'nuevo-lead';
+        switch (funnelStage) {
+          case 'nuevo_contacto':
+          case 'nuevo':
+          case 'nuevo-lead':
+            return 'nuevo-lead';
+          case 'en_contacto':
+          case 'contacto':
+          case 'en-contacto':
+            return 'en-contacto';
+          case 'cita_agendada':
+          case 'cita':
+          case 'cita-agendada':
+            return 'cita-agendada';
+          case 'atencion_cliente':
+          case 'atencion-cliente':
+            return 'atencion-cliente';
+          case 'cita_cancelada':
+          case 'cerrado':
+          case 'completado':
+            return 'cerrado';
+          case 'pendiente-documentacion':
+            return 'pendiente-documentacion';
+          default:
+            return 'nuevo-lead';
+        }
+      };
+
       setAllContacts(prevContacts => {
         let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
             contactFound = true;
-            return {
+            const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+            const newStatus = mapStatus(newFunnelStage);
+            const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+              status: newStatus,
+              etapaDelEmbudo: newFunnelStage,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
               _lastUpdate: Date.now()
-            };
+            } as Contact;
+
+            if (update.lastMessage) {
+              updatedContact.ultimoMensaje = {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
+                          update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+              };
+            }
+
+            return updatedContact;
           }
           return contact;
         });
@@ -88,16 +130,30 @@ export default function ChatPage() {
           if (contactByPhone) {
             updatedContacts = prevContacts.map(contact => {
               if (contact.telefono === update.phone) {
-                return {
+                const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+                const newStatus = mapStatus(newFunnelStage);
+                const updatedContact = {
                   ...contact,
                   nombre: update.name || contact.nombre,
-                  etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+                  status: newStatus,
+                  etapaDelEmbudo: newFunnelStage,
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
                   etiquetas: update.tags || contact.etiquetas,
                   ultimaActividad: update.last_activity || contact.ultimaActividad,
                   _lastUpdate: Date.now()
-                };
+                } as Contact;
+
+                if (update.lastMessage) {
+                  updatedContact.ultimoMensaje = {
+                    mensaje: update.lastMessage.message,
+                    timestamp: update.lastMessage.timestamp,
+                    remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
+                              update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+                  };
+                }
+
+                return updatedContact;
               }
               return contact;
             });
@@ -108,14 +164,54 @@ export default function ChatPage() {
       });
     });
 
+    // Actualizar último mensaje del contacto al llegar un mensaje nuevo
     wsHook.registerMessageHandler((message) => {
-      console.log('📨 [WEBSOCKET] Nuevo mensaje recibido:', message);
+      console.log('📨 [WEBSOCKET] Nuevo mensaje recibido en ChatPage:', {
+        messageId: message.id,
+        contactId: message.contactId,
+        sender: message.sender,
+        content: message.message,
+        timestamp: message.timestamp
+      });
+      
+      setAllContacts(prevContacts => {
+        let contactUpdated = false;
+        const updated = prevContacts.map(contact => {
+          if (contact.id === message.contactId) {
+            contactUpdated = true;
+            console.log('🔄 [WEBSOCKET] Actualizando contacto en ChatPage:', contact.nombre);
+            return {
+              ...contact,
+              ultimoMensaje: {
+                mensaje: message.message,
+                timestamp: message.timestamp,
+                remitente: message.sender === 'user' ? 'usuario' : message.sender === 'bot' ? 'bot' : 'agente'
+              },
+              ultimaActividad: message.timestamp,
+              _lastUpdate: Date.now()
+            };
+          }
+          return contact;
+        });
+        
+        if (contactUpdated) {
+          console.log('✅ [WEBSOCKET] Contacto actualizado en ChatPage');
+        }
+        
+        return contactUpdated ? updated : prevContacts;
+      });
     });
 
   }, [wsHook, lineId]);
 
   // Handle contact update
   const handleContactUpdate = async (contactId: string, updates: Partial<Contact>) => {
+    console.log('🔄 [CONTACT UPDATE] Actualizando contacto:', {
+      contactId,
+      updates,
+      BACKEND_URL
+    });
+    
     try {
       const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
         method: 'PUT',
@@ -126,6 +222,7 @@ export default function ChatPage() {
       });
 
       if (response.ok) {
+        console.log('✅ [CONTACT UPDATE] Contacto actualizado exitosamente en backend');
         setAllContacts(prevContacts => 
           prevContacts.map(contact => 
             contact.id === contactId 
@@ -133,9 +230,11 @@ export default function ChatPage() {
               : contact
           )
         );
+      } else {
+        console.error('❌ [CONTACT UPDATE] Error en backend:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error updating contact:', error);
+      console.error('❌ [CONTACT UPDATE] Error de conexión:', error);
     }
   };
 
@@ -151,40 +250,13 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader 
-        line={{
-          id: lineId,
-          numero: 'N/A',
-          proveedor: 'META',
-          estaActivo: true,
-          creadoEn: new Date().toISOString(),
-          idDeUsuario: '1',
-          contactsCount: allContacts.length,
-          activeContacts: allContacts.length,
-          lastActivity: new Date().toISOString()
-        }}
-        totalContacts={allContacts.length}
-        onBackClick={() => router.push('/crm')}
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <ChatSection 
+        contacts={allContacts}
+        lineId={lineId}
+        selectedContactFromKanban={selectedContact}
+        onContactUpdate={handleContactUpdate}
       />
-
-      <NavigationTabs 
-        currentView="chat"
-  onViewChange={(view: string) => {
-          if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
-          else if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
-          else if (view === 'analytics') router.push(`/crm/line-dashboard/${lineId}/analytics`);
-        }}
-      />
-
-      <div className="p-6">
-        <ChatSection 
-          contacts={allContacts}
-          lineId={lineId}
-          selectedContactFromKanban={selectedContact}
-          onContactUpdate={handleContactUpdate}
-        />
-      </div>
     </div>
   );
 }

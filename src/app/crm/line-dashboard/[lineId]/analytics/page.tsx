@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import DashboardHeader from "../../../../../components/crm/DashboardHeader";
-import NavigationTabs from "../../../../../components/crm/NavigationTabs";
+import { useParams } from "next/navigation";
+
 import AnalyticsSection from "../../../../../components/crm/AnalyticsSection";
 import { useCRMWebSocket } from "../../../../../hooks/useCRMWebSocket";
 import { Contact } from "../../../../../types/dashboard";
@@ -20,7 +19,6 @@ export default function AnalyticsPage() {
   });
 
   const params = useParams();
-  const router = useRouter();
   const lineId = params.lineId as string;
 
   // Configuración del backend
@@ -65,26 +63,43 @@ export default function AnalyticsPage() {
     }
   }, [lineId, BACKEND_URL, analyticsStats]);
 
-  // WebSocket handlers
+  // WebSocket handlers con mapeo de estados y actualización de último mensaje
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
+
+      const mapStatus = (funnelStage: string) => {
+        if (!funnelStage || funnelStage === 'null') return 'nuevo_contacto';
+        return funnelStage;
+      };
+
       setAllContacts(prevContacts => {
         let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
             contactFound = true;
-            return {
+            const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+            const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+              etapaDelEmbudo: mapStatus(newFunnelStage),
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
               _lastUpdate: Date.now()
-            };
+            } as Contact;
+
+            if (update.lastMessage) {
+              updatedContact.ultimoMensaje = {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.sender === 'user' ? 'usuario' : update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+              };
+            }
+
+            return updatedContact;
           }
           return contact;
         });
@@ -94,16 +109,27 @@ export default function AnalyticsPage() {
           if (contactByPhone) {
             updatedContacts = prevContacts.map(contact => {
               if (contact.telefono === update.phone) {
-                return {
+                const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+                const updatedContact = {
                   ...contact,
                   nombre: update.name || contact.nombre,
-                  etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+                  etapaDelEmbudo: mapStatus(newFunnelStage),
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
                   etiquetas: update.tags || contact.etiquetas,
                   ultimaActividad: update.last_activity || contact.ultimaActividad,
                   _lastUpdate: Date.now()
-                };
+                } as Contact;
+
+                if (update.lastMessage) {
+                  updatedContact.ultimoMensaje = {
+                    mensaje: update.lastMessage.message,
+                    timestamp: update.lastMessage.timestamp,
+                    remitente: update.lastMessage.sender === 'user' ? 'usuario' : update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
+                  };
+                }
+
+                return updatedContact;
               }
               return contact;
             });
@@ -116,6 +142,21 @@ export default function AnalyticsPage() {
 
     wsHook.registerMessageHandler((message) => {
       console.log('📨 [WEBSOCKET] Nuevo mensaje recibido:', message);
+      setAllContacts(prevContacts => prevContacts.map(contact => {
+        if (contact.id === message.contactId) {
+          return {
+            ...contact,
+            ultimoMensaje: {
+              mensaje: message.message,
+              timestamp: message.timestamp,
+              remitente: message.sender === 'user' ? 'usuario' : message.sender === 'bot' ? 'bot' : 'agente'
+            },
+            ultimaActividad: message.timestamp,
+            _lastUpdate: Date.now()
+          };
+        }
+        return contact;
+      }));
     });
 
   }, [wsHook, lineId]);
@@ -133,30 +174,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader 
-        line={{
-          id: lineId,
-          numero: 'N/A',
-          proveedor: 'META',
-          estaActivo: true,
-          creadoEn: new Date().toISOString(),
-          idDeUsuario: '1',
-          contactsCount: allContacts.length,
-          activeContacts: allContacts.length,
-          lastActivity: new Date().toISOString()
-        }}
-        totalContacts={allContacts.length}
-        onBackClick={() => router.push('/crm')}
-      />
 
-      <NavigationTabs 
-        currentView="analytics"
-  onViewChange={(view: string) => {
-          if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
-          else if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
-          else if (view === 'chat') router.push(`/crm/line-dashboard/${lineId}/chat`);
-        }}
-      />
+
+      
 
       <div className="p-6">
         <AnalyticsSection 

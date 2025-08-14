@@ -44,7 +44,7 @@ const statusColumns = [
   },
   {
     id: 'cerrado',
-    title: 'Cerrado',
+    title: 'Cita Cancelada',
     color: 'bg-green-50 border-green-200',
     headerColor: 'bg-green-100 text-green-800',
     cardColor: 'border-l-green-500'
