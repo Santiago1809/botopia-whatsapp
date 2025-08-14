@@ -1,11 +1,10 @@
 "use client";
 
 import { MessageSquare, BarChart3, Table } from "lucide-react";
-import type { ViewMode } from "../../types/dashboard";
+import { useRouter, usePathname } from "next/navigation";
 
 interface NavigationTabsProps {
-  currentView: ViewMode;
-  onViewChange: (view: ViewMode) => void;
+  lineId: string;
 }
 
 interface TabButtonProps {
@@ -31,32 +30,39 @@ const TabButton = ({ isActive, onClick, icon: Icon, label }: TabButtonProps) => 
   </button>
 );
 
-export default function NavigationTabs({ currentView, onViewChange }: NavigationTabsProps) {
+export default function NavigationTabs({ lineId }: NavigationTabsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Determinar qué tab está activo basado en la URL actual
+  const getActiveTab = () => {
+    if (pathname.includes('/kanban')) return 'kanban';
+    if (pathname.includes('/chat')) return 'chat';
+    if (pathname.includes('/analytics')) return 'analytics';
+    return 'kanban'; // Por defecto Kanban
+  };
+
+  const activeTab = getActiveTab();
+
   return (
     <div className="mt-6 border-b border-white/20">
       <nav className="flex justify-center items-center w-full">
         <div className="flex space-x-8">
           <TabButton
-            isActive={currentView === 'dashboard'}
-            onClick={() => onViewChange('dashboard')}
-            icon={Table}
-            label="Dashboard"
-          />
-          <TabButton
-            isActive={currentView === 'kanban'}
-            onClick={() => onViewChange('kanban')}
+            isActive={activeTab === 'kanban'}
+            onClick={() => router.push(`/crm/line-dashboard/${lineId}/kanban`)}
             icon={Table}
             label="Tablero Kanban"
           />
           <TabButton
-            isActive={currentView === 'chat'}
-            onClick={() => onViewChange('chat')}
+            isActive={activeTab === 'chat'}
+            onClick={() => router.push(`/crm/line-dashboard/${lineId}/chat`)}
             icon={MessageSquare}
             label="Chat Center"
           />
           <TabButton
-            isActive={currentView === 'analytics'}
-            onClick={() => onViewChange('analytics')}
+            isActive={activeTab === 'analytics'}
+            onClick={() => router.push(`/crm/line-dashboard/${lineId}/analytics`)}
             icon={BarChart3}
             label="Analytics Pro"
           />

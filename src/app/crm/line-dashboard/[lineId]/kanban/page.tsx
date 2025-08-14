@@ -1,23 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import DashboardHeader from "../../../../../components/crm/DashboardHeader";
-import NavigationTabs from "../../../../../components/crm/NavigationTabs";
+
 import KanbanBoard from "../../../../../components/crm/KanbanBoard";
+import FilterSidebar from "../../../../../components/crm/FilterSidebar";
+import StatsOverview from "../../../../../components/crm/StatsOverview";
 import { useCRMWebSocket } from "../../../../../hooks/useCRMWebSocket";
 import { Contact } from "../../../../../types/dashboard";
 
 export default function KanbanPage() {
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pendienteDocumentacion: 0,
+    nuevoLead: 0,
+    enContacto: 0,
+    citaAgendada: 0,
+    atencionCliente: 0,
+    cerrado: 0,
+    conversion: 0,
+  });
 
   const params = useParams();
   const router = useRouter();
   const lineId = params.lineId as string;
 
-  // Configuración del backend
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
+  // Configuración del backend - TEMPORAL: Forzar localhost para desarrollo
+  const BACKEND_URL = 'http://localhost:5005';
+
+  // Debug: Log de la URL del backend
+  useEffect(() => {
+    console.log('🌐 [KANBAN] Configuración del backend:', {
+      NEXT_PUBLIC_BACKEND_URL2: process.env.NEXT_PUBLIC_BACKEND_URL2,
+      BACKEND_URL,
+      isLocalhost: BACKEND_URL.includes('localhost')
+    });
+  }, [BACKEND_URL]);
 
   // Hook de WebSocket
   const wsHook = useCRMWebSocket({ 
@@ -25,6 +48,80 @@ export default function KanbanPage() {
     userId: 'kanban-user',
     backendUrl: BACKEND_URL
   });
+
+  // Debug: Log del WebSocket
+  useEffect(() => {
+    console.log('🔌 [KANBAN] WebSocket configurado:', {
+      lineId,
+      userId: 'kanban-user',
+      backendUrl: BACKEND_URL,
+      wsHook: !!wsHook,
+      isConnected: wsHook?.isConnected
+    });
+  }, [wsHook, BACKEND_URL, lineId]);
+
+  // Función para aplicar filtros
+  const applyFilters = useCallback(() => {
+    let filtered = allContacts;
+
+    // Filtro por búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(contact =>
+        contact.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.telefono.includes(searchTerm)
+      );
+    }
+
+    // Filtro por tags seleccionados
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(contact => {
+        // Verificar si el contacto tiene alguna de las etiquetas seleccionadas
+        return selectedTags.some(tag => {
+          // Filtros especiales para prioridad
+          if (['alta', 'media', 'baja'].includes(tag)) {
+            return contact.prioridad === tag;
+          }
+          // Filtros especiales para estado del embudo
+          if (['nuevo_contacto', 'en_contacto', 'cita_agendada', 'atencion_cliente', 'cita_cancelada'].includes(tag)) {
+            return contact.etapaDelEmbudo === tag;
+          }
+          // Filtros por etiquetas normales
+          return contact.etiquetas.includes(tag);
+        });
+      });
+    }
+
+    setFilteredContacts(filtered);
+  }, [allContacts, searchTerm, selectedTags]);
+
+  // Aplicar filtros cuando cambien los datos
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  // Calcular estadísticas cuando cambien los contactos filtrados
+  useEffect(() => {
+    const total = filteredContacts.length;
+    const nuevoLead = filteredContacts.filter(c => 
+      !c.etapaDelEmbudo || c.etapaDelEmbudo === 'null' || c.etapaDelEmbudo === 'nuevo_contacto'
+    ).length;
+    const enContacto = filteredContacts.filter(c => c.etapaDelEmbudo === 'en_contacto').length;
+    const citaAgendada = filteredContacts.filter(c => c.etapaDelEmbudo === 'cita_agendada').length;
+    const atencionCliente = filteredContacts.filter(c => c.etapaDelEmbudo === 'atencion_cliente').length;
+    const cerrado = filteredContacts.filter(c => c.etapaDelEmbudo === 'cita_cancelada').length;
+    
+    const newStats = {
+      total,
+      pendienteDocumentacion: 0, // No tenemos esta etapa en el funnel
+      nuevoLead,
+      enContacto,
+      citaAgendada,
+      atencionCliente,
+      cerrado,
+      conversion: total > 0 ? Math.round((cerrado / total) * 100) : 0,
+    };
+    setStats(newStats);
+  }, [filteredContacts]);
 
   // Cargar contactos
   useEffect(() => {
@@ -34,7 +131,25 @@ export default function KanbanPage() {
         const response = await fetch(`${BACKEND_URL}/api/contacts?lineId=${lineId}`);
         if (response.ok) {
           const data = await response.json();
-          setAllContacts(data.data || []);
+          const mapStatusFromFunnel = (funnelStage: string): Contact['status'] => {
+            if (!funnelStage || funnelStage === 'null') return 'nuevo-lead';
+            switch (funnelStage) {
+              case 'nuevo_contacto': return 'nuevo-lead';
+              case 'en_contacto': return 'en-contacto';
+              case 'cita_agendada': return 'cita-agendada';
+              case 'atencion_cliente': return 'atencion-cliente';
+              case 'cita_cancelada': return 'cerrado';
+              case 'pendiente-documentacion': return 'pendiente-documentacion';
+              default: return 'nuevo-lead';
+            }
+          };
+
+          const normalized = (data.data || []).map((c: Contact) => ({
+            ...c,
+            status: mapStatusFromFunnel(c.etapaDelEmbudo),
+          }));
+
+          setAllContacts(normalized);
         }
       } catch (error) {
         console.error('Error cargando contactos:', error);
@@ -52,7 +167,38 @@ export default function KanbanPage() {
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
+      
+      // Debug: Log específico para último mensaje
+      if (update.lastMessage) {
+        console.log('📨 [WEBSOCKET] Actualización incluye último mensaje:', {
+          contactId: update.id,
+          message: update.lastMessage.message,
+          timestamp: update.lastMessage.timestamp,
+          sender: update.lastMessage.sender,
+          remitente: update.lastMessage.remitente
+        });
+      }
+      
+      // Debug: Log específico para cambios de IA
+      if (update.is_ai_enabled !== undefined) {
+        console.log('🤖 [WEBSOCKET] Actualización de IA recibida:', {
+          contactId: update.id,
+          is_ai_enabled: update.is_ai_enabled,
+          anterior: allContacts.find(c => c.id === update.id)?.estaAlHabilitado
+        });
+      }
+      
+      // Debug: Log del estado actual de los contactos
+      console.log('📊 [WEBSOCKET] Estado actual de contactos antes de actualizar:', 
+        allContacts.map(c => ({ id: c.id, nombre: c.nombre, ultimoMensaje: c.ultimoMensaje }))
+      );
+      
       const mapStatus = (funnelStage: string): Contact['status'] => {
+        // Si funnel_stage es null o undefined, va a "nuevo-lead"
+        if (!funnelStage || funnelStage === 'null') {
+          return 'nuevo-lead';
+        }
+        
         switch (funnelStage) {
           case 'nuevo_contacto': return 'nuevo-lead';
           case 'en_contacto': return 'en-contacto';
@@ -68,16 +214,32 @@ export default function KanbanPage() {
         let updatedContacts = prevContacts.map(contact => {
           if (contact.id === update.id) {
             contactFound = true;
+            const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+            const newStatus = mapStatus(newFunnelStage);
+            
+            console.log(`🔄 [WEBSOCKET] Contacto ${contact.nombre} actualizado:`, {
+              anterior: { etapa: contact.etapaDelEmbudo, status: contact.status },
+              nuevo: { etapa: newFunnelStage, status: newStatus }
+            });
+            
             return {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
-              etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+              status: newStatus,
+              etapaDelEmbudo: newFunnelStage,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
               ultimaActividad: update.last_activity || contact.ultimaActividad,
+              // Actualizar último mensaje si viene en la actualización
+              ultimoMensaje: update.lastMessage ? {
+                mensaje: update.lastMessage.message,
+                timestamp: update.lastMessage.timestamp,
+                remitente: update.lastMessage.remitente || 
+                  (update.lastMessage.sender === 'user' ? 'usuario' : 
+                   update.lastMessage.sender === 'bot' ? 'bot' : 'agente')
+              } : contact.ultimoMensaje,
               _lastUpdate: Date.now()
             };
           }
@@ -89,15 +251,31 @@ export default function KanbanPage() {
           if (contactByPhone) {
             updatedContacts = prevContacts.map(contact => {
               if (contact.telefono === update.phone) {
+                const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
+                const newStatus = mapStatus(newFunnelStage);
+                
+                console.log(`🔄 [WEBSOCKET] Contacto por teléfono ${contact.nombre} actualizado:`, {
+                  anterior: { etapa: contact.etapaDelEmbudo, status: contact.status },
+                  nuevo: { etapa: newFunnelStage, status: newStatus }
+                });
+                
                 return {
                   ...contact,
                   nombre: update.name || contact.nombre,
-                  status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
-                  etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
+                  status: newStatus,
+                  etapaDelEmbudo: newFunnelStage,
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
                   etiquetas: update.tags || contact.etiquetas,
                   ultimaActividad: update.last_activity || contact.ultimaActividad,
+                  // Actualizar último mensaje si viene en la actualización
+                  ultimoMensaje: update.lastMessage ? {
+                    mensaje: update.lastMessage.message,
+                    timestamp: update.lastMessage.timestamp,
+                    remitente: update.lastMessage.remitente || 
+                      (update.lastMessage.sender === 'user' ? 'usuario' : 
+                       update.lastMessage.sender === 'bot' ? 'bot' : 'agente')
+                  } : contact.ultimoMensaje,
                   _lastUpdate: Date.now()
                 };
               }
@@ -108,17 +286,179 @@ export default function KanbanPage() {
 
         return updatedContacts;
       });
+      
+      // Debug: Log del estado después de actualizar
+      console.log('📊 [WEBSOCKET] Estado de contactos después de actualizar:', 
+        allContacts.map(c => ({ id: c.id, nombre: c.nombre, ultimoMensaje: c.ultimoMensaje }))
+      );
     });
 
     wsHook.registerMessageHandler((message) => {
       console.log('📨 [WEBSOCKET] Nuevo mensaje recibido:', message);
+      setAllContacts(prev => prev.map(contact => {
+        if (contact.id === message.contactId) {
+          return {
+            ...contact,
+            ultimoMensaje: {
+              mensaje: message.message,
+              timestamp: message.timestamp,
+              remitente: message.sender === 'user' ? 'usuario' : message.sender === 'bot' ? 'bot' : 'agente'
+            },
+            ultimaActividad: message.timestamp,
+            _lastUpdate: Date.now()
+          };
+        }
+        return contact;
+      }));
     });
 
-  }, [wsHook, lineId]);
+  }, [wsHook, lineId, allContacts]);
+
+  // Actualizar estado del contacto (nombre, etiquetas, prioridad, funnel_stage)
+  const handleContactUpdate = useCallback(async (contactId: string, updates: Partial<Contact>) => {
+    // Si se está actualizando etapaDelEmbudo, también actualizar el status correspondiente
+    const finalUpdates: Partial<Contact> = { ...updates };
+    if (updates.etapaDelEmbudo) {
+      const mapStatusFromFunnel = (funnelStage: string): Contact['status'] => {
+        if (!funnelStage || funnelStage === 'null') {
+          return 'nuevo-lead';
+        }
+        
+        switch (funnelStage) {
+          case 'nuevo_contacto': return 'nuevo-lead';
+          case 'en_contacto': return 'en-contacto';
+          case 'cita_agendada': return 'cita-agendada';
+          case 'atencion_cliente': return 'atencion-cliente';
+          case 'cita_cancelada': return 'cerrado';
+          case 'pendiente-documentacion': return 'pendiente-documentacion';
+          default: return 'nuevo-lead';
+        }
+      };
+      
+      finalUpdates.status = mapStatusFromFunnel(updates.etapaDelEmbudo);
+      
+      // Debug log para verificar la consistencia
+      console.log('🔄 [CONTACT UPDATE] Actualizando contacto con consistencia:', {
+        contactId,
+        etapaDelEmbudo: updates.etapaDelEmbudo,
+        status: finalUpdates.status,
+        updates
+      });
+    }
+
+    // Optimistic update
+    setAllContacts(prev => prev.map(c => (c.id === contactId ? { ...c, ...finalUpdates } : c)));
+
+    try {
+      const payload: Record<string, unknown> = {};
+      if (typeof updates.nombre !== 'undefined') payload.name = updates.nombre;
+      if (typeof updates.telefono !== 'undefined') payload.phone = updates.telefono;
+      if (typeof updates.etapaDelEmbudo !== 'undefined') payload.funnel_stage = updates.etapaDelEmbudo;
+      if (typeof updates.prioridad !== 'undefined') payload.priority = updates.prioridad;
+      if (typeof updates.estaAlHabilitado !== 'undefined') payload.is_ai_enabled = updates.estaAlHabilitado;
+      if (typeof updates.etiquetas !== 'undefined') payload.tags = updates.etiquetas;
+
+      console.log('🔄 [CONTACT UPDATE] Enviando actualización al backend:', {
+        payload,
+        BACKEND_URL,
+        endpoint: `${BACKEND_URL}/api/contacts/${contactId}`,
+        isProduction: BACKEND_URL.includes('railway.app')
+      });
+
+      const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        console.log('✅ [CONTACT UPDATE] Backend actualizado correctamente');
+        console.log('📡 [CONTACT UPDATE] WebSocket emitirá contact-updated automáticamente');
+      } else {
+        console.error('❌ [CONTACT UPDATE] Error en backend, revirtiendo cambios');
+        // Revertir cambios si falla el backend
+        setAllContacts(prev => prev.map(c => (c.id === contactId ? { ...c } : c)));
+      }
+    } catch (error) {
+      console.error('❌ [CONTACT UPDATE] Error actualizando contacto:', error);
+      // Revertir cambios si hay error
+      setAllContacts(prev => prev.map(c => (c.id === contactId ? { ...c } : c)));
+    }
+  }, [BACKEND_URL]);
+
+  // Cambiar columna (status) => actualizar funnel_stage en backend
+  const handleContactStatusChange = useCallback(async (contactId: string, newStatus: string) => {
+    let funnel_stage = 'nuevo_contacto';
+    switch (newStatus) {
+      case 'nuevo-lead':
+        funnel_stage = 'nuevo_contacto';
+        break;
+      case 'en-contacto':
+        funnel_stage = 'en_contacto';
+        break;
+      case 'cita-agendada':
+        funnel_stage = 'cita_agendada';
+        break;
+      case 'atencion-cliente':
+        funnel_stage = 'atencion_cliente';
+        break;
+      case 'cerrado':
+        funnel_stage = 'cita_cancelada';
+        break;
+    }
+
+    // Optimistic update local
+    setAllContacts(prev => prev.map(c => (
+      c.id === contactId ? { ...c, status: newStatus as Contact['status'], etapaDelEmbudo: funnel_stage } : c
+    )));
+
+    try {
+      console.log('🔄 [STATUS CHANGE] Actualizando funnel_stage:', {
+        contactId,
+        newStatus,
+        funnel_stage,
+        BACKEND_URL,
+        endpoint: `${BACKEND_URL}/api/contacts/${contactId}`,
+        isProduction: BACKEND_URL.includes('railway.app')
+      });
+      
+      const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ funnel_stage }),
+      });
+      
+      if (response.ok) {
+        console.log('✅ [STATUS CHANGE] funnel_stage actualizado correctamente');
+      } else {
+        console.error('❌ [STATUS CHANGE] Error en backend:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('❌ [STATUS CHANGE] Error actualizando funnel_stage:', error);
+    }
+  }, [BACKEND_URL]);
 
   // Handle goto chat
   const handleGotoChat = (contact: Contact) => {
     router.push(`/crm/line-dashboard/${lineId}/chat?contact=${contact.id}`);
+  };
+
+  // Funciones de manejo de filtros
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedTags([]);
   };
 
   if (loading) {
@@ -134,54 +474,30 @@ export default function KanbanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader 
-        line={{
-          id: lineId,
-          numero: 'N/A',
-          proveedor: 'META',
-          estaActivo: true,
-          creadoEn: new Date().toISOString(),
-          idDeUsuario: '1',
-          contactsCount: allContacts.length,
-          activeContacts: allContacts.length,
-          lastActivity: new Date().toISOString()
-        }}
-        totalContacts={allContacts.length}
-        onBackClick={() => router.push('/crm')}
-      />
-
-      <NavigationTabs 
-        currentView="kanban"
-  onViewChange={(view: string) => {
-          if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
-          else if (view === 'chat') router.push(`/crm/line-dashboard/${lineId}/chat`);
-          else if (view === 'analytics') router.push(`/crm/line-dashboard/${lineId}/analytics`);
-        }}
-      />
-
-      <div className="p-6">
-        <KanbanBoard 
-          contacts={allContacts}
-          onContactUpdate={(contactId, updates) => {
-            setAllContacts(prev => 
-              prev.map(contact => 
-                contact.id === contactId 
-                  ? { ...contact, ...updates }
-                  : contact
-              )
-            );
-          }}
-          onContactStatusChange={(contactId, newStatus) => {
-            setAllContacts(prev => 
-              prev.map(contact => 
-                contact.id === contactId 
-                  ? { ...contact, status: newStatus as Contact['status'] }
-                  : contact
-              )
-            );
-          }}
-          onGotoChat={handleGotoChat}
+      <div className="flex gap-6 p-6">
+        {/* Sidebar de Filtros */}
+        <FilterSidebar
+          allContacts={allContacts}
+          filteredContacts={filteredContacts}
+          selectedTags={selectedTags}
+          searchTerm={searchTerm}
+          onTagToggle={handleTagToggle}
+          onSearchChange={handleSearchChange}
+          onClearFilters={handleClearFilters}
         />
+        
+        {/* Tablero Kanban */}
+        <div className="flex-1">
+          {/* Stats Overview - Tarjetas de resumen */}
+          <StatsOverview analyticsStats={stats} />
+          
+          <KanbanBoard 
+            contacts={filteredContacts}
+            onContactUpdate={handleContactUpdate}
+            onContactStatusChange={handleContactStatusChange}
+            onGotoChat={handleGotoChat}
+          />
+        </div>
       </div>
     </div>
   );

@@ -291,6 +291,7 @@ export const useCRMWebSocket = ({
         backendUrl,
         funnel_stage: update.funnel_stage,
         last_activity: update.last_activity,
+        lastMessage: update.lastMessage,
         handlerRegistrado: !!eventHandlers.current.onContactUpdate
       });
       

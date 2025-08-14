@@ -75,20 +75,34 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     
     // Handler para nuevos mensajes
     wsHook.registerMessageHandler((message) => {
+      console.log('📨 [WEBSOCKET] Nuevo mensaje recibido en ChatSection:', {
+        messageId: message.id,
+        contactId: message.contactId,
+        sender: message.sender,
+        content: message.message,
+        timestamp: message.timestamp,
+        selectedContactId: selectedContact?.id,
+        isSelectedContact: selectedContact && message.contactId === selectedContact.id
+      });
+      
       // 🔥 ACTUALIZAR ÚLTIMO MENSAJE DEL CONTACTO EN LA LISTA - SIEMPRE
       if (onContactUpdate) {
+        console.log('🔄 [WEBSOCKET] Actualizando contacto via onContactUpdate:', message.contactId);
         onContactUpdate(message.contactId, {
           ultimoMensaje: {
             mensaje: message.message,
-            timestamp: message.timestamp,
+            timestamp: normalizeTimestamp(message.timestamp),
             remitente: message.sender === 'user' ? 'usuario' : 
                       message.sender === 'bot' ? 'bot' : 'agente'
           },
-          ultimaActividad: message.timestamp
+          ultimaActividad: normalizeTimestamp(message.timestamp)
         }, true); // 🔥 FLAG PARA WEBSOCKET UPDATE
+      } else {
+        console.warn('⚠️ [WEBSOCKET] onContactUpdate no está disponible');
       }
       
       if (selectedContact && message.contactId === selectedContact.id) {
+        console.log('💬 [WEBSOCKET] Agregando mensaje al chat activo');
         // 🔥 PROCESAR TODOS LOS MENSAJES QUE LLEGAN POR WEBSOCKET
         // Ya no se agregan localmente, solo por WebSocket
 
@@ -98,7 +112,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           senderName: message.sender === 'user' ? selectedContact.nombre : 
                      message.sender === 'agent' ? 'Respuesta Humana' : 'Bot',
           content: message.message,
-          timestamp: message.timestamp,
+          timestamp: normalizeTimestamp(message.timestamp),
           type: message.sender === 'user' ? 'incoming' : 'outgoing',
           isRead: true,
           sender: message.sender
@@ -111,13 +125,19 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             (msg.content === message.message && 
              Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000) // 5 segundos de tolerancia
           );
-          if (exists) return prev;
+          if (exists) {
+            console.log('🔄 [WEBSOCKET] Mensaje duplicado detectado, omitiendo');
+            return prev;
+          }
           
+          console.log('✅ [WEBSOCKET] Mensaje agregado al chat:', newMsg);
           const newMessages = [...prev, newMsg];
           // 🔥 RECALCULAR 24 HORAS DESPUÉS DE AGREGAR MENSAJE
           checkTimeGap(newMessages);
           return newMessages;
         });
+      } else {
+        console.log('ℹ️ [WEBSOCKET] Mensaje recibido para contacto no seleccionado o contacto no seleccionado');
       }
     });
 
@@ -202,8 +222,12 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         const data = await response.json();
         
         if (data.success && data.data) {
-          setMessages(data.data);
-          checkTimeGap(data.data);
+          const normalized = data.data.map((m: Message) => ({
+            ...m,
+            timestamp: normalizeTimestamp(m.timestamp)
+          }));
+          setMessages(normalized);
+          checkTimeGap(normalized);
         } else {
           setMessages([]);
           setIsOver24Hours(true);
@@ -218,7 +242,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     } finally {
       setLoading(false);
     }
-  }, [checkTimeGap, BACKEND_URL]);
+  }, [BACKEND_URL, checkTimeGap]);
 
   // Función para enviar plantilla
   const sendTemplate = useCallback(async (template: Template) => {
@@ -330,21 +354,30 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     setNewMessage("");
     setSendingMessage(true);
 
+    console.log('📤 [SEND] Enviando mensaje:', {
+      contactId: selectedContact.id,
+      contactName: selectedContact.nombre,
+      message: messageContent,
+      lineId: lineId
+    });
+
     try {
       // 🔥 NO AGREGAR MENSAJE LOCALMENTE - SOLO ENVIAR Y ESPERAR WEBSOCKET
       // 🔥 ACTUALIZAR ÚLTIMO MENSAJE DEL CONTACTO INMEDIATAMENTE
       if (onContactUpdate) {
+        console.log('🔄 [SEND] Actualizando contacto localmente antes de enviar');
         onContactUpdate(selectedContact.id, {
           ultimoMensaje: {
             mensaje: messageContent,
-            timestamp: new Date().toISOString(),
+            timestamp: normalizeTimestamp(new Date().toISOString()),
             remitente: 'agente'
           },
-          ultimaActividad: new Date().toISOString()
+          ultimaActividad: normalizeTimestamp(new Date().toISOString())
         }, true);
       }
       
       // 🔥 ENVIAR POR WHATSAPP (EL BACKEND SE ENCARGA DE GUARDAR EN BD)
+      console.log('📡 [SEND] Enviando a WhatsApp API...');
       const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -358,15 +391,20 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       });
 
       const result = await response.json();
+      console.log('📡 [SEND] Respuesta de WhatsApp API:', result);
 
       if (!response.ok || !result.success) {
         let errorMessage = result.message || result.error || 'Error desconocido';
         if (errorMessage.includes('credenciales de WhatsApp')) {
           errorMessage = 'Error: La línea de WhatsApp no tiene configuradas las credenciales (JWT y NUMBER_ID).';
         }
+        console.error('❌ [SEND] Error enviando mensaje:', errorMessage);
         alert(`Error enviando mensaje: ${errorMessage}`);
+      } else {
+        console.log('✅ [SEND] Mensaje enviado exitosamente, esperando WebSocket...');
       }
-    } catch {
+    } catch (error) {
+      console.error('❌ [SEND] Error de conexión:', error);
       alert('Error de conexión. Verifica que el backend esté funcionando.');
     } finally {
       setSendingMessage(false);
@@ -410,43 +448,46 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   };
 
   const formatTime = (timestamp: string) => {
+    if (!timestamp) return '';
+    // Si viene como 'HH:MM' o 'HH:MM:SS', devolver tal cual (está preformateado)
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timestamp)) {
+      return timestamp.slice(0, 5);
+    }
     const date = new Date(timestamp);
-    // Restar 5 horas (5 * 60 * 60 * 1000 milisegundos)
-    const localDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
-    
-    return localDate.toLocaleTimeString('es-ES', {
+    if (isNaN(date.getTime())) return timestamp;
+    return date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
   const formatDate = (timestamp: string) => {
+    if (!timestamp) return '';
+    // Si viene como 'HH:MM' usar como hora de hoy
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timestamp)) {
+      return `Hoy - ${timestamp.slice(0,5)}`;
+    }
+
     const date = new Date(timestamp);
-    // Restar 5 horas para convertir a hora local
-    const localDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
-    
-    // También ajustar la hora actual para mantener coherencia en el cálculo
+    if (isNaN(date.getTime())) return timestamp;
+
     const now = new Date();
-    const localNow = new Date(now.getTime() - (5 * 60 * 60 * 1000));
 
-    // Comparar solo la parte de la fecha (año, mes, día)
-    const isToday = localDate.getFullYear() === localNow.getFullYear() &&
-      localDate.getMonth() === localNow.getMonth() &&
-      localDate.getDate() === localNow.getDate();
+    const isToday = date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
 
-    // Calcular si fue ayer
-    const yesterday = new Date(localNow);
-    yesterday.setDate(localNow.getDate() - 1);
-    const isYesterday = localDate.getFullYear() === yesterday.getFullYear() &&
-      localDate.getMonth() === yesterday.getMonth() &&
-      localDate.getDate() === yesterday.getDate();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.getFullYear() === yesterday.getFullYear() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getDate() === yesterday.getDate();
 
-    const diff = localNow.getTime() - localDate.getTime();
+    const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    // Formatear la hora local
-    const timeString = localDate.toLocaleTimeString('es-ES', {
+    const timeString = date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -486,13 +527,23 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     }
   };
 
+  const normalizeTimestamp = (timestamp: string): string => {
+    if (!timestamp) return timestamp;
+    // Si ya tiene zona horaria (Z o +hh:mm / -hh:mm), lo dejamos igual
+    const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(timestamp);
+    if (hasTZ) return timestamp;
+    // Asegurar formato ISO y marcarlo como UTC
+    const isoLike = timestamp.includes('T') ? timestamp : timestamp.replace(' ', 'T');
+    return `${isoLike}Z`;
+  };
+
   return (
-    <div className="h-[800px] bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border overflow-hidden">
+    <div className="h-full bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border overflow-hidden">
       <div className="flex h-full">
         {/* Contacts Sidebar */}
         <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           {/* Search Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -510,8 +561,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             {Object.entries(contactsByStatus)
               .filter(([, statusContacts]) => statusContacts.length > 0)
               .map(([status, statusContacts]) => (
-                <div key={status} className="mb-4">
-                  <div className="px-4 py-2 bg-gray-50 dark:bg-[hsl(240,10%,8%)] border-b border-gray-200 dark:border-gray-700">
+                <div key={status} className="mb-2">
+                  <div className="px-3 py-1 bg-gray-50 dark:bg-[hsl(240,10%,8%)] border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm text-muted-foreground">
                         {getStatusLabel(status)}
@@ -527,7 +578,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       key={contact.id}
                       onClick={() => handleContactSelect(contact)}
                       className={`
-                        p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-[hsl(240,10%,8%)] transition-colors
+                        p-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-[hsl(240,10%,8%)] transition-colors
                         ${selectedContact?.id === contact.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-primary' : ''}
                       `}
                     >
@@ -669,7 +720,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -690,7 +741,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}
                         >
                           <div className={`
-                            max-w-[70%] rounded-lg p-3 relative
+                            max-w-[70%] rounded-lg p-2 relative
                             ${isHumanAgent 
                               ? 'bg-purple-500 text-white' 
                               : isBot
