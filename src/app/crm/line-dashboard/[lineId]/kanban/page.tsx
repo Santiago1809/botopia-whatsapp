@@ -30,8 +30,8 @@ export default function KanbanPage() {
   const router = useRouter();
   const lineId = params.lineId as string;
 
-  // Configuración del backend - TEMPORAL: Forzar localhost para desarrollo
-  const BACKEND_URL = 'http://localhost:5005';
+  // Configuración del backend
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
   // Debug: Log de la URL del backend
   useEffect(() => {
