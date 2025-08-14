@@ -279,7 +279,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     } finally {
       setLoading(false);
     }
-  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL, checkTimeGap]);
+  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL]);
 
   // Hacer scroll cuando cambien los mensajes y recalcular 24 horas
   useEffect(() => {

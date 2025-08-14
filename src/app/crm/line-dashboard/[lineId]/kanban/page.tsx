@@ -11,7 +11,6 @@ import { Contact } from "../../../../../types/dashboard";
 export default function KanbanPage() {
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedContactForChat, setSelectedContactForChat] = useState<Contact | null>(null);
 
   const params = useParams();
   const router = useRouter();
@@ -119,7 +118,6 @@ export default function KanbanPage() {
 
   // Handle goto chat
   const handleGotoChat = (contact: Contact) => {
-    setSelectedContactForChat(contact);
     router.push(`/crm/line-dashboard/${lineId}/chat?contact=${contact.id}`);
   };
 
@@ -154,7 +152,7 @@ export default function KanbanPage() {
 
       <NavigationTabs 
         currentView="kanban"
-        onViewChange={(view: any) => {
+  onViewChange={(view: string) => {
           if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
           else if (view === 'chat') router.push(`/crm/line-dashboard/${lineId}/chat`);
           else if (view === 'analytics') router.push(`/crm/line-dashboard/${lineId}/analytics`);

@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
     if (lineId) {
       loadData();
     }
-  }, [lineId, BACKEND_URL]);
+  }, [lineId, BACKEND_URL, analyticsStats]);
 
   // WebSocket handlers
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
 
       <NavigationTabs 
         currentView="analytics"
-        onViewChange={(view: any) => {
+  onViewChange={(view: string) => {
           if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
           else if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
           else if (view === 'chat') router.push(`/crm/line-dashboard/${lineId}/chat`);

@@ -170,7 +170,7 @@ export default function ChatPage() {
 
       <NavigationTabs 
         currentView="chat"
-        onViewChange={(view: any) => {
+  onViewChange={(view: string) => {
           if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
           else if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
           else if (view === 'analytics') router.push(`/crm/line-dashboard/${lineId}/analytics`);
