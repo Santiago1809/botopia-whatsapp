@@ -2,19 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import DashboardHeader from "../../../../components/crm/DashboardHeader";
-import NavigationTabs from "../../../../components/crm/NavigationTabs";
-// import { useDashboardFilters } from "../../../../hooks/useDashboardFilters";
-import { useCRMWebSocket } from "../../../../hooks/useCRMWebSocket";
-import type { 
-  Contact, 
-  LineDashboardData
-} from "../../../../types/dashboard";
+import DashboardHeader from "../../../../../components/crm/DashboardHeader";
+import NavigationTabs from "../../../../../components/crm/NavigationTabs";
+import AnalyticsSection from "../../../../../components/crm/AnalyticsSection";
+import { useCRMWebSocket } from "../../../../../hooks/useCRMWebSocket";
+import { Contact } from "../../../../../types/dashboard";
 
-export default function LineDashboard() {
-  const [dashboardData, setDashboardData] = useState<LineDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function AnalyticsPage() {
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   const [analyticsStats, setAnalyticsStats] = useState({
     totalContacts: 0,
     newContacts: 0,
@@ -30,19 +26,16 @@ export default function LineDashboard() {
   // Configuración del backend
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
-  // Hook de filtros - No se usa por ahora
-  // const { selectedTags, searchTerm, filteredContacts, analyticsStats: filterStats } = useDashboardFilters({ allContacts });
-
   // Hook de WebSocket
   const wsHook = useCRMWebSocket({ 
     lineId, 
-    userId: 'dashboard-user',
+    userId: 'analytics-user',
     backendUrl: BACKEND_URL
   });
 
-  // Cargar datos del dashboard
+  // Cargar datos
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         
@@ -60,22 +53,15 @@ export default function LineDashboard() {
           setAnalyticsStats(statsData.data || analyticsStats);
         }
 
-        // Cargar datos de la línea
-        const lineResponse = await fetch(`${BACKEND_URL}/api/lines/${lineId}`);
-        if (lineResponse.ok) {
-          const lineData = await lineResponse.json();
-          setDashboardData(lineData.data || null);
-        }
-
       } catch (error) {
-        console.error('Error cargando datos del dashboard:', error);
+        console.error('Error cargando datos:', error);
       } finally {
         setLoading(false);
       }
     };
 
     if (lineId) {
-      loadDashboardData();
+      loadData();
     }
   }, [lineId, BACKEND_URL]);
 
@@ -83,17 +69,6 @@ export default function LineDashboard() {
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
-              const mapStatus = (funnelStage: string): Contact['status'] => {
-          switch (funnelStage) {
-            case 'nuevo_contacto': return 'nuevo-lead';
-            case 'en_contacto': return 'en-contacto';
-            case 'cita_agendada': return 'cita-agendada';
-            case 'cita_cancelada': return 'cerrado';
-            case 'atencion_cliente': return 'atencion-cliente';
-            default: return 'nuevo-lead';
-          }
-        };
-
       setAllContacts(prevContacts => {
         let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
@@ -103,7 +78,6 @@ export default function LineDashboard() {
               ...contact,
               nombre: update.name || contact.nombre,
               telefono: update.phone || contact.telefono,
-              status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
               etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
@@ -123,7 +97,6 @@ export default function LineDashboard() {
                 return {
                   ...contact,
                   nombre: update.name || contact.nombre,
-                  status: mapStatus(update.funnel_stage || contact.etapaDelEmbudo),
                   etapaDelEmbudo: update.funnel_stage || contact.etapaDelEmbudo,
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
@@ -143,7 +116,6 @@ export default function LineDashboard() {
 
     wsHook.registerMessageHandler((message) => {
       console.log('📨 [WEBSOCKET] Nuevo mensaje recibido:', message);
-      // Aquí puedes actualizar el estado si es necesario
     });
 
   }, [wsHook, lineId]);
@@ -153,7 +125,7 @@ export default function LineDashboard() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando dashboard...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando Analytics...</p>
         </div>
       </div>
     );
@@ -178,57 +150,29 @@ export default function LineDashboard() {
       />
 
       <NavigationTabs 
-        currentView="dashboard"
+        currentView="analytics"
         onViewChange={(view: any) => {
-          if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
+          if (view === 'dashboard') router.push(`/crm/line-dashboard/${lineId}`);
+          else if (view === 'kanban') router.push(`/crm/line-dashboard/${lineId}/kanban`);
           else if (view === 'chat') router.push(`/crm/line-dashboard/${lineId}/chat`);
-          else if (view === 'analytics') router.push(`/crm/line-dashboard/${lineId}/analytics`);
         }}
       />
 
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Nuevos Contactos</h3>
-            <p className="text-3xl font-bold text-blue-600">{analyticsStats.newContacts}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">En Contacto</h3>
-            <p className="text-3xl font-bold text-yellow-600">{analyticsStats.inContact}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Citas Agendadas</h3>
-            <p className="text-3xl font-bold text-green-600">{analyticsStats.scheduledAppointments}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Atención Cliente</h3>
-            <p className="text-3xl font-bold text-purple-600">{analyticsStats.customerService}</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Nuevos Leads</h2>
-          <div className="space-y-3">
-            {allContacts
-              .filter(contact => contact.etapaDelEmbudo === 'nuevo_contacto')
-              .slice(0, 5)
-              .map(contact => (
-                <div key={contact.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{contact.nombre}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{contact.telefono}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {contact.etiquetas?.map((tag, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
+        <AnalyticsSection 
+          contacts={allContacts}
+          stats={{
+            total: allContacts.length,
+            pendienteDocumentacion: allContacts.filter(c => c.etapaDelEmbudo === 'pendiente-documentacion').length,
+            nuevoLead: allContacts.filter(c => c.etapaDelEmbudo === 'nuevo_contacto').length,
+            enContacto: allContacts.filter(c => c.etapaDelEmbudo === 'en_contacto').length,
+            citaAgendada: allContacts.filter(c => c.etapaDelEmbudo === 'cita_agendada').length,
+            atencionCliente: allContacts.filter(c => c.etapaDelEmbudo === 'atencion_cliente').length,
+            cerrado: allContacts.filter(c => c.etapaDelEmbudo === 'cita_cancelada').length,
+            conversion: 0
+          }}
+          lineId={lineId}
+        />
       </div>
     </div>
   );

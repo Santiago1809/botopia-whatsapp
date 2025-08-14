@@ -62,4 +62,4 @@ export interface AnalyticsStats {
   conversion: number;
 }
 
-export type ViewMode = 'dashboard' | 'chat' | 'analytics';
+export type ViewMode = 'dashboard' | 'kanban' | 'chat' | 'analytics';

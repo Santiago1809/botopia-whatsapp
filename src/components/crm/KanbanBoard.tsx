@@ -622,6 +622,38 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
     // Find the contact that was moved
     const contact = contacts.find(c => c.id === draggableId);
     if (contact && contact.status !== newStatus) {
+      // Mapear el status del frontend al funnel_stage del backend
+      let funnelStage = contact.etapaDelEmbudo;
+      
+      switch (newStatus) {
+        case 'nuevo-lead':
+          funnelStage = 'nuevo_contacto';
+          break;
+        case 'en-contacto':
+          funnelStage = 'en_contacto';
+          break;
+        case 'cita-agendada':
+          funnelStage = 'cita_agendada';
+          break;
+        case 'atencion-cliente':
+          funnelStage = 'atencion_cliente';
+          break;
+        case 'cerrado':
+          funnelStage = 'cita_cancelada';
+          break;
+        default:
+          funnelStage = 'nuevo_contacto';
+      }
+
+      // Actualizar tanto el status como el funnel_stage
+      if (onContactUpdate) {
+        onContactUpdate(draggableId, { 
+          status: newStatus as Contact['status'],
+          etapaDelEmbudo: funnelStage 
+        });
+      }
+      
+      // También llamar al callback de status change para compatibilidad
       onContactStatusChange(draggableId, newStatus);
     }
   };
