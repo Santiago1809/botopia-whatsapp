@@ -139,7 +139,7 @@ export default function LineDashboardLayout({
       </div>
 
       {/* Content Area - Aquí se renderizan las páginas específicas */}
-      <div className="px-4 sm:px-6 md:px-8 py-6">
+      <div className="px-4 sm:px-6 md:px-8 py-2">
         {children}
       </div>
     </div>
