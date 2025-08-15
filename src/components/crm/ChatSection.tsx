@@ -556,8 +556,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
             </div>
           </div>
 
-          {/* Contacts List */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Contacts List - Con altura máxima y scroll */}
+          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)]">
             {Object.entries(contactsByStatus)
               .filter(([, statusContacts]) => statusContacts.length > 0)
               .map(([status, statusContacts]) => (
@@ -719,8 +719,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {/* Messages - Con altura máxima reducida para mostrar menos mensajes */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[calc(100vh-290px)]">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -743,8 +743,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           <div className={`
                             max-w-[70%] rounded-lg p-2 relative
                             ${isHumanAgent 
-                              ? 'bg-purple-500 text-white' 
-                              : isBot
+                              ? 'bg-purple-500 text-white' : 
+                              isBot
                               ? 'bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100 border border-purple-200 dark:border-purple-800'
                               : 'bg-gray-100 dark:bg-gray-700 text-foreground'
                             }
@@ -795,7 +795,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="px-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                 {/* Mostrar alerta si han pasado más de 24 horas */}
                 {isOver24Hours && (
                   <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">

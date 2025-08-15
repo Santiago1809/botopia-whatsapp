@@ -17,7 +17,7 @@ interface TabButtonProps {
 const TabButton = ({ isActive, onClick, icon: Icon, label }: TabButtonProps) => (
   <button
     onClick={onClick}
-    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+    className={`py-1 px-1 border-b-2 font-medium text-sm transition-colors ${
       isActive
         ? 'border-white text-white'
         : 'border-transparent text-white/70 hover:text-white hover:border-white/50'
@@ -45,7 +45,7 @@ export default function NavigationTabs({ lineId }: NavigationTabsProps) {
   const activeTab = getActiveTab();
 
   return (
-    <div className="mt-6 border-b border-white/20">
+    <div className="mt-2 border-b border-white/20">
       <nav className="flex justify-center items-center w-full">
         <div className="flex space-x-8">
           <TabButton

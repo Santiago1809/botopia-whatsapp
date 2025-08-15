@@ -250,7 +250,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
       <ChatSection 
         contacts={allContacts}
         lineId={lineId}
