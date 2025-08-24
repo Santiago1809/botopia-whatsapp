@@ -39,43 +39,53 @@ export default function LineDashboardLayout({
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Simulamos datos del dashboard de línea
-      const mockData: LineDashboardData = {
-        line: {
-          id: lineId,
-          numero: "15556647179",
-          proveedor: "META",
-          estaActivo: true,
-          creadoEn: "2025-07-18T06:04:22.007746+00:00",
-          idDeUsuario: "2",
-          contactsCount: 4,
-          activeContacts: 4,
-          lastActivity: "2025-07-20T23:37:09.569Z"
-        },
+      // Intentar obtener detalles reales de la línea
+      const res = await fetch(`${BACKEND_URL}/api/lines/${lineId}`);
+      let lineDetails = null;
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload.success && payload.data) {
+          lineDetails = payload.data;
+        }
+      }
+
+      const line = lineDetails || {
+        id: lineId,
+        numero: "",
+        proveedor: "META",
+        estaActivo: true,
+        creadoEn: new Date().toISOString(),
+        idDeUsuario: "",
+        contactsCount: 0,
+        activeContacts: 0,
+        lastActivity: new Date().toISOString(),
+      };
+
+      const data: LineDashboardData = {
+        line,
         stats: {
-          totalContacts: 4,
-          activeContacts: 4,
-          newLeads: 4,
+          totalContacts: line.contactsCount || 0,
+          activeContacts: line.activeContacts || 0,
+          newLeads: 0,
           inProgress: 0,
           scheduled: 0,
           closed: 0,
           conversionRate: 0,
-          averageResponseTime: "2 min",
-          todayMessages: 12,
-          weeklyMessages: 45
+          averageResponseTime: "-",
+          todayMessages: 0,
+          weeklyMessages: 0
         },
         recentContacts: []
       };
       
-      setDashboardData(mockData);
+      setDashboardData(data);
     } catch (error) {
       setError("Error de conexión con el servidor");
       console.error("Error:", error);
     } finally {
       setLoading(false);
     }
-  }, [lineId]);
+  }, [lineId, BACKEND_URL]);
 
   useEffect(() => {
     if (lineId) {
@@ -122,23 +132,38 @@ export default function LineDashboardLayout({
   }
 
   const { line } = dashboardData;
+  const CHAT_ONLY_LINE_ID = '4853bac0-785a-4775-a8eb-e8401dae5167';
+
+  // Chat-only: keep header but only one tab, or optionally hide tabs at all
+  if (lineId === CHAT_ONLY_LINE_ID) {
+    return (
+      <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
+          <DashboardHeader 
+            line={line}
+            totalContacts={allContacts.length}
+            onBackClick={() => router.push('/crm')}
+          />
+          {/* Tabs component will already render a single Chat tab for this line */}
+          <NavigationTabs lineId={lineId} />
+        </div>
+        <div className="px-4 sm:px-6 md:px-8 py-2">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
-      {/* Header with navigation - Aparece en TODAS las páginas */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
         <DashboardHeader 
           line={line}
           totalContacts={allContacts.length}
           onBackClick={() => router.push('/crm')}
         />
-        
-        <NavigationTabs
-          lineId={lineId}
-        />
+        <NavigationTabs lineId={lineId} />
       </div>
-
-      {/* Content Area - Aquí se renderizan las páginas específicas */}
       <div className="px-4 sm:px-6 md:px-8 py-2">
         {children}
       </div>

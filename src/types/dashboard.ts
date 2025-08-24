@@ -30,6 +30,8 @@ export interface Line {
   contactsCount: number;
   activeContacts: number;
   lastActivity: string;
+  nombreLinea?: string | null;
+  fotoLinea?: string | null;
 }
 
 export interface LineStats {

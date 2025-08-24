@@ -13,6 +13,8 @@ interface Line {
   estaActivo: boolean;
   creadoEn: string;
   idDeUsuario: string | number; // Puede ser string o number
+  nombreLinea?: string | null;
+  fotoLinea?: string | null;
   contactsCount: number;
   activeContacts: number;
   lastActivity: string;
@@ -136,6 +138,15 @@ export default function CrmPage() {
     });
   };
 
+  const formatOptionalDate = (dateString?: string) => {
+    if (!dateString) return '—';
+    try {
+      return formatDate(dateString);
+    } catch {
+      return '—';
+    }
+  };
+
   const handleLineClick = (lineId: string) => {
     router.push(`/crm/line-dashboard/${lineId}`);
   };
@@ -143,7 +154,8 @@ export default function CrmPage() {
   const getProviderColor = (provider: string) => {
     const colors = {
       'WhatsApp Business': 'bg-green-100 text-green-800 border-green-300',
-      'Meta WhatsApp': 'bg-blue-100 text-blue-800 border-blue-300',
+  'Meta WhatsApp': 'bg-blue-100 text-blue-800 border-blue-300',
+  'META': 'bg-blue-100 text-blue-800 border-blue-300',
     };
     return colors[provider as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-300';
   };
@@ -187,54 +199,69 @@ export default function CrmPage() {
           )}
 
           {/* Lines Grid */}
-          <div className="flex justify-center items-start min-h-[60vh] mt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full justify-center">
-              {lines.map((line) => (
-                <div
-                  key={line.id}
-                  onClick={() => handleLineClick(line.id)}
-                  className="flex flex-col justify-between items-stretch 
-                    bg-white/90 dark:bg-[hsl(240,10%,16%)]/95 
-                    rounded-2xl shadow-lg border border-primary/30 dark:border-primary/50 
-                    hover:shadow-xl transition-all duration-200 cursor-pointer overflow-hidden 
-                    h-[240px] w-[370px] p-5 group"
-                >
-                  {/* Header: Foto, nombre, proveedor */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <Image
-                      src="/Juanita.jpeg"
-                      alt="Juanita"
-                      width={112}
-                      height={112}
-                      className="w-28 h-28 rounded-full object-cover border-2 border-primary shadow-sm"
-                    />
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="text-xl font-bold text-primary truncate">JUANITA</span>
-                      <span className="text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
+          <div className="flex justify-start items-start min-h-[60vh] mt-2">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] auto-rows-fr items-stretch gap-8 w-full max-w-7xl px-4">
+              {lines.map((line) => {
+                const displayName = (line.nombreLinea?.trim() || 'NA');
+                const photoUrl = line.fotoLinea?.trim() || '';
+                return (
+                  <div
+                    key={line.id}
+                    onClick={() => handleLineClick(line.id)}
+                    className="flex flex-col justify-between items-stretch 
+                      bg-white/90 dark:bg-[hsl(240,10%,16%)]/95 
+                      rounded-2xl shadow-lg border border-primary/30 dark:border-primary/50 
+                      hover:shadow-xl hover:translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden 
+                      min-h-[240px] h-full w-full p-5 sm:p-6 group"
+                  >
+                    {/* Header: Foto, nombre, proveedor */}
+                    <div className="flex items-center gap-4 mb-4">
+                      {photoUrl ? (
+                        <Image
+                          src={photoUrl}
+                          alt={`Foto de ${displayName}`}
+                          width={112}
+                          height={112}
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-primary shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-transparent" />
+                      )}
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="text-xl font-bold text-primary truncate">{displayName}</span>
+                        <span className="text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
+                      </div>
+                      <div className="ml-auto flex flex-col items-end gap-1">
+                        <span className={`px-3 py-1 rounded text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground">{line.activeContacts ?? 0}</span>
+                          <span> / {line.contactsCount ?? 0} contactos</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Última: {formatOptionalDate(line.lastActivity)}</div>
+                      </div>
                     </div>
-                    <span className={`ml-auto px-3 py-1 rounded text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
-                  </div>
 
-                  {/* Estado */}
-                  <div className="flex justify-center items-center w-full text-sm mb-4 mt-2">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-4 h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <span className={`font-bold text-lg ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
+                    {/* Estado */}
+                    <div className="flex justify-center items-center w-full text-sm mb-4 mt-2">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-4 h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span className={`font-bold text-lg ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex justify-between items-center w-full text-xs text-muted-foreground border-t pt-2 mt-2 dark:text-gray-300/80">
+                      <span className="truncate">{formatDate(line.creadoEn)}</span>
+                      <span className="text-primary font-bold cursor-pointer flex items-center gap-1 group-hover:underline text-sm">
+                        Ver Dashboard
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
                     </div>
                   </div>
-
-                  {/* Footer */}
-                  <div className="flex justify-between items-center w-full text-xs text-muted-foreground border-t pt-2 mt-2 dark:text-gray-300/80">
-                    <span className="truncate">{formatDate(line.creadoEn)}</span>
-                    <span className="text-primary font-bold cursor-pointer flex items-center gap-1 group-hover:underline text-sm">
-                      Ver Dashboard
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
