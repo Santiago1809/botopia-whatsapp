@@ -15,6 +15,8 @@ export default function DashboardHeader({
   totalContacts, 
   onBackClick 
 }: DashboardHeaderProps) {
+  const displayName = (line.nombreLinea?.trim() || line.numero);
+  const photoUrl = line.fotoLinea?.trim() || '';
   return (
     <div className="bg-gradient-to-r from-primary to-primary/80 text-white relative">
       <div className="px-4 sm:px-6 md:px-8 py-3">
@@ -28,7 +30,7 @@ export default function DashboardHeader({
             </button>
             <div>
               <h1 className="text-2xl font-bold">
-                CRM Dashboard - {line.proveedor}
+                {displayName} • {line.proveedor}
               </h1>
               <p className="text-white/80 mt-1">
                 Línea {line.numero} • {totalContacts} contactos
@@ -39,15 +41,16 @@ export default function DashboardHeader({
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-white/90 text-gray-800">
               {line.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
-            {/* Foto de Juanita en la esquina superior derecha */}
-            <Image
-              src="/Juanita.jpeg"
-              alt="Juanita"
-              width={48}
-              height={48}
-              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
-              style={{ boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)' }}
-            />
+            {photoUrl && (
+              <Image
+                src={photoUrl}
+                alt={`Foto de ${displayName}`}
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+                style={{ boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)' }}
+              />
+            )}
           </div>
         </div>
       </div>
