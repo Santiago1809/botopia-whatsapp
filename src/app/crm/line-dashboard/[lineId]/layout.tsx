@@ -132,27 +132,6 @@ export default function LineDashboardLayout({
   }
 
   const { line } = dashboardData;
-  const CHAT_ONLY_LINE_ID = '4853bac0-785a-4775-a8eb-e8401dae5167';
-
-  // Chat-only: keep header but only one tab, or optionally hide tabs at all
-  if (lineId === CHAT_ONLY_LINE_ID) {
-    return (
-      <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
-          <DashboardHeader 
-            line={line}
-            totalContacts={allContacts.length}
-            onBackClick={() => router.push('/crm')}
-          />
-          {/* Tabs component will already render a single Chat tab for this line */}
-          <NavigationTabs lineId={lineId} />
-        </div>
-        <div className="px-4 sm:px-6 md:px-8 py-2">
-          {children}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">

@@ -33,7 +33,6 @@ const TabButton = ({ isActive, onClick, icon: Icon, label }: TabButtonProps) => 
 export default function NavigationTabs({ lineId }: NavigationTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const CHAT_ONLY_LINE_ID = '4853bac0-785a-4775-a8eb-e8401dae5167';
 
   // Determinar qué tab está activo basado en la URL actual
   const getActiveTab = () => {
@@ -44,25 +43,6 @@ export default function NavigationTabs({ lineId }: NavigationTabsProps) {
   };
 
   const activeTab = getActiveTab();
-
-  // If line is chat-only, render a minimal single-tab bar and force chat route
-  if (lineId === CHAT_ONLY_LINE_ID) {
-    const isActive = pathname.includes('/chat');
-    return (
-      <div className="mt-2 border-b border-white/20">
-        <nav className="flex justify-center items-center w-full">
-          <div className="flex space-x-8">
-            <TabButton
-              isActive={isActive}
-              onClick={() => router.push(`/crm/line-dashboard/${lineId}/chat`)}
-              icon={MessageSquare}
-              label="Chat Center"
-            />
-          </div>
-        </nav>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-2 border-b border-white/20">

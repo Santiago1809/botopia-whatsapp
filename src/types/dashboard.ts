@@ -2,7 +2,7 @@ export interface Contact {
   id: string;
   identificacion: string;
   telefono: string;
-  nombre: string;
+  nombre?: string; // Made optional since it can be undefined from backend
   etapaDelEmbudo: string;
   prioridad: string;
   estaAlHabilitado: boolean;

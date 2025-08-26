@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCRMWebSocket } from '../hooks/useCRMWebSocket';
 
 interface WebSocketIndicatorProps {
@@ -19,6 +19,27 @@ export const WebSocketIndicator: React.FC<WebSocketIndicatorProps> = ({
   position = 'relative'
 }) => {
   const { isConnected, connectionError, connectionStatus, isHealthy } = useCRMWebSocket();
+  
+  // Estado estable para evitar parpadeos
+  const [stableStatus, setStableStatus] = useState(connectionStatus);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce para el estado de conexión (evitar parpadeos)
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    const timer = setTimeout(() => {
+      setStableStatus(connectionStatus);
+    }, 1000); // 1 segundo de debounce
+
+    debounceTimer.current = timer;
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [connectionStatus]);
 
   // Configuración de estilos basada en el tamaño
   const sizeClasses = {
@@ -32,16 +53,16 @@ export const WebSocketIndicator: React.FC<WebSocketIndicatorProps> = ({
     ? 'fixed top-4 right-4 z-50' 
     : 'inline-flex';
 
-  // Estado y colores
+  // Estado y colores (usar estado estable)
   const getStatusConfig = () => {
-    if (isHealthy()) {
+    if (isHealthy() && stableStatus === 'connected') {
       return {
         color: 'bg-green-500',
-        text: 'Tiempo Real Activo',
+        text: 'Tiempo Real',
         icon: '🟢',
-        pulse: 'animate-pulse'
+        pulse: ''
       };
-    } else if (connectionStatus === 'connecting') {
+    } else if (stableStatus === 'connecting') {
       return {
         color: 'bg-yellow-500',
         text: 'Conectando...',
