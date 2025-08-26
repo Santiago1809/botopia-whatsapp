@@ -89,7 +89,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Mantener refs con los últimos valores para evitar re-registros
   const selectedContactRef = useRef<Contact | null>(null);
-  const onContactUpdateRef = useRef<typeof onContactUpdate>();
+  const onContactUpdateRef = useRef<ChatSectionProps['onContactUpdate']>(undefined);
   useEffect(() => { selectedContactRef.current = selectedContact; }, [selectedContact]);
   useEffect(() => { onContactUpdateRef.current = onContactUpdate; }, [onContactUpdate]);
 
