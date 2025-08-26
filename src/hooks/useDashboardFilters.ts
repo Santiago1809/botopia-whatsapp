@@ -14,7 +14,7 @@ export function useDashboardFilters({ allContacts }: UseDashboardFiltersProps) {
   // Filter contacts based on selected tags and search term
   const filteredContacts = allContacts.filter(contact => {
     const matchesSearch = searchTerm === "" || 
-      contact.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (contact.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
       contact.telefono.includes(searchTerm);
     
     const matchesTags = selectedTags.length === 0 || 
