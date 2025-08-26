@@ -177,6 +177,9 @@ export default function CrmPage() {
     );
   }
 
+  // Si solo hay una tarjeta, mostramos un diseño más compacto
+  const isSingle = lines.length === 1;
+
   return (
     <SidebarLayout>
       <div className="flex flex-col min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
@@ -199,8 +202,10 @@ export default function CrmPage() {
           )}
 
           {/* Lines Grid */}
-          <div className="flex justify-start items-start min-h-[60vh] mt-2">
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] auto-rows-fr items-stretch gap-8 w-full max-w-7xl px-4">
+          <div className={`flex justify-start items-start min-h-[60vh] mt-2`}>
+            <div className={`${isSingle
+                ? 'grid grid-cols-1 place-items-start gap-8 w-full max-w-2xl px-4'
+                : 'grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] auto-rows-fr items-stretch gap-8 w-full max-w-7xl px-4'}`}>
               {lines.map((line) => {
                 const displayName = (line.nombreLinea?.trim() || 'NA');
                 const photoUrl = line.fotoLinea?.trim() || '';
@@ -208,11 +213,11 @@ export default function CrmPage() {
                   <div
                     key={line.id}
                     onClick={() => handleLineClick(line.id)}
-                    className="flex flex-col justify-between items-stretch 
+                    className={`flex flex-col justify-between items-stretch 
                       bg-white/90 dark:bg-[hsl(240,10%,16%)]/95 
                       rounded-2xl shadow-lg border border-primary/30 dark:border-primary/50 
                       hover:shadow-xl hover:translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden 
-                      min-h-[240px] h-full w-full p-5 sm:p-6 group"
+                      min-h-[240px] h-full w-full p-5 sm:p-6 group ${isSingle ? 'max-w-[600px] sm:max-w-[680px]' : ''}`}
                   >
                     {/* Header: Foto, nombre, proveedor */}
                     <div className="flex items-center gap-4 mb-4">
@@ -220,16 +225,17 @@ export default function CrmPage() {
                         <Image
                           src={photoUrl}
                           alt={`Foto de ${displayName}`}
-                          width={112}
-                          height={112}
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-primary shadow-sm"
+                          width={128}
+                          height={128}
+                          className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-primary shadow-sm"
                         />
                       ) : (
-                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-transparent" />
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-transparent" />
                       )}
                       <div className="flex flex-col flex-1 min-w-0">
                         <span className="text-xl font-bold text-primary truncate">{displayName}</span>
                         <span className="text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
+                        <span className="text-xs text-muted-foreground truncate dark:text-gray-300/80">ID: {line.id}</span>
                       </div>
                       <div className="ml-auto flex flex-col items-end gap-1">
                         <span className={`px-3 py-1 rounded text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
@@ -245,7 +251,7 @@ export default function CrmPage() {
                     <div className="flex justify-center items-center w-full text-sm mb-4 mt-2">
                       <div className="flex items-center gap-3">
                         <span className={`w-4 h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <span className={`font-bold text-lg ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
+                        <span className={`font-bold ${isSingle ? 'text-base' : 'text-lg'} ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
                       </div>
                     </div>
 

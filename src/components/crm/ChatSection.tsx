@@ -41,9 +41,10 @@ interface ChatSectionProps {
   lineId: string;
   selectedContactFromKanban?: Contact | null;
   onContactUpdate?: (contactId: string, updates: Partial<Contact>, isWebSocketUpdate?: boolean) => void;
+  ws?: ReturnType<typeof useCRMWebSocket>;
 }
 
-const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedContactFromKanban, onContactUpdate }) => {
+const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedContactFromKanban, onContactUpdate, ws }) => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,11 +61,14 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
   // 🔥 WEBSOCKET HOOK - TIEMPO REAL SIN POLLING
-  const wsHook = useCRMWebSocket({ 
+  // Siempre llamar al hook para respetar el orden de hooks; si llega uno por props, lo usamos.
+  const localWs = useCRMWebSocket({ 
     lineId, 
     userId: 'agent-1',
-    backendUrl: BACKEND_URL 
+    backendUrl: BACKEND_URL,
+    enabled: !ws // si ya hay uno externo, no abrir otro
   });
+  const wsHook = ws ?? localWs;
 
   // Función para verificar si han pasado más de 24 horas desde el último mensaje
   const checkTimeGap = useCallback((messages: Message[]) => {
@@ -83,14 +87,20 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     return over24;
   }, []);
 
-  // Configurar handlers de WebSocket
+  // Mantener refs con los últimos valores para evitar re-registros
+  const selectedContactRef = useRef<Contact | null>(null);
+  const onContactUpdateRef = useRef<typeof onContactUpdate>();
+  useEffect(() => { selectedContactRef.current = selectedContact; }, [selectedContact]);
+  useEffect(() => { onContactUpdateRef.current = onContactUpdate; }, [onContactUpdate]);
+
+  // Configurar handlers de WebSocket (registrar una sola vez por instancia)
   useEffect(() => {
     // Si no está conectado, intentar reconectar
     if (!wsHook.isConnected && wsHook.reconnect) {
       wsHook.reconnect();
     }
-    
-    // Handler para nuevos mensajes
+
+    // Handler para nuevos mensajes (asegurar un solo registro)
     wsHook.registerMessageHandler((message) => {
       console.log('📨 [WEBSOCKET] Nuevo mensaje recibido en ChatSection:', {
         messageId: message.id,
@@ -98,14 +108,14 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         sender: message.sender,
         content: message.message,
         timestamp: message.timestamp,
-        selectedContactId: selectedContact?.id,
-        isSelectedContact: selectedContact && message.contactId === selectedContact.id
+        selectedContactId: selectedContactRef.current?.id,
+        isSelectedContact: selectedContactRef.current && message.contactId === selectedContactRef.current.id
       });
       
       // 🔥 ACTUALIZAR ÚLTIMO MENSAJE DEL CONTACTO EN LA LISTA - SIEMPRE
-      if (onContactUpdate) {
+      if (onContactUpdateRef.current) {
         console.log('🔄 [WEBSOCKET] Actualizando contacto via onContactUpdate:', message.contactId);
-        onContactUpdate(message.contactId, {
+        onContactUpdateRef.current(message.contactId, {
           ultimoMensaje: {
             mensaje: message.message,
             timestamp: normalizeTimestamp(message.timestamp),
@@ -117,8 +127,9 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       } else {
         console.warn('⚠️ [WEBSOCKET] onContactUpdate no está disponible');
       }
-      
-      if (selectedContact && message.contactId === selectedContact.id) {
+
+      const currentSelected = selectedContactRef.current;
+      if (currentSelected && message.contactId === currentSelected.id) {
         console.log('💬 [WEBSOCKET] Agregando mensaje al chat activo');
         // 🔥 PROCESAR TODOS LOS MENSAJES QUE LLEGAN POR WEBSOCKET
         // ⏰ NORMALIZAR TIMESTAMP PARA CONSISTENCIA
@@ -127,7 +138,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         const newMsg: Message = {
           id: message.id || `ws-${Date.now()}`,
           senderId: message.sender === 'user' ? message.contactId : 'agent',
-          senderName: message.sender === 'user' ? (selectedContact.nombre || selectedContact.telefono || 'Sin nombre') : 
+          senderName: message.sender === 'user' ? (currentSelected.nombre || currentSelected.telefono || 'Sin nombre') : 
                      message.sender === 'agent' ? 'Respuesta Humana' : 'Bot',
           content: message.message,
           timestamp: normalizedTimestamp, // 🔥 TIMESTAMP NORMALIZADO
@@ -166,21 +177,24 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
     // Handler para actualizaciones de contacto
     wsHook.registerContactUpdateHandler((update) => {
-      if (selectedContact && update.id === selectedContact.id && onContactUpdate) {
+      const currentSelected = selectedContactRef.current;
+      const matchesSelected = currentSelected && (update.id === currentSelected.id || update.contactId === currentSelected.id);
+      if (matchesSelected && onContactUpdateRef.current) {
         const updatedFields: Partial<Contact> = {
-          nombre: update.name || selectedContact.nombre,
-          telefono: update.phone || selectedContact.telefono,
-          etapaDelEmbudo: update.funnel_stage || selectedContact.etapaDelEmbudo,
-          prioridad: update.priority || selectedContact.prioridad,
-          estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : selectedContact.estaAlHabilitado,
-          etiquetas: update.tags || selectedContact.etiquetas,
-          ultimaActividad: update.last_activity || selectedContact.ultimaActividad,
+          nombre: update.name || currentSelected.nombre,
+          telefono: update.phone || currentSelected.telefono,
+          etapaDelEmbudo: update.funnel_stage || currentSelected.etapaDelEmbudo,
+          prioridad: update.priority || currentSelected.prioridad,
+          estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : currentSelected.estaAlHabilitado,
+          etiquetas: update.tags || currentSelected.etiquetas,
+          ultimaActividad: update.last_activity || currentSelected.ultimaActividad,
         };
-        
-        onContactUpdate(selectedContact.id, updatedFields, true);
+
+        onContactUpdateRef.current(currentSelected.id, updatedFields, true);
       }
     });
-  }, [wsHook, selectedContact, onContactUpdate, wsHook.isConnected, wsHook.reconnect, checkTimeGap]);
+    // No dependencias de selectedContact/onContactUpdate para evitar re-registro
+  }, [wsHook, wsHook.isConnected, wsHook.reconnect, checkTimeGap]);
 
   
 
