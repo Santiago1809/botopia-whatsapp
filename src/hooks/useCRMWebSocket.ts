@@ -6,7 +6,7 @@ export interface WebSocketMessage {
   contactId: string;
   lineId: string;
   message: string;
-  sender: 'user' | 'agent' | 'bot';
+  sender: 'user' | 'bot' | 'agent';
   timestamp: string;
   type: 'text' | 'template' | 'media';
   flow?: string;
@@ -84,6 +84,7 @@ interface UseCRMWebSocketProps {
   lineId?: string;
   userId?: string;
   backendUrl?: string;
+  enabled?: boolean; // Nuevo: permitir deshabilitar la conexión
 }
 
 /**
@@ -93,7 +94,8 @@ interface UseCRMWebSocketProps {
 export const useCRMWebSocket = ({ 
   lineId = 'general', 
   userId = 'agent-1', 
-  backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005'
+  backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005',
+  enabled = true
 }: UseCRMWebSocketProps = {}) => {
   
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -137,6 +139,10 @@ export const useCRMWebSocket = ({
 
   // Inicializar conexión WebSocket (solo una vez por lineId, userId, backendUrl)
   useEffect(() => {
+    if (!enabled) {
+      // Modo deshabilitado: no crear conexión
+      return;
+    }
     console.log('🔌 [PRODUCCIÓN] CRM WebSocket: Inicializando conexión SOLO WEBSOCKET...', { 
       lineId, 
       backendUrl: backendUrl,
@@ -156,18 +162,19 @@ export const useCRMWebSocket = ({
     setConnectionStatus('connecting');
     
     const newSocket = io(backendUrl, {
-      transports: ['websocket'], // SOLO WEBSOCKET
+      // Usar WebSocket Y polling para mejor compatibilidad en producción
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5, // Limitar intentos en lugar de Infinity
-      reconnectionDelay: 2000, // Aumentar delay inicial
-      reconnectionDelayMax: 10000, // Aumentar delay máximo
-      timeout: 30000, // Aumentar timeout
+      reconnectionAttempts: 10, // Más intentos en producción
+      reconnectionDelay: 1000, // Delay inicial más rápido
+      reconnectionDelayMax: 5000, // Delay máximo más corto
+      timeout: 20000, // Timeout más corto
       forceNew: false,
-      withCredentials: false,
-      // Agregar opciones para mejorar estabilidad
+      withCredentials: true, // Habilitar credenciales para CORS
+      // Opciones adicionales para mejorar estabilidad en producción
       upgrade: true,
-      rememberUpgrade: true
+      rememberUpgrade: false // No recordar upgrade para evitar problemas
     });
 
     // === EVENTOS DE CONEXIÓN ===
@@ -395,7 +402,7 @@ export const useCRMWebSocket = ({
       newSocket.disconnect();
       setConnectionStatus('disconnected');
     };
-  }, [lineId, userId, backendUrl]); // Dependencias necesarias
+  }, [lineId, userId, backendUrl, enabled]); // Dependencias necesarias
 
   // === MÉTODOS DE SUSCRIPCIÓN ===
   const subscribeToContact = useCallback((contactId: string) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 
 import ChatSection from "../../../../../components/crm/ChatSection";
 import { useCRMWebSocket } from "../../../../../hooks/useCRMWebSocket";
@@ -14,11 +14,32 @@ export default function ChatPage() {
 
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const lineId = params.lineId as string;
   const contactId = searchParams.get('contact');
 
   // Configuración del backend
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
+
+  // Normaliza timestamps a un formato consistente (ISO con zona horaria) sin tocar valores tipo "HH:MM"
+  const normalizeTimestamp = (timestamp?: string): string | undefined => {
+    if (!timestamp) return timestamp;
+    // Si viene como 'HH:MM' o 'HH:MM:SS', lo dejamos igual
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timestamp)) return timestamp;
+    try {
+      const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(timestamp);
+      if (hasTZ) {
+        const d = new Date(timestamp);
+        return isNaN(d.getTime()) ? new Date().toISOString() : timestamp;
+      }
+      const isoLike = timestamp.includes('T') ? timestamp : timestamp.replace(' ', 'T');
+      const normalized = `${isoLike}Z`;
+      const d = new Date(normalized);
+      return isNaN(d.getTime()) ? new Date().toISOString() : normalized;
+    } catch {
+      return new Date().toISOString();
+    }
+  };
 
   // Hook de WebSocket
   const wsHook = useCRMWebSocket({ 
@@ -32,10 +53,19 @@ export default function ChatPage() {
     const loadContacts = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${BACKEND_URL}/api/contacts?lineId=${lineId}`);
+        // Usar endpoint específico por línea para evitar mezclar contactos
+        const response = await fetch(`${BACKEND_URL}/api/lines/${lineId}/contacts`);
         if (response.ok) {
           const data = await response.json();
-          setAllContacts(data.data || []);
+          const normalized = (data.data || []).map((c: Contact) => ({
+            ...c,
+            ultimaActividad: normalizeTimestamp(c.ultimaActividad) || c.ultimaActividad,
+            ultimoMensaje: c.ultimoMensaje ? {
+              ...c.ultimoMensaje,
+              timestamp: normalizeTimestamp(c.ultimoMensaje.timestamp) || c.ultimoMensaje.timestamp
+            } : c.ultimoMensaje
+          }));
+          setAllContacts(normalized);
           
           // Si hay un contactId en la URL, seleccionarlo
           if (contactId) {
@@ -59,7 +89,7 @@ export default function ChatPage() {
 
   // WebSocket handlers
   useEffect(() => {
-    wsHook.registerContactUpdateHandler((update) => {
+  wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
 
       const mapStatus = (funnelStage: string): Contact['status'] => {
@@ -92,9 +122,10 @@ export default function ChatPage() {
       };
 
       setAllContacts(prevContacts => {
-        let contactFound = false;
+        const targetId = update.id || update.contactId || '';
+  let contactFound = false;
         let updatedContacts = prevContacts.map(contact => {
-          if (contact.id === update.id) {
+          if (contact.id === targetId) {
             contactFound = true;
             const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
             const newStatus = mapStatus(newFunnelStage);
@@ -107,14 +138,14 @@ export default function ChatPage() {
               prioridad: update.priority || contact.prioridad,
               estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
               etiquetas: update.tags || contact.etiquetas,
-              ultimaActividad: update.last_activity || contact.ultimaActividad,
+              ultimaActividad: normalizeTimestamp(update.last_activity) || contact.ultimaActividad,
               _lastUpdate: Date.now()
             } as Contact;
 
             if (update.lastMessage) {
               updatedContact.ultimoMensaje = {
                 mensaje: update.lastMessage.message,
-                timestamp: update.lastMessage.timestamp,
+                timestamp: normalizeTimestamp(update.lastMessage.timestamp) || update.lastMessage.timestamp,
                 remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
                           update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
               };
@@ -125,7 +156,7 @@ export default function ChatPage() {
           return contact;
         });
 
-        if (!contactFound) {
+  if (!contactFound) {
           const contactByPhone = prevContacts.find(c => c.telefono === update.phone);
           if (contactByPhone) {
             updatedContacts = prevContacts.map(contact => {
@@ -134,20 +165,21 @@ export default function ChatPage() {
                 const newStatus = mapStatus(newFunnelStage);
                 const updatedContact = {
                   ...contact,
+      id: targetId || contact.id,
                   nombre: update.name || contact.nombre,
                   status: newStatus,
                   etapaDelEmbudo: newFunnelStage,
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
                   etiquetas: update.tags || contact.etiquetas,
-                  ultimaActividad: update.last_activity || contact.ultimaActividad,
+                  ultimaActividad: normalizeTimestamp(update.last_activity) || contact.ultimaActividad,
                   _lastUpdate: Date.now()
                 } as Contact;
 
                 if (update.lastMessage) {
                   updatedContact.ultimoMensaje = {
                     mensaje: update.lastMessage.message,
-                    timestamp: update.lastMessage.timestamp,
+                    timestamp: normalizeTimestamp(update.lastMessage.timestamp) || update.lastMessage.timestamp,
                     remitente: update.lastMessage.sender === 'user' ? 'usuario' : 
                               update.lastMessage.sender === 'bot' ? 'bot' : 'agente'
                   };
@@ -162,76 +194,80 @@ export default function ChatPage() {
 
         return updatedContacts;
       });
-    });
 
-    // Actualizar último mensaje del contacto al llegar un mensaje nuevo
-    wsHook.registerMessageHandler((message) => {
-      console.log('📨 [WEBSOCKET] Nuevo mensaje recibido en ChatPage:', {
-        messageId: message.id,
-        contactId: message.contactId,
-        sender: message.sender,
-        content: message.message,
-        timestamp: message.timestamp
-      });
-      
-      setAllContacts(prevContacts => {
-        let contactUpdated = false;
-        const updated = prevContacts.map(contact => {
-          if (contact.id === message.contactId) {
-            contactUpdated = true;
-            console.log('🔄 [WEBSOCKET] Actualizando contacto en ChatPage:', contact.nombre);
-            return {
-              ...contact,
-              ultimoMensaje: {
-                mensaje: message.message,
-                timestamp: message.timestamp,
-                remitente: message.sender === 'user' ? 'usuario' : message.sender === 'bot' ? 'bot' : 'agente'
-              },
-              ultimaActividad: message.timestamp,
-              _lastUpdate: Date.now()
-            };
-          }
-          return contact;
-        });
-        
-        if (contactUpdated) {
-          console.log('✅ [WEBSOCKET] Contacto actualizado en ChatPage');
+      // Si el WS dice que este contacto pertenece a otra línea, redirigir automáticamente
+      const incomingLineId = update.lineId;
+      const incomingContactId = update.id || update.contactId || '';
+      if (incomingLineId && incomingLineId !== lineId && incomingContactId) {
+        if (selectedContact && selectedContact.id === incomingContactId) {
+          console.warn('↪️ [WEBSOCKET] El contacto pertenece a otra línea; redireccionando:', incomingLineId);
+          router.push(`/crm/line-dashboard/${incomingLineId}/chat?contact=${incomingContactId}`);
         }
-        
-        return contactUpdated ? updated : prevContacts;
-      });
+      }
     });
 
-  }, [wsHook, lineId]);
+  // Nota: El handler de nuevos mensajes se registra en ChatSection (donde se muestra el chat)
+  // para evitar que los handlers se sobreescriban entre sí al compartir el mismo WebSocket.
+
+  }, [wsHook, lineId, router, selectedContact]);
 
   // Handle contact update
-  const handleContactUpdate = async (contactId: string, updates: Partial<Contact>) => {
+  const handleContactUpdate = async (
+    contactId: string,
+    updates: Partial<Contact>,
+    isWebSocketUpdate: boolean = false
+  ) => {
     console.log('🔄 [CONTACT UPDATE] Actualizando contacto:', {
       contactId,
       updates,
+      isWebSocketUpdate,
       BACKEND_URL
     });
-    
+
+    // Siempre aplica la actualización localmente para mantener la UI reactiva
+    setAllContacts(prevContacts =>
+      prevContacts.map(contact =>
+        contact.id === contactId
+          ? { ...contact, ...updates }
+          : contact
+      )
+    );
+
+    // Si el cambio proviene del WebSocket, no reenviar al backend para evitar bucles
+    if (isWebSocketUpdate) return;
+
     try {
+      // Sanitizar payload: solo enviar campos que el backend espera
+      const allowedKeys: (keyof Contact)[] = [
+        'nombre',
+        'telefono',
+        'status',
+        'etapaDelEmbudo',
+        'prioridad',
+        'estaAlHabilitado',
+        'etiquetas',
+        'ultimaActividad'
+      ];
+      const sanitized: Partial<Contact> = {};
+      for (const key of allowedKeys) {
+        if (key in updates) {
+          // @ts-expect-error indexado seguro
+          sanitized[key] = updates[key];
+        }
+      }
+
       const response = await fetch(`${BACKEND_URL}/api/contacts/${contactId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(sanitized),
       });
 
-      if (response.ok) {
-        console.log('✅ [CONTACT UPDATE] Contacto actualizado exitosamente en backend');
-        setAllContacts(prevContacts => 
-          prevContacts.map(contact => 
-            contact.id === contactId 
-              ? { ...contact, ...updates }
-              : contact
-          )
-        );
-      } else {
+      if (!response.ok) {
         console.error('❌ [CONTACT UPDATE] Error en backend:', response.status, response.statusText);
+      } else {
+        console.log('✅ [CONTACT UPDATE] Contacto sincronizado con backend');
       }
     } catch (error) {
       console.error('❌ [CONTACT UPDATE] Error de conexión:', error);
@@ -255,6 +291,7 @@ export default function ChatPage() {
         contacts={allContacts}
         lineId={lineId}
         selectedContactFromKanban={selectedContact}
+  ws={wsHook}
         onContactUpdate={handleContactUpdate}
       />
     </div>
