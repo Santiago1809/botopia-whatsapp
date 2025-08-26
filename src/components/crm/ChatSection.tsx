@@ -121,26 +121,27 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       if (selectedContact && message.contactId === selectedContact.id) {
         console.log('💬 [WEBSOCKET] Agregando mensaje al chat activo');
         // 🔥 PROCESAR TODOS LOS MENSAJES QUE LLEGAN POR WEBSOCKET
-        // Ya no se agregan localmente, solo por WebSocket
+        // ⏰ NORMALIZAR TIMESTAMP PARA CONSISTENCIA
+        const normalizedTimestamp = normalizeTimestamp(message.timestamp);
 
         const newMsg: Message = {
           id: message.id || `ws-${Date.now()}`,
           senderId: message.sender === 'user' ? message.contactId : 'agent',
-          senderName: message.sender === 'user' ? selectedContact.nombre : 
+          senderName: message.sender === 'user' ? (selectedContact.nombre || selectedContact.telefono || 'Sin nombre') : 
                      message.sender === 'agent' ? 'Respuesta Humana' : 'Bot',
           content: message.message,
-          timestamp: normalizeTimestamp(message.timestamp),
+          timestamp: normalizedTimestamp, // 🔥 TIMESTAMP NORMALIZADO
           type: message.sender === 'user' ? 'incoming' : 'outgoing',
           isRead: true,
           sender: message.sender
         };
         
         setMessages(prev => {
-          // Verificar que no esté duplicado por ID o contenido similar
+          // 🔥 VERIFICAR DUPLICADOS CON TIMESTAMP NORMALIZADO
           const exists = prev.some(msg => 
             msg.id === message.id || 
             (msg.content === message.message && 
-             Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000) // 5 segundos de tolerancia
+             Math.abs(new Date(msg.timestamp).getTime() - new Date(normalizedTimestamp).getTime()) < 5000) // 5 segundos de tolerancia
           );
           if (exists) {
             console.log('🔄 [WEBSOCKET] Mensaje duplicado detectado, omitiendo');
@@ -316,8 +317,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   // Filter contacts for chat view
   const filteredContacts = contacts.filter(contact =>
-    contact.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.telefono.includes(searchTerm)
+    (contact.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (contact.telefono || '').includes(searchTerm)
   );
 
   // Group contacts by status for chat organization
@@ -529,14 +530,39 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     }
   };
 
+  // 🔥 FUNCIÓN MEJORADA PARA NORMALIZAR TIMESTAMPS
   const normalizeTimestamp = (timestamp: string): string => {
-    if (!timestamp) return timestamp;
-    // Si ya tiene zona horaria (Z o +hh:mm / -hh:mm), lo dejamos igual
-    const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(timestamp);
-    if (hasTZ) return timestamp;
-    // Asegurar formato ISO y marcarlo como UTC
-    const isoLike = timestamp.includes('T') ? timestamp : timestamp.replace(' ', 'T');
-    return `${isoLike}Z`;
+    if (!timestamp) return new Date().toISOString(); // Fallback a ahora
+    
+    try {
+      // Si ya tiene zona horaria (Z o +hh:mm / -hh:mm), lo dejamos igual
+      const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(timestamp);
+      if (hasTZ) {
+        // Verificar que sea un timestamp válido
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) {
+          console.warn('⚠️ Timestamp inválido recibido:', timestamp);
+          return new Date().toISOString();
+        }
+        return timestamp;
+      }
+      
+      // Asegurar formato ISO y marcarlo como UTC
+      const isoLike = timestamp.includes('T') ? timestamp : timestamp.replace(' ', 'T');
+      const normalizedTs = `${isoLike}Z`;
+      
+      // Verificar que el resultado sea válido
+      const date = new Date(normalizedTs);
+      if (isNaN(date.getTime())) {
+        console.warn('⚠️ No se pudo normalizar timestamp:', timestamp);
+        return new Date().toISOString();
+      }
+      
+      return normalizedTs;
+    } catch (error) {
+      console.error('❌ Error normalizando timestamp:', timestamp, error);
+      return new Date().toISOString();
+    }
   };
 
   return (
@@ -613,6 +639,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                                 <Clock className="w-3 h-3 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">
                                   {formatDate(
+                                    // 🔥 PRIORIZAR TIMESTAMP DEL ÚLTIMO MENSAJE VISIBLE
                                     (selectedContact?.id === contact.id && messages.length > 0)
                                       ? messages[messages.length - 1].timestamp
                                       : (contact.ultimoMensaje?.timestamp || contact.ultimaActividad)

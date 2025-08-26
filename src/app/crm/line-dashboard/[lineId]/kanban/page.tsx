@@ -67,7 +67,7 @@ export default function KanbanPage() {
     // Filtro por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(contact =>
-        contact.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contact.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         contact.telefono.includes(searchTerm)
       );
     }

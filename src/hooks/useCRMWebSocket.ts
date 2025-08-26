@@ -135,11 +135,11 @@ export const useCRMWebSocket = ({
   // Estado para indicadores visuales
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
 
-  // Inicializar conexión WebSocket
+  // Inicializar conexión WebSocket (solo una vez por lineId, userId, backendUrl)
   useEffect(() => {
     console.log('🔌 [PRODUCCIÓN] CRM WebSocket: Inicializando conexión SOLO WEBSOCKET...', { 
       lineId, 
-      backendUrl,
+      backendUrl: backendUrl,
       env: process.env.NODE_ENV,
       envVar: process.env.NEXT_PUBLIC_BACKEND_URL2,
       isLocalhost: backendUrl.includes('localhost'),
@@ -159,12 +159,15 @@ export const useCRMWebSocket = ({
       transports: ['websocket'], // SOLO WEBSOCKET
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
+      reconnectionAttempts: 5, // Limitar intentos en lugar de Infinity
+      reconnectionDelay: 2000, // Aumentar delay inicial
+      reconnectionDelayMax: 10000, // Aumentar delay máximo
+      timeout: 30000, // Aumentar timeout
       forceNew: false,
-      withCredentials: false
+      withCredentials: false,
+      // Agregar opciones para mejorar estabilidad
+      upgrade: true,
+      rememberUpgrade: true
     });
 
     // === EVENTOS DE CONEXIÓN ===
@@ -192,7 +195,7 @@ export const useCRMWebSocket = ({
         if (newSocket.connected) {
           newSocket.emit('ping');
         }
-      }, 25000); // Ping cada 25 segundos
+      }, 45000); // Ping cada 45 segundos para ser menos agresivo
     });
 
     newSocket.on('authenticated', (data) => {
@@ -201,8 +204,8 @@ export const useCRMWebSocket = ({
       // ✅ El backend ya suscribe automáticamente al room line-{lineId} en authenticate
       console.log('📡 [PRODUCCIÓN] Cliente ya suscrito automáticamente a line-' + lineId);
       
-      // Re-suscribirse al contacto actual si existe
-      const contactToSubscribe = currentContactId || eventHandlers.current.savedContactId;
+      // Re-suscribirse al contacto actual si existe (usar solo savedContactId para evitar dependencias)
+      const contactToSubscribe = eventHandlers.current.savedContactId;
       if (contactToSubscribe) {
         console.log('🔄 Re-suscribiendo a contacto después de autenticación:', contactToSubscribe);
         newSocket.emit('subscribe-contact', { contactId: contactToSubscribe, lineId });
@@ -221,10 +224,16 @@ export const useCRMWebSocket = ({
         heartbeatInterval.current = null;
       }
       
+      // Solo reconectar manualmente si el servidor nos desconectó
       if (reason === 'io server disconnect') {
-        console.log('🔄 Servidor desconectó, reconectando...');
-        setTimeout(() => newSocket.connect(), 1000);
+        console.log('🔄 Servidor desconectó, reconectando en 3 segundos...');
+        setTimeout(() => {
+          if (!newSocket.connected) {
+            newSocket.connect();
+          }
+        }, 3000);
       }
+      // Para otros casos, socket.io-client manejará la reconexión automáticamente
     });
 
     newSocket.on('connect_error', (error) => {
@@ -234,9 +243,13 @@ export const useCRMWebSocket = ({
       setIsConnected(false);
       setConnectionStatus('error');
       
-      // Reintentar con backoff exponencial
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-      console.log(`🔄 Reintentando en ${delay/1000} segundos...`);
+      // Si hemos intentado muchas veces, parar y esperar más tiempo
+      if (reconnectAttempts.current >= 5) {
+        console.log('� Demasiados intentos de reconexión, pausando por 30 segundos...');
+        setTimeout(() => {
+          reconnectAttempts.current = 0; // Reset después del delay largo
+        }, 30000);
+      }
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
@@ -257,7 +270,7 @@ export const useCRMWebSocket = ({
     newSocket.on('new-message', (message: WebSocketMessage) => {
       console.log('📨 [PRODUCCIÓN] CRM: Nuevo mensaje recibido:', {
         message,
-        backendUrl,
+        backendUrl: backendUrl,
         lineId,
         messageLineId: message.lineId,
         handlerExists: !!eventHandlers.current.onNewMessage,
@@ -382,7 +395,7 @@ export const useCRMWebSocket = ({
       newSocket.disconnect();
       setConnectionStatus('disconnected');
     };
-  }, [lineId, userId, backendUrl, currentContactId]);
+  }, [lineId, userId, backendUrl]); // Dependencias necesarias
 
   // === MÉTODOS DE SUSCRIPCIÓN ===
   const subscribeToContact = useCallback((contactId: string) => {

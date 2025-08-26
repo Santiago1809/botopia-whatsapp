@@ -7,13 +7,11 @@ export default function LineDashboard() {
   const params = useParams();
   const router = useRouter();
   const lineId = params.lineId as string;
-  const CHAT_ONLY_LINE_ID = '4853bac0-785a-4775-a8eb-e8401dae5167';
 
   // 🚀 REDIRECCIÓN AUTOMÁTICA A KANBAN
   useEffect(() => {
     if (lineId) {
-      const target = lineId === CHAT_ONLY_LINE_ID ? 'chat' : 'kanban';
-      router.replace(`/crm/line-dashboard/${lineId}/${target}`);
+      router.replace(`/crm/line-dashboard/${lineId}/kanban`);
     }
   }, [lineId, router]);
 
