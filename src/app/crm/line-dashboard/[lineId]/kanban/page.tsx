@@ -15,6 +15,7 @@ export default function KanbanPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     pendienteDocumentacion: 0,
@@ -474,29 +475,48 @@ export default function KanbanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex gap-6 p-6">
+      {/* Mobile sticky bar */}
+      <div className="md:hidden sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur border-b px-4 py-2 flex items-center justify-between">
+        <span className="text-sm text-gray-700 dark:text-gray-200">Tablero Kanban</span>
+        <button
+          onClick={() => setShowFilters(v => !v)}
+          className="text-xs px-3 py-1 rounded-md border text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6">
         {/* Sidebar de Filtros */}
-        <FilterSidebar
-          allContacts={allContacts}
-          filteredContacts={filteredContacts}
-          selectedTags={selectedTags}
-          searchTerm={searchTerm}
-          onTagToggle={handleTagToggle}
-          onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
-        />
+        <div className={`${showFilters ? 'block' : 'hidden'} md:block md:static md:translate-x-0 w-full md:w-auto md:max-w-xs order-1 md:order-1 mt-2 md:mt-0`}>
+          <FilterSidebar
+            allContacts={allContacts}
+            filteredContacts={filteredContacts}
+            selectedTags={selectedTags}
+            searchTerm={searchTerm}
+            onTagToggle={handleTagToggle}
+            onSearchChange={handleSearchChange}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
         
         {/* Tablero Kanban */}
-        <div className="flex-1">
+  <div className="flex-1 min-w-0 order-2 md:order-2">
           {/* Stats Overview - Tarjetas de resumen */}
-          <StatsOverview analyticsStats={stats} />
+          <div className="px-1 md:px-0">
+            <StatsOverview analyticsStats={stats} />
+          </div>
           
-          <KanbanBoard 
-            contacts={filteredContacts}
-            onContactUpdate={handleContactUpdate}
-            onContactStatusChange={handleContactStatusChange}
-            onGotoChat={handleGotoChat}
-          />
+          <div className="mt-4 overflow-x-hidden pb-2 md:pb-0">
+            <div>
+              <KanbanBoard 
+                contacts={filteredContacts}
+                onContactUpdate={handleContactUpdate}
+                onContactStatusChange={handleContactStatusChange}
+                onGotoChat={handleGotoChat}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

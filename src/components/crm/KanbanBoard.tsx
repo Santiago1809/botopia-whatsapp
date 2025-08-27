@@ -671,9 +671,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
   }, {} as Record<string, Contact[]>);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-hidden">
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 min-w-[1200px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {statusColumns.map(column => (
             <KanbanColumn
               key={column.id}
