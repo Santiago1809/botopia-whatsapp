@@ -91,7 +91,7 @@ export default function FilterSidebar({
   };
 
   return (
-    <div className="w-64 bg-card dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border h-fit">
+    <div className="w-full md:w-64 bg-card dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border h-fit">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-foreground flex items-center mb-4">
           <Filter className="w-5 h-5 mr-2 text-primary" />

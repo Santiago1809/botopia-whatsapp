@@ -202,10 +202,10 @@ export default function CrmPage() {
           )}
 
           {/* Lines Grid */}
-          <div className={`flex justify-start items-start min-h-[60vh] mt-2`}>
+          <div className="flex justify-start items-start min-h-[60vh] mt-2">
             <div className={`${isSingle
-                ? 'grid grid-cols-1 place-items-start gap-8 w-full max-w-2xl px-4'
-                : 'grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] auto-rows-fr items-stretch gap-8 w-full max-w-7xl px-4'}`}>
+                ? 'grid grid-cols-1 place-items-stretch gap-4 sm:gap-6 w-full max-w-2xl px-2 sm:px-4'
+                : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr items-stretch gap-4 sm:gap-6 w-full max-w-7xl px-2 sm:px-4'}`}>
               {lines.map((line) => {
                 const displayName = (line.nombreLinea?.trim() || 'NA');
                 const photoUrl = line.fotoLinea?.trim() || '';
@@ -217,50 +217,50 @@ export default function CrmPage() {
                       bg-white/90 dark:bg-[hsl(240,10%,16%)]/95 
                       rounded-2xl shadow-lg border border-primary/30 dark:border-primary/50 
                       hover:shadow-xl hover:translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden 
-                      min-h-[240px] h-full w-full p-5 sm:p-6 group ${isSingle ? 'max-w-[600px] sm:max-w-[680px]' : ''}`}
+                      min-h-[220px] h-full w-full p-4 sm:p-6 group ${isSingle ? 'max-w-[600px] sm:max-w-[680px]' : ''}`}
                   >
                     {/* Header: Foto, nombre, proveedor */}
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4 text-center sm:text-left">
                       {photoUrl ? (
                         <Image
                           src={photoUrl}
                           alt={`Foto de ${displayName}`}
                           width={128}
                           height={128}
-                          className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-primary shadow-sm"
+                          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-primary shadow-sm"
                         />
                       ) : (
-                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-transparent" />
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-transparent" />
                       )}
                       <div className="flex flex-col flex-1 min-w-0">
-                        <span className="text-xl font-bold text-primary truncate">{displayName}</span>
-                        <span className="text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
-                        <span className="text-xs text-muted-foreground truncate dark:text-gray-300/80">ID: {line.id}</span>
+                        <span className="text-lg sm:text-xl font-bold text-primary truncate">{displayName}</span>
+                        <span className="text-sm sm:text-base text-muted-foreground truncate dark:text-gray-200/80">{line.numero}</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground truncate dark:text-gray-300/80">ID: {line.id}</span>
                       </div>
-                      <div className="ml-auto flex flex-col items-end gap-1">
-                        <span className={`px-3 py-1 rounded text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
-                        <div className="text-xs text-muted-foreground">
+                      <div className="sm:ml-auto mt-2 sm:mt-0 flex flex-col items-center sm:items-end gap-1">
+                        <span className={`px-2.5 py-1 rounded text-xs sm:text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
+                        <div className="text-[11px] sm:text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">{line.activeContacts ?? 0}</span>
                           <span> / {line.contactsCount ?? 0} contactos</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">Última: {formatOptionalDate(line.lastActivity)}</div>
+                        <div className="text-[11px] sm:text-xs text-muted-foreground">Última: {formatOptionalDate(line.lastActivity)}</div>
                       </div>
                     </div>
 
                     {/* Estado */}
-                    <div className="flex justify-center items-center w-full text-sm mb-4 mt-2">
+                    <div className="flex justify-center items-center w-full text-xs sm:text-sm mb-4 mt-2">
                       <div className="flex items-center gap-3">
-                        <span className={`w-4 h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <span className={`font-bold ${isSingle ? 'text-base' : 'text-lg'} ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
+                        <span className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full ${line.estaActivo ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span className={`font-bold ${isSingle ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} ${line.estaActivo ? 'text-green-600' : 'text-red-600'}`}>{line.estaActivo ? 'Activa' : 'Inactiva'}</span>
                       </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="flex justify-between items-center w-full text-xs text-muted-foreground border-t pt-2 mt-2 dark:text-gray-300/80">
+                    <div className="flex justify-between items-center w-full text-[11px] sm:text-xs text-muted-foreground border-t pt-2 mt-2 dark:text-gray-300/80">
                       <span className="truncate">{formatDate(line.creadoEn)}</span>
-                      <span className="text-primary font-bold cursor-pointer flex items-center gap-1 group-hover:underline text-sm">
+                      <span className="text-primary font-bold cursor-pointer flex items-center gap-1 group-hover:underline text-xs sm:text-sm">
                         Ver Dashboard
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </span>

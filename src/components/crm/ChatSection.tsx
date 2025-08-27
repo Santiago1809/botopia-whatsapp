@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, MessageSquare, Clock, User, Send, Bot, File, FileText, X } from "lucide-react";
+import { Search, MessageSquare, Clock, User, Send, Bot, File, FileText, X, ChevronLeft } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 import { useCRMWebSocket } from "../../hooks/useCRMWebSocket";
 
@@ -581,9 +581,10 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
   return (
     <div className="h-full bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border overflow-hidden">
-      <div className="flex h-full">
-        {/* Contacts Sidebar */}
-        <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      <div className="flex h-full overflow-x-hidden">
+        {/* Contacts Sidebar - full screen on mobile when no chat selected */}
+        <div className={`${selectedContact ? 'hidden' : 'flex'} md:flex w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700 flex-col`}
+        >
           {/* Search Header */}
           <div className="p-3 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
@@ -691,14 +692,23 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
           </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        {/* Chat Area - full screen on mobile when a chat is selected */}
+    <div className={`${selectedContact ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-h-screen sm:min-h-0`}>
           {selectedContact ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[hsl(240,10%,8%)]">
+      <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[hsl(240,10%,8%)] sticky top-0 sm:static z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
+                    {/* Back button for mobile */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedContact(null)}
+                      className="md:hidden mr-1 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800"
+                      aria-label="Volver a contactos"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="w-5 h-5 text-primary" />
                     </div>
@@ -711,7 +721,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           {selectedContact.telefono} • {getStatusLabel(selectedContact.status)}
                         </p>
                         {/* 🔥 INDICADOR WEBSOCKET TIEMPO REAL */}
-                        <div className="flex items-center space-x-1">
+                        <div className="hidden sm:flex items-center space-x-1">
                           <div className={`w-2 h-2 rounded-full ${wsHook.isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
                           <span className={`text-xs ${wsHook.isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {wsHook.isConnected ? 'Tiempo Real' : 'Desconectado'}
@@ -721,8 +731,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                     </div>
                   </div>
                   
-                  {/* AI Toggle Switch */}
-                  <div className="flex items-center">
+                  {/* AI Toggle Switch (visible también en móvil) */}
+                  <div className="flex items-center ml-2 shrink-0">
                     <label 
                       className="relative inline-flex items-center cursor-pointer group mr-2" 
                       title={`IA ${selectedContact.estaAlHabilitado ? 'activada' : 'desactivada'} - Click para cambiar`}
@@ -763,7 +773,9 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 md:p-3 pr-4 sm:pr-0 space-y-3 max-h-[calc(100svh-8rem)] sm:max-h-none"
+              >
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -784,7 +796,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}
                         >
                           <div className={`
-                            max-w-[70%] rounded-lg p-2 relative
+                            max-w-[70%] sm:max-w-[80%] rounded-lg p-2 md:p-3 relative ${alignRight ? 'mr-5 sm:mr-0' : ''}
                             ${isHumanAgent 
                               ? 'bg-purple-500 text-white' 
                               : isBot
@@ -810,8 +822,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                                 )}
                               </div>
                             )}
-                            {/* Mostrar saltos de línea reales */}
-                            <p className="text-sm whitespace-pre-line">{message.content}</p>
+                            {/* Mostrar saltos de línea reales y evitar overflow horizontal */}
+                            <p className="text-sm whitespace-pre-line break-words">{message.content}</p>
                             <p className={`text-xs mt-1 ${
                               isHumanAgent ? 'text-purple-100' : 
                               isBot ? 'text-purple-500 dark:text-purple-400' : 
@@ -838,7 +850,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[hsl(240,10%,14%)] sticky bottom-0 sm:static z-10">
                 {/* Mostrar alerta si han pasado más de 24 horas */}
                 {isOver24Hours && (
                   <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -851,10 +863,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                   </div>
                 )}
 
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  </div>
-                  <div className="flex-1 flex space-x-2">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="min-w-0 flex-1 flex items-center gap-2">
                     <input
                       type="text"
                       value={newMessage}
@@ -862,34 +872,34 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       onKeyPress={(e) => e.key === 'Enter' && !sendingMessage && sendMessage()}
                       placeholder="Escribe un mensaje para WhatsApp..."
                       disabled={sendingMessage}
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-background text-foreground disabled:opacity-50"
+                      className="min-w-0 flex-1 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-background text-foreground disabled:opacity-50 text-sm sm:text-base"
                     />
                     
                     {/* Botón de plantillas */}
                     <button
                       onClick={openTemplateModal}
                       disabled={loading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      className="shrink-0 p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-full sm:rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       title="Plantillas"
                     >
                       <File className="w-4 h-4" />
                     </button>
 
-                                        {/* Botón enviar */}
+                    {/* Botón enviar */}
                     <button
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      className="shrink-0 p-2 sm:px-6 sm:py-2 bg-green-600 text-white rounded-full sm:rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {sendingMessage ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Enviando...</span>
+                          <span className="hidden sm:inline">Enviando...</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-4 h-4" />
-                          <span>Enviar</span>
+                          <span className="hidden sm:inline">Enviar</span>
                         </>
                       )}
                     </button>

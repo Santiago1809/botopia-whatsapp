@@ -275,7 +275,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ contacts, stats, li
     {
       stage: 'Cita Cancelada',
       count: stats?.cerrado || 0,
-      percentage: stats?.conversion || 0,
+  percentage: stats?.total ? Math.round(((stats?.cerrado || 0) / stats.total) * 100) : 0,
       color: 'bg-green-500',
       icon: CheckCircle
     }
