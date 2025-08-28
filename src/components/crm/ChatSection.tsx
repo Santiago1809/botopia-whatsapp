@@ -789,7 +789,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
               {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto overflow-x-hidden p-2 md:p-3 pr-4 sm:pr-0 space-y-3"
+                className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-2 md:p-3 pr-4 sm:pr-0 space-y-3"
               >
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
@@ -884,6 +884,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       type="text"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
+                      onFocus={() => setTimeout(() => scrollToBottom(), 0)}
                       onKeyPress={(e) => e.key === 'Enter' && !sendingMessage && sendMessage()}
                       placeholder="Escribe un mensaje para WhatsApp..."
                       disabled={sendingMessage}

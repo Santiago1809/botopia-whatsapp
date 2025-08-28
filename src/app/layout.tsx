@@ -1,5 +1,5 @@
 import ClientProviders from "@/components/ClientProviders";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
@@ -13,6 +13,14 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Botopia - Productos",
   description: "Panel de control de productos Botopia",
+};
+
+// Evitar zoom en mobile y fijar escala
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

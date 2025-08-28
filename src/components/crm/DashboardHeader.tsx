@@ -119,8 +119,15 @@ export default function DashboardHeader({
             )}
           </div>
           
-          {/* Mobile: solo imagen más grande, sin badge */}
-          <div className="block md:hidden">
+          {/* Mobile: imagen + campanita editable */}
+          <div className="flex md:hidden items-center gap-3">
+            <button
+              title="Editar teléfonos de atención"
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              onClick={() => setIsPhonesOpen(true)}
+            >
+              <Bell className="w-5 h-5" />
+            </button>
             {photoUrl && (
               <Image
                 src={photoUrl}
