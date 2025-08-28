@@ -48,6 +48,37 @@ export default function ChatPage() {
     backendUrl: BACKEND_URL
   });
 
+  // Función para mapear funnel_stage a status
+  const mapFunnelStageToStatus = (funnelStage: string): Contact['status'] => {
+    if (!funnelStage || funnelStage === 'null') return 'nuevo-lead';
+    switch (funnelStage) {
+      case 'nuevo_contacto':
+      case 'nuevo':
+      case 'nuevo-lead':
+        return 'nuevo-lead';
+      case 'en_contacto':
+      case 'contacto':
+      case 'en-contacto':
+        return 'en-contacto';
+      case 'cita_agendada':
+      case 'cita':
+      case 'cita-agendada':
+        return 'cita-agendada';
+      case 'atencion_cliente':
+      case 'atencion-cliente':
+        return 'atencion-cliente';
+      case 'cita_cancelada':
+        return 'cita-cancelada';
+      case 'cerrado':
+      case 'completado':
+        return 'cerrado';
+      case 'pendiente-documentacion':
+        return 'pendiente-documentacion';
+      default:
+        return 'nuevo-lead';
+    }
+  };
+
   // Cargar contactos
   useEffect(() => {
     const loadContacts = async () => {
@@ -59,6 +90,8 @@ export default function ChatPage() {
           const data = await response.json();
           const normalized = (data.data || []).map((c: Contact) => ({
             ...c,
+            // Normalizar el status basado en etapaDelEmbudo si no está sincronizado
+            status: c.status || mapFunnelStageToStatus(c.etapaDelEmbudo),
             ultimaActividad: normalizeTimestamp(c.ultimaActividad) || c.ultimaActividad,
             ultimoMensaje: c.ultimoMensaje ? {
               ...c.ultimoMensaje,
@@ -92,35 +125,6 @@ export default function ChatPage() {
   wsHook.registerContactUpdateHandler((update) => {
       console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
 
-      const mapStatus = (funnelStage: string): Contact['status'] => {
-        if (!funnelStage || funnelStage === 'null') return 'nuevo-lead';
-        switch (funnelStage) {
-          case 'nuevo_contacto':
-          case 'nuevo':
-          case 'nuevo-lead':
-            return 'nuevo-lead';
-          case 'en_contacto':
-          case 'contacto':
-          case 'en-contacto':
-            return 'en-contacto';
-          case 'cita_agendada':
-          case 'cita':
-          case 'cita-agendada':
-            return 'cita-agendada';
-          case 'atencion_cliente':
-          case 'atencion-cliente':
-            return 'atencion-cliente';
-          case 'cita_cancelada':
-          case 'cerrado':
-          case 'completado':
-            return 'cerrado';
-          case 'pendiente-documentacion':
-            return 'pendiente-documentacion';
-          default:
-            return 'nuevo-lead';
-        }
-      };
-
       setAllContacts(prevContacts => {
         const targetId = update.id || update.contactId || '';
   let contactFound = false;
@@ -128,7 +132,7 @@ export default function ChatPage() {
           if (contact.id === targetId) {
             contactFound = true;
             const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
-            const newStatus = mapStatus(newFunnelStage);
+            const newStatus = mapFunnelStageToStatus(newFunnelStage);
             const updatedContact = {
               ...contact,
               nombre: update.name || contact.nombre,
@@ -162,7 +166,7 @@ export default function ChatPage() {
             updatedContacts = prevContacts.map(contact => {
               if (contact.telefono === update.phone) {
                 const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
-                const newStatus = mapStatus(newFunnelStage);
+                const newStatus = mapFunnelStageToStatus(newFunnelStage);
                 const updatedContact = {
                   ...contact,
       id: targetId || contact.id,
@@ -286,7 +290,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen md:h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-x-hidden">
+    <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       <ChatSection 
         contacts={allContacts}
         lineId={lineId}

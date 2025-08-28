@@ -134,8 +134,8 @@ export default function LineDashboardLayout({
   const { line } = dashboardData;
 
   return (
-    <div className="min-h-screen bg-background dark:bg-[hsl(240,10%,5%)]">
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-white">
+    <div className="h-screen bg-background dark:bg-[hsl(240,10%,5%)] flex flex-col">
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-white flex-shrink-0">
         <DashboardHeader 
           line={line}
           totalContacts={allContacts.length}
@@ -143,7 +143,7 @@ export default function LineDashboardLayout({
         />
         <NavigationTabs lineId={lineId} />
       </div>
-      <div className="px-4 sm:px-6 md:px-8 py-2">
+      <div className="flex-1 px-4 sm:px-6 md:px-8 py-2 overflow-hidden">
         {children}
       </div>
     </div>

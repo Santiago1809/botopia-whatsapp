@@ -341,6 +341,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
     'en-contacto': filteredContacts.filter(c => c.status === 'en-contacto'),
     'cita-agendada': filteredContacts.filter(c => c.status === 'cita-agendada'),
     'atencion-cliente': filteredContacts.filter(c => c.status === 'atencion-cliente'),
+    'cita-cancelada': filteredContacts.filter(c => c.status === 'cita-cancelada'),
     'cerrado': filteredContacts.filter(c => c.status === 'cerrado')
   };
 
@@ -528,7 +529,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'en-contacto': return 'bg-yellow-100 text-yellow-800';
       case 'cita-agendada': return 'bg-green-100 text-green-800';
       case 'atencion-cliente': return 'bg-orange-100 text-orange-800';
-      case 'cerrado': return 'bg-red-100 text-red-800';
+      case 'cita-cancelada': return 'bg-red-100 text-red-800';
+      case 'cerrado': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -539,6 +541,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
       case 'en-contacto': return 'En Contacto';
       case 'cita-agendada': return 'Cita Agendada';
       case 'atencion-cliente': return 'Atención al Cliente';
+      case 'cita-cancelada': return 'Cita Cancelada';
       case 'cerrado': return 'Cerrado';
       default: return status;
     }
@@ -580,8 +583,8 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   };
 
   return (
-    <div className="h-full bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border overflow-hidden">
-      <div className="flex h-full overflow-x-hidden">
+    <div className="h-full bg-white dark:bg-[hsl(240,10%,14%)] rounded-lg shadow-sm border flex flex-col overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Contacts Sidebar - full screen on mobile when no chat selected */}
         <div className={`${selectedContact ? 'hidden' : 'flex'} md:flex w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700 flex-col`}
         >
@@ -642,6 +645,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                                contact.status === 'en-contacto' ? 'Contacto' :
                                contact.status === 'cita-agendada' ? 'Cita' : 
                                contact.status === 'atencion-cliente' ? 'Atención' : 
+                               contact.status === 'cita-cancelada' ? 'Cancelada' : 
                                contact.status === 'cerrado' ? 'Cerrado' : 'Otro'}
                             </span>
                           </div>
@@ -693,11 +697,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
         </div>
 
         {/* Chat Area - full screen on mobile when a chat is selected */}
-    <div className={`${selectedContact ? 'flex' : 'hidden'} md:flex flex-1 flex-col min-h-screen sm:min-h-0`}>
+    <div className={`${selectedContact ? 'flex' : 'hidden'} md:flex flex-1 flex-col h-full`}>
           {selectedContact ? (
             <>
               {/* Chat Header */}
-      <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[hsl(240,10%,8%)] sticky top-0 sm:static z-10">
+      <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[hsl(240,10%,8%)] flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {/* Back button for mobile */}
@@ -774,7 +778,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
               {/* Messages */}
               <div
-                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 md:p-3 pr-4 sm:pr-0 space-y-3 max-h-[calc(100svh-8rem)] sm:max-h-none"
+                className="flex-1 overflow-y-auto overflow-x-hidden p-2 md:p-3 pr-4 sm:pr-0 space-y-3"
               >
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
@@ -796,7 +800,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                           className={`flex ${alignRight ? 'justify-end' : 'justify-start'}`}
                         >
                           <div className={`
-                            max-w-[70%] sm:max-w-[80%] rounded-lg p-2 md:p-3 relative ${alignRight ? 'mr-5 sm:mr-0' : ''}
+                            ${alignRight ? 'max-w-[55%] sm:max-w-[80%]' : 'max-w-[70%] sm:max-w-[80%]'} rounded-lg p-2 md:p-3 relative
                             ${isHumanAgent 
                               ? 'bg-purple-500 text-white' 
                               : isBot
@@ -850,7 +854,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
               </div>
 
               {/* Message Input */}
-              <div className="p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[hsl(240,10%,14%)] sticky bottom-0 sm:static z-10">
+              <div className="p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[hsl(240,10%,14%)] flex-shrink-0">
                 {/* Mostrar alerta si han pasado más de 24 horas */}
                 {isOver24Hours && (
                   <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
