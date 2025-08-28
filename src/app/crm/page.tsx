@@ -138,15 +138,6 @@ export default function CrmPage() {
     });
   };
 
-  const formatOptionalDate = (dateString?: string) => {
-    if (!dateString) return '—';
-    try {
-      return formatDate(dateString);
-    } catch {
-      return '—';
-    }
-  };
-
   const handleLineClick = (lineId: string) => {
     router.push(`/crm/line-dashboard/${lineId}`);
   };
@@ -240,10 +231,10 @@ export default function CrmPage() {
                       <div className="sm:ml-auto mt-2 sm:mt-0 flex flex-col items-center sm:items-end gap-1">
                         <span className={`px-2.5 py-1 rounded text-xs sm:text-sm border font-semibold ${getProviderColor(line.proveedor)}`}>{line.proveedor}</span>
                         <div className="text-[11px] sm:text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">{line.activeContacts ?? 0}</span>
-                          <span> / {line.contactsCount ?? 0} contactos</span>
+                          <span className="font-semibold text-foreground">{line.contactsCount ?? 0}</span>
+                          <span> contactos</span>
                         </div>
-                        <div className="text-[11px] sm:text-xs text-muted-foreground">Última: {formatOptionalDate(line.lastActivity)}</div>
+                        {/* Última actividad ocultada por solicitud */}
                       </div>
                     </div>
 

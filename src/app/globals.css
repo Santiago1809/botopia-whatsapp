@@ -195,6 +195,13 @@
   }
 }
 
+/* Evitar zoom al enfocar inputs en iOS: usar mínimo 16px en móviles */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* Añadir al final del archivo */
 
 /* Control explícito para ocultar SOLO el menú hamburguesa cuando el copilot está abierto */

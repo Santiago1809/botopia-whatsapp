@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, MessageSquare, Clock, User, Send, Bot, File, FileText, X, ChevronLeft } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 import { useCRMWebSocket } from "../../hooks/useCRMWebSocket";
@@ -56,6 +56,17 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [isOver24Hours, setIsOver24Hours] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Ocultar ciertas plantillas en el modal (sin tocar backend)
+  const HIDDEN_TEMPLATE_NAMES = useMemo(() => new Set([
+    'avisomedilasser',
+    'fridoom_companies'
+  ].map(n => n.toLowerCase())), []);
+
+  const visibleTemplates = useMemo(
+    () => templates.filter(t => !HIDDEN_TEMPLATE_NAMES.has((t.name || '').toLowerCase())),
+    [templates, HIDDEN_TEMPLATE_NAMES]
+  );
 
   // Variables de configuración
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
@@ -265,62 +276,62 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
   const sendTemplate = useCallback(async (template: Template) => {
     if (!selectedContact) return;
 
-    setLoading(true);
+    // UX: cerrar el modal y mantener el chat fluido sin loaders
+    setShowTemplateModal(false);
+    // Forzar scroll al final para que el scrollbar quede abajo
+    setTimeout(() => scrollToBottom(), 0);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/templates/send`, {
+      // 1) Construir el texto visible (header + body) con variables sustituidas
+      let formattedContent = template.content;
+      if (template.header && template.body) {
+        formattedContent = `${template.header}\n\n${template.body}`;
+      }
+      const nameOrPhone = selectedContact.nombre || selectedContact.telefono || 'Cliente';
+      const displayMessage = formattedContent
+        .replace(/\{\{1\}\}/g, nameOrPhone)
+        .replace(/\{1\}/g, nameOrPhone);
+
+      // 2) Enviar por el mismo endpoint que los mensajes normales para guardar en BD y emitir WS
+  const response = await fetch(`${BACKEND_URL}/api/whatsapp/send-message`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          to: selectedContact.telefono,
           lineId,
-          contactId: selectedContact.id,
-          templateId: template.id,
+          messageType: 'template',
           templateName: template.name,
-          templateLanguage: template.language
+          templateLanguage: template.language,
+          // Este "message" se usa como parámetro {1} de la plantilla (Meta)
+          message: nameOrPhone,
+          // Y este se guarda/manda por WS como texto visible en el chat
+          displayMessage,
+          contactId: selectedContact.id
         }),
       });
 
-      if (response.ok) {
-        await response.json(); // Solo verificar que la respuesta sea válida
-        
-        // Formatear contenido del template
-        let formattedContent = template.content;
-        if (template.header && template.body) {
-          formattedContent = `${template.header}\n\n${template.body}`;
-        }
-        
-        // Reemplazar variables por el nombre del contacto
-        const messageWithContactName = formattedContent
-          .replace(/\{\{1\}\}/g, selectedContact.nombre || selectedContact.telefono || 'Cliente')
-          .replace(/\{1\}/g, selectedContact.nombre || selectedContact.telefono || 'Cliente');
-        
-        // 🔥 NO GUARDAR EN BD AQUÍ - EL BACKEND SE ENCARGA DE GUARDAR TEMPLATES
-        // NO AGREGAR LOCALMENTE - SOLO ESPERAR WEBSOCKET
-        
-        // Actualizar último mensaje del contacto
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) {
+        const msg = result?.message || 'Error enviando plantilla';
+        alert(msg);
+      } else {
+        // 3) Actualizar preview del último mensaje localmente (sin duplicar en backend)
         if (onContactUpdate) {
           onContactUpdate(selectedContact.id, {
             ultimoMensaje: {
-              mensaje: messageWithContactName,
+              mensaje: displayMessage,
               timestamp: new Date().toISOString(),
               remitente: 'bot'
             },
             ultimaActividad: new Date().toISOString()
           }, true);
         }
-        
-        setShowTemplateModal(false);
-      } else {
-        const errorData = await response.json();
-        alert(`Error enviando plantilla: ${errorData.message}`);
+    // Asegurar que el chat permanezca al final
+    setTimeout(() => scrollToBottom(), 0);
       }
     } catch {
       alert('Error de conexión al enviar plantilla');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL]);
+  }
+  }, [selectedContact, lineId, onContactUpdate, BACKEND_URL, scrollToBottom]);
 
   // Hacer scroll cuando cambien los mensajes y recalcular 24 horas
   useEffect(() => {
@@ -778,7 +789,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
 
               {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto overflow-x-hidden p-2 md:p-3 pr-4 sm:pr-0 space-y-3"
+                className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-2 md:p-3 pr-4 sm:pr-0 space-y-3"
               >
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
@@ -873,6 +884,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                       type="text"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
+                      onFocus={() => setTimeout(() => scrollToBottom(), 0)}
                       onKeyPress={(e) => e.key === 'Enter' && !sendingMessage && sendMessage()}
                       placeholder="Escribe un mensaje para WhatsApp..."
                       disabled={sendingMessage}
@@ -949,9 +961,9 @@ const ChatSection: React.FC<ChatSectionProps> = ({ contacts, lineId, selectedCon
                     Cargando plantillas...
                   </span>
                 </div>
-              ) : templates.length > 0 ? (
+        ) : visibleTemplates.length > 0 ? (
                 <div className="space-y-3">
-                  {templates.map((template) => (
+          {visibleTemplates.map((template) => (
                     <div
                       key={template.id}
                       className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
