@@ -549,7 +549,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContact
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className={`rounded-lg border-2 border-dashed ${column.color} md:min-h-[600px]`}>
+  // h-full en desktop para que todas las columnas igualen la más alta
+  <div className={`rounded-lg border-2 border-dashed ${column.color} md:h-full md:flex md:flex-col`}>
       {/* Encabezado (sirve como tarjeta-resumen en móvil) */}
       <div className={`px-4 py-3 rounded-t-lg ${column.headerColor}`}>
         <div className="flex items-center justify-between">
@@ -573,13 +574,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContact
       </div>
 
       {/* Área droppable (ocultable en móvil) */}
-      <Droppable droppableId={column.id}>
+  <Droppable droppableId={column.id}>
         {(provided, snapshot) => (
           <div
             id={`kanban-${column.id}`}
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`p-4 md:block ${isCollapsed ? 'hidden' : 'block'} md:!block md:min-h-[500px] ${
+    // En desktop, el área de tarjetas ocupa todo el alto disponible y agrega scroll interno
+    className={`p-4 md:block ${isCollapsed ? 'hidden' : 'block'} md:!block md:flex-1 md:min-h-0 md:overflow-y-auto ${
               snapshot.isDraggingOver ? 'bg-opacity-50' : ''
             }`}
           >
@@ -687,9 +689,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
   }, {} as Record<string, Contact[]>);
 
   return (
-    <div className="overflow-x-hidden">
+  <div className="overflow-x-hidden">
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+    {/* En desktop, forzamos a que cada ítem del grid estire su alto para igualar la fila más alta */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:items-stretch">
           {statusColumns.map(column => {
             const count = (groupedContacts[column.id] || []).length;
             const gradient =
@@ -707,7 +710,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
             const IconCmp = column.id === 'en-contacto' ? MessageSquare : (column.id === 'nuevo-lead' ? Table : BarChart3);
 
             return (
-              <div key={column.id} className="flex flex-col gap-2">
+              <div key={column.id} className="flex flex-col gap-2 md:h-full">{/* h-full: estira al alto de la fila */}
                 {/* Stat card solo en móvil */}
                 <div className="md:hidden">
                   <div className={`bg-gradient-to-r ${gradient} rounded-lg p-4 text-white`}>

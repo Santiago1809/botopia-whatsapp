@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bell } from "lucide-react";
 import Image from "next/image";
 import type { Line } from "../../types/dashboard";
+import { useCallback, useEffect, useState } from "react";
 
 interface DashboardHeaderProps {
   line: Line;
@@ -17,6 +18,47 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   const displayName = (line.nombreLinea?.trim() || line.numero);
   const photoUrl = line.fotoLinea?.trim() || '';
+  const [isPhonesOpen, setIsPhonesOpen] = useState(false);
+  const [phones, setPhones] = useState<string[]>([]);
+  // Derivar y editar sólo los 10 dígitos locales en UI; almacenamos '57'+local
+  const localPart = (full?: string) => (full || '').replace(/\D/g, '').replace(/^57/, '').slice(-10);
+  const [loading, setLoading] = useState(false);
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
+
+  const fetchPhones = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${BACKEND_URL}/api/lines/${line.id}/attention-phones`);
+      if (res.ok) {
+        const payload = await res.json();
+        setPhones(payload.data?.attentionPhones || []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [BACKEND_URL, line.id]);
+
+  useEffect(() => {
+    if (isPhonesOpen) fetchPhones();
+  }, [isPhonesOpen, fetchPhones]);
+
+  const savePhones = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/lines/${line.id}/attention-phones`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phones })
+      });
+      if (res.ok) {
+        setIsPhonesOpen(false);
+      } else {
+        alert('Error guardando teléfonos');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [BACKEND_URL, line.id, phones]);
   
   return (
     <div className="bg-gradient-to-r from-primary to-primary/80 text-white relative">
@@ -57,6 +99,14 @@ export default function DashboardHeader({
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-white/90 text-gray-800">
               {line.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
+            {/* Campanita para configurar teléfonos de atención */}
+            <button
+              title="Editar teléfonos de atención"
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              onClick={() => setIsPhonesOpen(true)}
+            >
+              <Bell className="w-5 h-5" />
+            </button>
             {photoUrl && (
               <Image
                 src={photoUrl}
@@ -84,6 +134,59 @@ export default function DashboardHeader({
           </div>
         </div>
       </div>
+
+      {/* Modal sencillo para editar teléfonos de atención */}
+      {isPhonesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsPhonesOpen(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Teléfonos de atención</h3>
+            <p className="text-sm text-muted-foreground mb-3">Estos números recibirán las plantillas de aviso.</p>
+
+            {[0,1].map((idx) => (
+              <div key={idx} className="mb-3">
+                <label className="block text-sm text-muted-foreground mb-1">Número {idx+1}</label>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-2 rounded border bg-gray-100 text-gray-700 whitespace-nowrap inline-flex items-center gap-2" title="Colombia">
+                    <span role="img" aria-label="Bandera de Colombia">🇨🇴</span>
+                    +57
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={localPart(phones[idx])}
+                    onChange={(e) => {
+                      const onlyDigits = e.target.value.replace(/\D/g, '').slice(0,10);
+                      const full = onlyDigits ? `57${onlyDigits}` : '';
+                      setPhones(prev => {
+                        const next = [...prev];
+                        next[idx] = full;
+                        return next;
+                      });
+                    }}
+                    placeholder="3001234567"
+                    className="w-full px-3 py-2 rounded border bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            ))}
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700"
+                onClick={() => setIsPhonesOpen(false)}
+                disabled={loading}
+              >Cancelar</button>
+              <button
+                className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50"
+                onClick={savePhones}
+                disabled={loading}
+              >{loading ? 'Guardando...' : 'Guardar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
