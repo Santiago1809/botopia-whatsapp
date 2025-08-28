@@ -475,8 +475,8 @@ export default function KanbanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Mobile sticky bar */}
-      <div className="md:hidden sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur border-b px-4 py-2 flex items-center justify-between">
+  {/* Mobile bar (no sticky) */}
+  <div className="md:hidden bg-gray-50/90 dark:bg-gray-900/90 border-b px-4 py-2 flex items-center justify-between">
         <span className="text-sm text-gray-700 dark:text-gray-200">Tablero Kanban</span>
         <button
           onClick={() => setShowFilters(v => !v)}
@@ -502,9 +502,11 @@ export default function KanbanPage() {
         
         {/* Tablero Kanban */}
   <div className="flex-1 min-w-0 order-2 md:order-2">
-          {/* Stats Overview - Tarjetas de resumen */}
-          <div className="px-1 md:px-0">
-            <StatsOverview analyticsStats={stats} />
+          {/* Stats Overview - oculto en móvil, visible en escritorio */}
+          <div className="hidden md:block">
+            <div className="px-0">
+              <StatsOverview analyticsStats={stats} />
+            </div>
           </div>
           
           <div className="mt-4 overflow-x-hidden pb-2 md:pb-0">

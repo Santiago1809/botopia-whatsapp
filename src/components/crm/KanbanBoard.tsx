@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Clock, Tag, MoreVertical, Edit2, Plus, X, Check } from "lucide-react";
+import { Clock, Tag, MoreVertical, Edit2, Plus, X, Check, ChevronDown, ChevronRight, MessageSquare, BarChart3, Table } from "lucide-react";
 import type { Contact } from "../../types/dashboard";
 
 interface KanbanBoardProps {
@@ -545,40 +545,56 @@ interface KanbanColumnProps {
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, contacts, onContactUpdate, onContactSelect, onGotoChat }) => {
+  // En móvil permitimos colapsar/expandir cada columna
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   return (
-    <div className={`rounded-lg border-2 border-dashed ${column.color} min-h-[600px]`}>
-      {/* Column Header */}
+    <div className={`rounded-lg border-2 border-dashed ${column.color} md:min-h-[600px]`}>
+      {/* Encabezado (sirve como tarjeta-resumen en móvil) */}
       <div className={`px-4 py-3 rounded-t-lg ${column.headerColor}`}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">{column.title}</h3>
+          <div className="flex items-center gap-2">
+            {/* Toggle solo visible en móvil */}
+            <button
+              type="button"
+              className="md:hidden p-1 -ml-1 rounded hover:bg-white/30"
+              aria-expanded={!isCollapsed}
+              aria-controls={`kanban-${column.id}`}
+              onClick={() => setIsCollapsed(v => !v)}
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <h3 className="font-semibold">{column.title}</h3>
+          </div>
           <span className="bg-white bg-opacity-70 px-2 py-1 rounded-full text-sm font-medium">
             {contacts.length}
           </span>
         </div>
       </div>
 
-      {/* Droppable Area */}
+      {/* Área droppable (ocultable en móvil) */}
       <Droppable droppableId={column.id}>
         {(provided, snapshot) => (
           <div
+            id={`kanban-${column.id}`}
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`p-4 min-h-[500px] ${
+            className={`p-4 md:block ${isCollapsed ? 'hidden' : 'block'} md:!block md:min-h-[500px] ${
               snapshot.isDraggingOver ? 'bg-opacity-50' : ''
             }`}
           >
             {contacts.map((contact, index) => (
-              <ContactCard 
-                key={contact.id} 
-                contact={contact} 
-                index={index} 
+              <ContactCard
+                key={contact.id}
+                contact={contact}
+                index={index}
                 onContactUpdate={onContactUpdate}
                 onContactSelect={onContactSelect}
                 onGotoChat={onGotoChat}
               />
             ))}
             {provided.placeholder}
-            
+
             {contacts.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <div className="text-4xl mb-2"></div>
@@ -673,17 +689,51 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ contacts, onContactStatusChan
   return (
     <div className="overflow-x-hidden">
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {statusColumns.map(column => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              contacts={groupedContacts[column.id] || []}
-              onContactUpdate={onContactUpdate}
-              onContactSelect={onContactSelect}
-              onGotoChat={onGotoChat}
-            />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {statusColumns.map(column => {
+            const count = (groupedContacts[column.id] || []).length;
+            const gradient =
+              column.id === 'nuevo-lead' ? 'from-blue-500 to-blue-600' :
+              column.id === 'en-contacto' ? 'from-yellow-500 to-yellow-600' :
+              column.id === 'cita-agendada' ? 'from-purple-500 to-purple-600' :
+              column.id === 'atencion-cliente' ? 'from-orange-500 to-orange-600' :
+              'from-green-500 to-green-600';
+            const title =
+              column.id === 'nuevo-lead' ? 'Nuevos Contactos' :
+              column.id === 'en-contacto' ? 'En Contacto' :
+              column.id === 'cita-agendada' ? 'Citas Agendadas' :
+              column.id === 'atencion-cliente' ? 'Atención Cliente' :
+              'Cita Cancelada';
+            const IconCmp = column.id === 'en-contacto' ? MessageSquare : (column.id === 'nuevo-lead' ? Table : BarChart3);
+
+            return (
+              <div key={column.id} className="flex flex-col gap-2">
+                {/* Stat card solo en móvil */}
+                <div className="md:hidden">
+                  <div className={`bg-gradient-to-r ${gradient} rounded-lg p-4 text-white`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white/80 text-sm">{title}</p>
+                        <p className="text-2xl font-bold">{count}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                        <IconCmp className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna */}
+                <KanbanColumn
+                  column={column}
+                  contacts={groupedContacts[column.id] || []}
+                  onContactUpdate={onContactUpdate}
+                  onContactSelect={onContactSelect}
+                  onGotoChat={onGotoChat}
+                />
+              </div>
+            );
+          })}
         </div>
       </DragDropContext>
 
