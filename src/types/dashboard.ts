@@ -12,7 +12,7 @@ export interface Contact {
   idDeUsuario: string;
   proveedor: string;
   numeroLinea: string;
-  status: 'pendiente-documentacion' | 'nuevo-lead' | 'en-contacto' | 'cita-agendada' | 'atencion-cliente' | 'cerrado';
+  status: 'pendiente-documentacion' | 'nuevo-lead' | 'en-contacto' | 'cita-agendada' | 'atencion-cliente' | 'cita-cancelada' | 'cerrado';
   ultimoMensaje?: {
     mensaje: string;
     timestamp: string;
