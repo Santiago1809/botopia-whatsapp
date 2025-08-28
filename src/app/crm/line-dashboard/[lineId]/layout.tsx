@@ -143,7 +143,7 @@ export default function LineDashboardLayout({
         />
         <NavigationTabs lineId={lineId} />
       </div>
-      <div className="flex-1 px-4 sm:px-6 md:px-8 py-2 overflow-hidden">
+  <div className="flex-1 px-4 sm:px-6 md:px-8 py-2 overflow-y-auto">
         {children}
       </div>
     </div>
