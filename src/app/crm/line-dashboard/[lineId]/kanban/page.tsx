@@ -34,33 +34,12 @@ export default function KanbanPage() {
   // Configuración del backend
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL2 || 'http://localhost:5005';
 
-  // Debug: Log de la URL del backend
-  useEffect(() => {
-    console.log('🌐 [KANBAN] Configuración del backend:', {
-      NEXT_PUBLIC_BACKEND_URL2: process.env.NEXT_PUBLIC_BACKEND_URL2,
-      BACKEND_URL,
-      isLocalhost: BACKEND_URL.includes('localhost')
-    });
-  }, [BACKEND_URL]);
-
   // Hook de WebSocket
   const wsHook = useCRMWebSocket({ 
     lineId, 
     userId: 'kanban-user',
     backendUrl: BACKEND_URL
   });
-
-  // Debug: Log del WebSocket
-  useEffect(() => {
-    console.log('🔌 [KANBAN] WebSocket configurado:', {
-      lineId,
-      userId: 'kanban-user',
-      backendUrl: BACKEND_URL,
-      wsHook: !!wsHook,
-      isConnected: wsHook?.isConnected,
-      connectionStatus: wsHook?.connectionStatus
-    });
-  }, [wsHook, BACKEND_URL, lineId]);
 
   // Función para aplicar filtros
   const applyFilters = useCallback(() => {
@@ -168,32 +147,6 @@ export default function KanbanPage() {
   // WebSocket handlers
   useEffect(() => {
     wsHook.registerContactUpdateHandler((update) => {
-      console.log('🔥 [WEBSOCKET] Actualización de contacto recibida:', update);
-      
-      // Debug: Log específico para último mensaje
-      if (update.lastMessage) {
-        console.log('📨 [WEBSOCKET] Actualización incluye último mensaje:', {
-          contactId: update.id,
-          message: update.lastMessage.message,
-          timestamp: update.lastMessage.timestamp,
-          sender: update.lastMessage.sender,
-          remitente: update.lastMessage.remitente
-        });
-      }
-      
-      // Debug: Log específico para cambios de IA
-      if (update.is_ai_enabled !== undefined) {
-        console.log('🤖 [WEBSOCKET] Actualización de IA recibida:', {
-          contactId: update.id,
-          is_ai_enabled: update.is_ai_enabled,
-          anterior: allContacts.find(c => c.id === update.id)?.estaAlHabilitado
-        });
-      }
-      
-      // Debug: Log del estado actual de los contactos
-      console.log('📊 [WEBSOCKET] Estado actual de contactos antes de actualizar:', 
-        allContacts.map(c => ({ id: c.id, nombre: c.nombre, ultimoMensaje: c.ultimoMensaje }))
-      );
       
       const mapStatus = (funnelStage: string): Contact['status'] => {
         // Si funnel_stage es null o undefined, va a "nuevo-lead"
@@ -218,11 +171,6 @@ export default function KanbanPage() {
             contactFound = true;
             const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
             const newStatus = mapStatus(newFunnelStage);
-            
-            console.log(`🔄 [WEBSOCKET] Contacto ${contact.nombre} actualizado:`, {
-              anterior: { etapa: contact.etapaDelEmbudo, status: contact.status },
-              nuevo: { etapa: newFunnelStage, status: newStatus }
-            });
             
             return {
               ...contact,
@@ -256,11 +204,6 @@ export default function KanbanPage() {
                 const newFunnelStage = update.funnel_stage || contact.etapaDelEmbudo;
                 const newStatus = mapStatus(newFunnelStage);
                 
-                console.log(`🔄 [WEBSOCKET] Contacto por teléfono ${contact.nombre} actualizado:`, {
-                  anterior: { etapa: contact.etapaDelEmbudo, status: contact.status },
-                  nuevo: { etapa: newFunnelStage, status: newStatus }
-                });
-                
                 return {
                   ...contact,
                   nombre: update.name || contact.nombre,
@@ -288,11 +231,6 @@ export default function KanbanPage() {
 
         return updatedContacts;
       });
-      
-      // Debug: Log del estado después de actualizar
-      console.log('📊 [WEBSOCKET] Estado de contactos después de actualizar:', 
-        allContacts.map(c => ({ id: c.id, nombre: c.nombre, ultimoMensaje: c.ultimoMensaje }))
-      );
     });
 
     wsHook.registerMessageHandler((message) => {
@@ -338,14 +276,6 @@ export default function KanbanPage() {
       };
       
       finalUpdates.status = mapStatusFromFunnel(updates.etapaDelEmbudo);
-      
-      // Debug log para verificar la consistencia
-      console.log('🔄 [CONTACT UPDATE] Actualizando contacto con consistencia:', {
-        contactId,
-        etapaDelEmbudo: updates.etapaDelEmbudo,
-        status: finalUpdates.status,
-        updates
-      });
     }
 
     // Optimistic update
@@ -476,32 +406,6 @@ export default function KanbanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* WebSocket Status Indicator */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border shadow-sm bg-white dark:bg-gray-800">
-        <div className={`w-2 h-2 rounded-full ${
-          wsHook?.isConnected 
-            ? 'bg-green-500 animate-pulse' 
-            : 'bg-red-500'
-        }`}></div>
-        <span className="text-gray-700 dark:text-gray-300">
-          WebSocket: {wsHook?.isConnected ? 'Conectado' : 'Desconectado'}
-        </span>
-        {wsHook?.connectionStatus && (
-          <span className="text-xs text-gray-500">
-            ({wsHook.connectionStatus})
-          </span>
-        )}
-        {!wsHook?.isConnected && (
-          <button
-            onClick={() => wsHook?.reconnect?.()}
-            className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-            title="Reconectar WebSocket"
-          >
-            Reconectar
-          </button>
-        )}
-      </div>
-
       {/* Mobile bar (no sticky) */}
       <div className="md:hidden bg-gray-50/90 dark:bg-gray-900/90 border-b px-4 py-2 flex items-center justify-between">
         <span className="text-sm text-gray-700 dark:text-gray-200">Tablero Kanban</span>
