@@ -57,7 +57,8 @@ export default function KanbanPage() {
       userId: 'kanban-user',
       backendUrl: BACKEND_URL,
       wsHook: !!wsHook,
-      isConnected: wsHook?.isConnected
+      isConnected: wsHook?.isConnected,
+      connectionStatus: wsHook?.connectionStatus
     });
   }, [wsHook, BACKEND_URL, lineId]);
 
@@ -475,8 +476,34 @@ export default function KanbanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-  {/* Mobile bar (no sticky) */}
-  <div className="md:hidden bg-gray-50/90 dark:bg-gray-900/90 border-b px-4 py-2 flex items-center justify-between">
+      {/* WebSocket Status Indicator */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border shadow-sm bg-white dark:bg-gray-800">
+        <div className={`w-2 h-2 rounded-full ${
+          wsHook?.isConnected 
+            ? 'bg-green-500 animate-pulse' 
+            : 'bg-red-500'
+        }`}></div>
+        <span className="text-gray-700 dark:text-gray-300">
+          WebSocket: {wsHook?.isConnected ? 'Conectado' : 'Desconectado'}
+        </span>
+        {wsHook?.connectionStatus && (
+          <span className="text-xs text-gray-500">
+            ({wsHook.connectionStatus})
+          </span>
+        )}
+        {!wsHook?.isConnected && (
+          <button
+            onClick={() => wsHook?.reconnect?.()}
+            className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            title="Reconectar WebSocket"
+          >
+            Reconectar
+          </button>
+        )}
+      </div>
+
+      {/* Mobile bar (no sticky) */}
+      <div className="md:hidden bg-gray-50/90 dark:bg-gray-900/90 border-b px-4 py-2 flex items-center justify-between">
         <span className="text-sm text-gray-700 dark:text-gray-200">Tablero Kanban</span>
         <button
           onClick={() => setShowFilters(v => !v)}

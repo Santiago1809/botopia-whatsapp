@@ -132,6 +132,7 @@ export const useCRMWebSocket = ({
     
     // Estado guardado para reconexión
     savedContactId?: string;
+    authenticated?: boolean;
   }>({});
 
   // Estado para indicadores visuales
@@ -161,35 +162,62 @@ export const useCRMWebSocket = ({
     });
     setConnectionStatus('connecting');
     
+    // Detectar si estamos en producción para ajustar configuración
+    const isProduction = backendUrl.includes('railway.app') || backendUrl.includes('vercel.app') || !backendUrl.includes('localhost');
+    
     const newSocket = io(backendUrl, {
-      // Usar WebSocket Y polling para mejor compatibilidad en producción
-      transports: ['websocket', 'polling'],
+      // SOLO WebSocket - nada de polling
+      transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 10, // Más intentos en producción
-      reconnectionDelay: 1000, // Delay inicial más rápido
-      reconnectionDelayMax: 5000, // Delay máximo más corto
-      timeout: 20000, // Timeout más corto
+      reconnectionAttempts: isProduction ? 15 : 10, // Más intentos en producción
+      reconnectionDelay: isProduction ? 2000 : 1000, // Delay más largo en producción
+      reconnectionDelayMax: isProduction ? 10000 : 5000, // Delay máximo más largo en producción
+      timeout: isProduction ? 30000 : 20000, // Timeout más largo en producción
       forceNew: false,
       withCredentials: true, // Habilitar credenciales para CORS
       // Opciones adicionales para mejorar estabilidad en producción
-      upgrade: true,
-      rememberUpgrade: false // No recordar upgrade para evitar problemas
+      upgrade: false, // No upgrade, solo websocket desde el inicio
+      rememberUpgrade: false, // No recordar upgrade
+      // Configuraciones adicionales para producción
+      ...(isProduction && {
+        pingTimeout: 60000, // 1 minuto de timeout para ping en producción
+        pingInterval: 25000, // Ping cada 25 segundos en producción
+      })
     });
 
     // === EVENTOS DE CONEXIÓN ===
     newSocket.on('connect', () => {
-      console.log('✅ [PRODUCCIÓN] CRM WebSocket conectado:', newSocket.id);
-      console.log('🔗 [PRODUCCIÓN] URL de conexión:', backendUrl);
-      console.log('🎯 [PRODUCCIÓN] Línea ID:', lineId);
+      console.log('✅ [PRODUCCIÓN] CRM WebSocket conectado:', {
+        socketId: newSocket.id,
+        backendUrl,
+        lineId,
+        isProduction,
+        transport: newSocket.io.engine.transport.name,
+        userAgent: navigator.userAgent
+      });
       setIsConnected(true);
       setConnectionError(null);
       setConnectionStatus('connected');
       reconnectAttempts.current = 0; // Reset intentos de reconexión
       
-      // Autenticar con el servidor
-      console.log('🔐 [PRODUCCIÓN] Autenticando con lineId:', lineId, 'userId:', userId);
-      newSocket.emit('authenticate', { lineId, userId });
+      // Autenticar con el servidor - agregar retry en producción
+      const authenticate = () => {
+        console.log('🔐 [PRODUCCIÓN] Autenticando con lineId:', lineId, 'userId:', userId);
+        newSocket.emit('authenticate', { lineId, userId });
+      };
+      
+      authenticate();
+      
+      // En producción, verificar autenticación después de 3 segundos
+      if (isProduction) {
+        setTimeout(() => {
+          if (newSocket.connected && !eventHandlers.current.authenticated) {
+            console.log('⚠️ [PRODUCCIÓN] Re-intentando autenticación...');
+            authenticate();
+          }
+        }, 3000);
+      }
       
       // ✅ El authenticate ya suscribe automáticamente al room
       console.log('📡 [PRODUCCIÓN] La autenticación suscribirá automáticamente a line-' + lineId);
@@ -206,7 +234,8 @@ export const useCRMWebSocket = ({
     });
 
     newSocket.on('authenticated', (data) => {
-      console.log('🔐 CRM WebSocket autenticado:', data);
+      console.log('🔐 [PRODUCCIÓN] CRM WebSocket autenticado:', data);
+      eventHandlers.current.authenticated = true; // Marcar como autenticado
       
       // ✅ El backend ya suscribe automáticamente al room line-{lineId} en authenticate
       console.log('📡 [PRODUCCIÓN] Cliente ya suscrito automáticamente a line-' + lineId);
@@ -221,9 +250,10 @@ export const useCRMWebSocket = ({
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('🔌 CRM WebSocket desconectado:', reason);
+      console.log('🔌 [PRODUCCIÓN] CRM WebSocket desconectado:', reason);
       setIsConnected(false);
       setConnectionStatus('disconnected');
+      eventHandlers.current.authenticated = false; // Resetear estado de autenticación
       
       // Limpiar heartbeat
       if (heartbeatInterval.current) {
@@ -245,14 +275,27 @@ export const useCRMWebSocket = ({
 
     newSocket.on('connect_error', (error) => {
       reconnectAttempts.current++;
-      console.error(`❌ CRM WebSocket error de conexión (intento ${reconnectAttempts.current}):`, error.message);
+      console.error(`❌ [PRODUCCIÓN] CRM WebSocket error de conexión (intento ${reconnectAttempts.current}):`, {
+        error: error.message,
+        backendUrl,
+        lineId,
+        isProduction,
+        transport: newSocket.io?.engine?.transport?.name,
+        userAgent: navigator.userAgent
+      });
       setConnectionError(error.message);
       setIsConnected(false);
       setConnectionStatus('error');
+      eventHandlers.current.authenticated = false; // Resetear autenticación en error
       
-      // Si hemos intentado muchas veces, parar y esperar más tiempo
-      if (reconnectAttempts.current >= 5) {
-        console.log('� Demasiados intentos de reconexión, pausando por 30 segundos...');
+      // En producción, intentar más agresivamente
+      if (isProduction && reconnectAttempts.current >= 10) {
+        console.log('🔄 [PRODUCCIÓN] Demasiados intentos, pausando por 15 segundos...');
+        setTimeout(() => {
+          reconnectAttempts.current = 0; // Reset después del delay
+        }, 15000);
+      } else if (!isProduction && reconnectAttempts.current >= 5) {
+        console.log('🔄 [LOCAL] Demasiados intentos, pausando por 30 segundos...');
         setTimeout(() => {
           reconnectAttempts.current = 0; // Reset después del delay largo
         }, 30000);
@@ -260,11 +303,14 @@ export const useCRMWebSocket = ({
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log(`🔄 CRM WebSocket reconectado después de ${attemptNumber} intentos`);
+      console.log(`🔄 [PRODUCCIÓN] CRM WebSocket reconectado después de ${attemptNumber} intentos`);
       setIsConnected(true);
       setConnectionStatus('connected');
       reconnectAttempts.current = 0;
+      eventHandlers.current.authenticated = false; // Resetear autenticación
+      
       // Re-autenticar después de reconectar
+      console.log('🔐 [PRODUCCIÓN] Re-autenticando después de reconexión...');
       newSocket.emit('authenticate', { lineId, userId });
     });
     
@@ -312,8 +358,27 @@ export const useCRMWebSocket = ({
         funnel_stage: update.funnel_stage,
         last_activity: update.last_activity,
         lastMessage: update.lastMessage,
-        handlerRegistrado: !!eventHandlers.current.onContactUpdate
+        handlerRegistrado: !!eventHandlers.current.onContactUpdate,
+        isConnected: newSocket.connected,
+        isAuthenticated: eventHandlers.current.authenticated,
+        socketId: newSocket.id,
+        transport: newSocket.io?.engine?.transport?.name
       });
+      
+      // Verificar que estamos autenticados antes de procesar
+      if (!eventHandlers.current.authenticated) {
+        console.warn('⚠️ [PRODUCCIÓN] CRM: Recibido contact-updated pero no autenticado, ignorando...');
+        return;
+      }
+      
+      // Verificar que el lineId coincide
+      if (update.lineId && update.lineId !== lineId) {
+        console.warn('⚠️ [PRODUCCIÓN] CRM: contact-updated de lineId diferente, ignorando:', {
+          updateLineId: update.lineId,
+          currentLineId: lineId
+        });
+        return;
+      }
       
       if (eventHandlers.current.onContactUpdate) {
         console.log('✅ [PRODUCCIÓN] CRM: Ejecutando handler de contacto actualizado');
