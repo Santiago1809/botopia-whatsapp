@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Minus } from "lucide-react";
 import Image from "next/image";
 import type { Line } from "../../types/dashboard";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +20,7 @@ export default function DashboardHeader({
   const photoUrl = line.fotoLinea?.trim() || '';
   const [isPhonesOpen, setIsPhonesOpen] = useState(false);
   const [phones, setPhones] = useState<string[]>([]);
+  const [phoneCount, setPhoneCount] = useState(2); // Inicialmente mostrar 2 campos
   // Derivar y editar sólo los 10 dígitos locales en UI; almacenamos '57'+local
   const localPart = (full?: string) => (full || '').replace(/\D/g, '').replace(/^57/, '').slice(-10);
   const [loading, setLoading] = useState(false);
@@ -41,6 +42,12 @@ export default function DashboardHeader({
   useEffect(() => {
     if (isPhonesOpen) fetchPhones();
   }, [isPhonesOpen, fetchPhones]);
+
+  // Ajustar phoneCount cuando se cargan los números existentes
+  useEffect(() => {
+    const validPhones = phones.filter(p => p && p.length > 0).length;
+    setPhoneCount(Math.max(2, validPhones || 2));
+  }, [phones]);
 
   const savePhones = useCallback(async () => {
     setLoading(true);
@@ -148,11 +155,30 @@ export default function DashboardHeader({
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsPhonesOpen(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold mb-4">Teléfonos de atención</h3>
-            <p className="text-sm text-muted-foreground mb-3">Estos números recibirán las plantillas de aviso.</p>
+            <p className="text-sm text-muted-foreground mb-3">Estos números recibirán las plantillas de aviso cuando un contacto pase a atención al cliente.</p>
 
-            {[0,1].map((idx) => (
+            {Array.from({ length: phoneCount }, (_, idx) => (
               <div key={idx} className="mb-3">
-                <label className="block text-sm text-muted-foreground mb-1">Número {idx+1}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm text-muted-foreground">Número {idx+1}</label>
+                  {idx >= 2 && (
+                    <button
+                      onClick={() => {
+                        // Remover este campo específico y ajustar el contador
+                        setPhones(prev => {
+                          const next = [...prev];
+                          next.splice(idx, 1);
+                          return next;
+                        });
+                        setPhoneCount(prev => Math.max(2, prev - 1));
+                      }}
+                      className="p-1 hover:bg-red-100 rounded text-red-600"
+                      title="Eliminar este número"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-2 rounded border bg-gray-100 text-gray-700 whitespace-nowrap inline-flex items-center gap-2" title="Colombia">
                     <span role="img" aria-label="Bandera de Colombia">🇨🇴</span>
@@ -179,9 +205,20 @@ export default function DashboardHeader({
               </div>
             ))}
 
+            {/* Botón para agregar más números */}
+            {phoneCount < 4 && (
+              <button
+                onClick={() => setPhoneCount(prev => Math.min(4, prev + 1))}
+                className="w-full mb-4 px-3 py-2 rounded border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 text-gray-600 hover:text-primary transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar número ({phoneCount}/4)
+              </button>
+            )}
+
             <div className="flex justify-end gap-2 mt-4">
               <button
-                className="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700"
+                className="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 onClick={() => setIsPhonesOpen(false)}
                 disabled={loading}
               >Cancelar</button>
