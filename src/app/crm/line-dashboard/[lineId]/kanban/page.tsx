@@ -16,6 +16,20 @@ export default function KanbanPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Helper function para convertir UTC a hora local de Colombia
+  const toColombiaTime = (utcTimestamp: string): string => {
+    try {
+      const date = new Date(utcTimestamp);
+      // Colombia está en UTC-5, así que restamos 5 horas
+      const colombiaDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+      // Devolver sin la 'Z' para que sea tratado como hora local
+      return colombiaDate.toISOString().slice(0, -1);
+    } catch (error) {
+      console.warn('Error convirtiendo timestamp a hora Colombia:', error);
+      return utcTimestamp; // Devolver original si hay error
+    }
+  };
   const [stats, setStats] = useState({
     total: 0,
     pendienteDocumentacion: 0,
@@ -212,11 +226,11 @@ export default function KanbanPage() {
                   prioridad: update.priority || contact.prioridad,
                   estaAlHabilitado: update.is_ai_enabled !== undefined ? update.is_ai_enabled : contact.estaAlHabilitado,
                   etiquetas: update.tags || contact.etiquetas,
-                  ultimaActividad: update.last_activity || contact.ultimaActividad,
+                  ultimaActividad: update.last_activity ? toColombiaTime(update.last_activity) : contact.ultimaActividad,
                   // Actualizar último mensaje si viene en la actualización
                   ultimoMensaje: update.lastMessage ? {
                     mensaje: update.lastMessage.message,
-                    timestamp: update.lastMessage.timestamp,
+                    timestamp: toColombiaTime(update.lastMessage.timestamp),
                     remitente: update.lastMessage.remitente || 
                       (update.lastMessage.sender === 'user' ? 'usuario' : 
                        update.lastMessage.sender === 'bot' ? 'bot' : 'agente')
@@ -234,7 +248,6 @@ export default function KanbanPage() {
     });
 
     wsHook.registerMessageHandler((message) => {
-      console.log('📨 [WEBSOCKET] Nuevo mensaje recibido:', message);
       setAllContacts(prev => prev.map(contact => {
         if (contact.id === message.contactId) {
           return {
